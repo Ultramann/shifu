@@ -1,0 +1,118 @@
+shifu_command_function_declaration='^(.*) ?\(\) {'
+shifu_subcommand_delimiter='_'
+
+# for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
+shifu_grey="$(tput setaf 0)"
+shifu_red="$(tput setaf 1)"
+shifu_green="$(tput setaf 2)"
+shifu_reset="$(tput sgr0)"
+
+shifu_log_flag='--shifu-log'
+
+# Write input arguments to stdout starting with green "shifu"
+shifu_log() {
+  [ "${shifu_logging_on}" = true ] && echo "${shifu_green}shifu${shifu_reset}  $@"
+}
+
+# Write input arguments to stderr starting with red "shifu"
+shifu_debug() {
+  echo "${shifu_red}shifu${shifu_reset}  $@" >&2
+}
+
+# Write input arguments array as "( arg1, arg2, ..., argn )" to stdout
+shifu_array_fmt() {
+  echo "(" $(echo "$@" | sed 's/ /, /g') ")"
+}
+
+# Write the absolute path of the calling script two layer up the stack
+shifu_caller_script() {
+  echo $(realpath $(caller 1 | cut -d ' ' -f 3))
+}
+
+# Reads function names in passed script path matching the regex pattern
+# shifu_command_function_declaration to global variable `script_functions`
+shifu_read_script_functions() {
+  local script_path=$1
+  script_functions=($(
+    cat "${script_path}" | \
+    # -r: extended regex, -n: don't echo lines to stdout
+    sed -rn "/${shifu_command_function_declaration}/!d;
+            s/${shifu_command_function_declaration}/\1/p"
+  ))
+}
+
+# Write input arguments array filtered by first argment as prefix
+# arg, ( argument, other, arg3 ) -> ( argument, arg3 )
+shifu_array_filter_prefix() {
+  local prefix=$1; shift
+  [ -z "${prefix}" ] && { echo "$@"; return; }
+  local value
+  for value in "$@"; do
+    [ "${value#"${prefix}"}" != "${value}" ] && echo "${value}"
+  done
+}
+
+# Write input arguments array filtered by first argment as prefix
+# arg, ( argument, other, arg3 ) -> ( argument, arg3 )
+shifu_array_contains() {
+  local element=$1; shift
+  local value
+  for value in "$@"; do
+    [ "${value}" = "${element}" ] && { echo true; break; }
+  done
+}
+
+shifu_infer_function_and_arguments() {
+  # if trying to get to a subcommand but invalid should tell user
+  # this would happen if the candidate function ends in _
+  function_to_call=""
+  remaining_arguments=()
+
+  local candidate=""
+  local last_candidate
+  local last_argument
+  local filtered_functions=("${script_functions[@]}")
+  local argument
+  for argument in "$@"; do
+    filtered_functions=($(shifu_array_filter_prefix "${candidate}" "${filtered_functions[@]}"))
+    if [ "${#filtered_functions[@]}" -le 1 ]; then
+      remaining_arguments+=("${argument}")
+    else
+      candidate+="${argument}${shifu_subcommand_delimiter}"
+    fi
+  done
+
+  local maybe_function="${candidate%${shifu_subcommand_delimiter}}"
+  local found_function=$(shifu_array_contains "${maybe_function}" "${script_functions[@]}")
+
+  shifu_log last argument: "${last_argument}"
+  shifu_log maybe function: "${maybe_function}"
+  shifu_log maybe function arguments: $(shifu_array_fmt "${remaining_arguments[@]}")
+
+  if [ "${found_function}" = true ]; then
+    function_to_call="${maybe_function}"
+    return 0
+  else
+    function_to_call=""
+    local last_function="${candidate%_*_}"
+    shifu_debug "${last_function//_/ } has no subcommand ${maybe_function##*_}"
+    return 1
+  fi
+
+}
+
+shifu_run() {
+  [ $1 = "${shifu_log_flag}" ] && { shifu_logging_on=true; shift; }
+
+  shifu_read_script_functions $(shifu_caller_script)
+  shifu_log "script functions:\n      " $(shifu_array_fmt "${script_functions[@]}")
+
+  shifu_log "arguments:\n      " $(shifu_array_fmt "$@")
+  shifu_infer_function_and_arguments "$@"; status=$?
+
+  [ $status != 0 ] && return $status
+
+  shifu_log function to call: "${function_to_call}"
+
+  "${function_to_call}" "${remaining_arguments[@]}"
+}
