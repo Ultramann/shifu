@@ -24,6 +24,10 @@ shifu_iterate() {
   echo $1 | tr ' ' '\n'
 }
 
+shifu_collapse() {
+  echo $1 | tr '\n' ' '
+}
+
 # Write newline separated "array" as "( arg1 arg2 ... argn )" to stdout
 shifu_array_fmt() {
   local comma_seperated=$(echo "$1" | tr '\n' ' ')
@@ -104,6 +108,7 @@ shifu_infer_function_and_arguments() {
       candidate="${candidate}${argument}${shifu_subcommand_delimiter}"
     fi
   done
+  remaining_arguments=$(shifu_collapse "$remaining_arguments")
 
   local maybe_function="${candidate%${shifu_subcommand_delimiter}}"
   local found_function=$(shifu_array_contains "$script_functions" "$maybe_function")
