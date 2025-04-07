@@ -19,19 +19,19 @@ shifu_debug() {
   echo "${shifu_red}debug${shifu_reset}  $@" >&2
 }
 
-# Alias for echo to make loops more readable
+# Convert spaces to newlines to enable looping
 shifu_iterate() {
   echo $1 | tr ' ' '\n'
 }
 
+# Convert newlines to spaces to enable parameter expansion
 shifu_collapse() {
   echo $1 | tr '\n' ' '
 }
 
 # Write newline separated "array" as "( arg1 arg2 ... argn )" to stdout
 shifu_array_fmt() {
-  local comma_seperated=$(echo "$1" | tr '\n' ' ')
-  echo "( $comma_seperated)"
+  echo "( $(shifu_collapse "$1"))"
 }
 
 # Write number of elements in newline separated "array" to stdout
