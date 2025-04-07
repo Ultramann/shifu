@@ -49,6 +49,10 @@ shifu_assert_equal() {
   return 0
 }
 
+shifu_assert_strings_equal() {
+  shifu_assert_equal "\"$1\"" "\"$2\""
+}
+
 test_shifu_array_length() {
   local in_array="$(shifu_iterate "arg other arg3")"
 
@@ -126,16 +130,16 @@ test_shifu_infer_function_and_arguments() {
   local fake_arguments="$(shifu_iterate "test sub func arg1 arg2")"
 
   local expected_function_to_call="test_sub_func"
-  local expected_remaining_arguments="$(shifu_iterate "arg1 arg2")"
+  local expected_remaining_arguments="arg1 arg2"
 
   shifu_infer_function_and_arguments "$fake_arguments"; local status=$?
 
   local error_count=0
   shifu_assert_zero $status
   error_count=$(($error_count + $?))
-  shifu_assert_equal "$function_to_call" "$expected_function_to_call"
+  shifu_assert_strings_equal "$function_to_call" "$expected_function_to_call"
   error_count=$(($error_count + $?))
-  shifu_assert_equal "$remaining_arguments" "$expected_remaining_arguments"
+  shifu_assert_strings_equal "$remaining_arguments" "$expected_remaining_arguments"
   error_count=$(($error_count + $?))
   return $error_count
 }
@@ -151,7 +155,7 @@ test_shifu_infer_function_and_arguments_only_subcommand() {
   local error_count=0
   shifu_assert_non_zero $status
   error_count=$(($error_count + $?))
-  shifu_assert_equal "$function_to_call" "$expected_function_to_call"
+  shifu_assert_strings_equal "$function_to_call" "$expected_function_to_call"
   error_count=$(($error_count + $?))
   return $error_count
 }

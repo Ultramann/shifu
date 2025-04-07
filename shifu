@@ -26,7 +26,7 @@ shifu_iterate() {
 
 # Convert newlines to spaces to enable parameter expansion
 shifu_collapse() {
-  echo $1 | tr '\n' ' '
+  echo -n $1 | tr '\n' ' '
 }
 
 # Write newline separated "array" as "( arg1 arg2 ... argn )" to stdout
