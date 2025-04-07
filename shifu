@@ -74,20 +74,20 @@ shifu_array_filter_prefix() {
   done
 }
 
-# Write the absolute path of the calling script two layer up the stack
+# Write the absolute path of the calling script, $0, to stdout
 shifu_caller_script() {
-  echo $(realpath $(caller 1 | cut -d ' ' -f 3))
+  echo $(realpath $(basename $0))
 }
 
 # Reads function names in passed script path matching the regex pattern
-# shifu_command_function_declaration to global variable `script_functions`
+# shifu_command_function_pattern to global variable `script_functions`
 shifu_read_script_functions() {
   local script_path=$1
   script_functions=$(
     cat "${script_path}" | \
     # -r: extended regex, -n: don't echo lines to stdout
-    sed -rn "/${shifu_command_function_declaration}/!d;
-            s/${shifu_command_function_declaration}/\1/p"
+    sed -rn "/${shifu_command_function_pattern}/!d;
+            s/${shifu_command_function_pattern}/\1/p"
   )
 }
 

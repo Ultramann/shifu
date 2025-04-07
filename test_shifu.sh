@@ -175,7 +175,7 @@ shifu_run_test() {
 
 shifu_run_test_suite() {
   [ $# -gt 0 ] && [ $1 = "-v" ] && shifu_verbose_tests=true
-  shifu_read_test_functions "$(realpath $(basename $0))"
+  shifu_read_test_functions $(shifu_caller_script)
   local failures=0
   local total=0
   for test_function in $(shifu_iterate "$test_functions"); do
