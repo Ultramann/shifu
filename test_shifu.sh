@@ -13,12 +13,20 @@ shifu_read_test_functions() {
 
 shifu_report_success() {
   if [ "$shifu_verbose_tests" = true ]; then
-    printf "${shifu_green}%-8s${shifu_reset} %s\n" success $1
+    printf "${shifu_green}%-10s${shifu_reset}%s\n" success $1
   fi
 }
 
 shifu_report_failure() {
-  printf "${shifu_red}%-8s${shifu_reset} %s\n" fail $1
+  printf "${shifu_red}%-10s${shifu_reset}%s\n" fail $1
+}
+
+shifu_report_context() {
+  local header=$1; shift
+  printf "${shifu_grey}%10s%s${shifu_reset}\n" "" "$header"
+  for arg in "$@"; do
+    printf "${shifu_grey}%12s%s${shifu_reset}\n" "" "$arg"
+  done
 }
 
 shifu_test_array() {
@@ -26,26 +34,24 @@ shifu_test_array() {
 }
 
 shifu_assert_zero() {
-  local error_message="         ${shifu_grey}Expected zero return code, got
-           $1${shifu_reset}"
-  [ $1 != 0 ] && { echo "${error_message}"; return 1; }
+  local value=$1
+  local header="Expected zero return code, got"
+  [ $value != 0 ] && { shifu_report_context "$header" $value; return 1; }
   return 0
 }
 
 shifu_assert_non_zero() {
-  local error_message="         ${shifu_grey}Expected non-zero return code, got
-           $1${shifu_reset}"
-  [ $1 = 0 ] && { echo "${error_message}"; return 1; }
+  local value=$1
+  local header="Expected non-zero return code, got"
+  [ $value = 0 ] && { shifu_report_context "$header" $value; return 1; }
   return 0
 }
 
 shifu_assert_equal() {
-  local first="${1:-<empty>}"
-  local second="${2:-<empty>}"
-  local error_message="         ${shifu_grey}Expected values to be equal, got
-           ${first}
-           ${second}${shifu_reset}"
-  [ "$first" != "$second" ] && { echo "$error_message"; return 1; }
+  local one="${1:-<empty>}"
+  local two="${2:-<empty>}"
+  local header="Expected values to be equal, got"
+  [ "$one" != "$two" ] && { shifu_report_context "$header" "$one" "$two"; return 1; }
   return 0
 }
 
@@ -130,7 +136,7 @@ test_shifu_infer_function_and_arguments() {
   local fake_arguments="$(shifu_iterate "test sub func arg1 arg2")"
 
   local expected_function_to_call="test_sub_func"
-  local expected_remaining_arguments="arg1 arg2"
+  local expected_remaining_arguments="$(shifu_collapse "arg1 arg2")"
 
   shifu_infer_function_and_arguments "$fake_arguments"; local status=$?
 
@@ -142,6 +148,11 @@ test_shifu_infer_function_and_arguments() {
   shifu_assert_strings_equal "$remaining_arguments" "$expected_remaining_arguments"
   error_count=$(($error_count + $?))
   return $error_count
+}
+
+test_shifu_infer_function_and_glob_arguments() {
+  shifu_report_context "TODO: test not implemented"
+  return 1
 }
 
 test_shifu_infer_function_and_arguments_only_subcommand() {
