@@ -11,12 +11,17 @@ shifu_log_flag='--shifu-log'
 
 # Write input arguments to stdout starting with green "shifu"
 shifu_log() {
-  [ "${shifu_logging_on}" = true ] && echo "${shifu_green}shifu${shifu_reset}  $@"
+  [ "${shifu_logging_on}" = true ] && echo "${shifu_green}shifu${shifu_reset}  $*"
+}
+
+# Write input to stderr
+shifu_stderr() {
+  echo "$*" >&2
 }
 
 # Write input arguments to stderr starting with red "debug"
 shifu_debug() {
-  echo "${shifu_red}debug${shifu_reset}  $@" >&2
+  shifu_stderr "${shifu_red}debug${shifu_reset}  $*"
 }
 
 # Convert spaces to newlines to enable looping
@@ -24,9 +29,9 @@ shifu_iterate() {
   echo $1 | tr ' ' '\n'
 }
 
-# Convert newlines to spaces to enable parameter expansion
+# Convert newlines to spaces
 shifu_collapse() {
-  echo -n $1 | tr '\n' ' '
+  echo $1 | tr '\n' ' '
 }
 
 # Write newline separated "array" as "( arg1 arg2 ... argn )" to stdout
@@ -118,9 +123,11 @@ shifu_infer_function_and_arguments() {
 
   if [ "$found_function" = true ]; then
     function_to_call="$maybe_function"
+    shifu_log function to call: "$function_to_call"
     return 0
   else
-    echo "$(echo "${candidate%_*_}" | tr '_' ' ') has no subcommand ${maybe_function##*_}"
+    local parsed_candidate=$(echo ${candidate%_*_} | tr '_' ' ')
+    shifu_stderr "$parsed_candidate has no subcommand ${maybe_function##*_}"
     return 1
   fi
 
@@ -130,14 +137,10 @@ shifu_run() {
   [ $1 = "${shifu_log_flag}" ] && { shifu_logging_on=true; shift; }
 
   shifu_read_script_functions $(shifu_caller_script)
-  shifu_log "script functions:\n      " $(shifu_array_fmt "$script_functions")
 
-  shifu_log "arguments:\n      " $(shifu_array_fmt "$*")
   shifu_infer_function_and_arguments "$*"; status=$?
-
   [ $status != 0 ] && return $status
-
-  shifu_log function to call: "$function_to_call"
 
   eval "$function_to_call $remaining_arguments"
 }
+

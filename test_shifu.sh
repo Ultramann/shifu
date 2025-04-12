@@ -162,7 +162,7 @@ test_shifu_infer_function_and_arguments_only_subcommand() {
 
 shifu_run_test() {
   local test_function=$1
-  message=$("$test_function")
+  message=$("$test_function" 2> /dev/null)
   local test_result=$?
   if [ "$test_result" -eq 0 ]; then
     shifu_report_success "$test_function"
