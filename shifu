@@ -26,12 +26,12 @@ shifu_debug() {
 
 # Convert spaces to newlines to enable looping
 shifu_iterate() {
-  echo $1 | tr ' ' '\n'
+  echo "$1" | tr ' ' '\n'
 }
 
 # Convert newlines to spaces
 shifu_collapse() {
-  echo $1 | tr '\n' ' '
+  echo "$1" | tr '\n' ' '
 }
 
 # Write newline separated "array" as "( arg1 arg2 ... argn )" to stdout
@@ -41,14 +41,14 @@ shifu_array_fmt() {
 
 # Write number of elements in newline separated "array" to stdout
 shifu_array_length() {
-  local array=$1
+  local array="$1"
   shifu_iterate "$array" | wc -l
 }
 
 # Write newline separated "array" with element added at end to stdout
 shifu_array_append() {
-  local array=$1
-  local element=$2
+  local array="$1"
+  local element="$2"
   [ "${#array}" -gt 0 ] && echo "$array\n$element" || echo "$element"
 }
 
@@ -57,8 +57,8 @@ shifu_array_append() {
 # [argument other arg] arg -> true
 # [argument other arg] nar -> false
 shifu_array_contains() {
-  local array=$1
-  local value=$2
+  local array="$1"
+  local value="$2"
   local element
   for element in $(shifu_iterate "$array"); do
     [ "$element" = "$value" ] && { echo true; break; }
@@ -70,8 +70,8 @@ shifu_array_contains() {
 #   [argument other arg3] arg -> "argument arg3"
 #   [argument other arg3] oth -> "other"
 shifu_array_filter_prefix() {
-  local array=$1
-  local prefix=$2
+  local array="$1"
+  local prefix="$2"
   [ -z "$prefix" ] && { echo "$array"; return; }
   local element
   for element in $(shifu_iterate "$array"); do
@@ -87,7 +87,7 @@ shifu_caller_script() {
 # Reads function names in passed script path matching the regex pattern
 # shifu_command_function_pattern to global variable `script_functions`
 shifu_read_script_functions() {
-  local script_path=$1
+  local script_path="$1"
   script_functions=$(
     cat "${script_path}" | \
     # -r: extended regex, -n: don't echo lines to stdout
@@ -97,7 +97,7 @@ shifu_read_script_functions() {
 }
 
 shifu_infer_function_and_arguments() {
-  local array=$1
+  local array="$1"
 
   function_to_call=""
   remaining_arguments=""
@@ -134,7 +134,7 @@ shifu_infer_function_and_arguments() {
 }
 
 shifu_run() {
-  [ $1 = "$shifu_log_flag" ] && { shifu_logging_on=true; shift; }
+  [ "$1" = "$shifu_log_flag" ] && { shifu_logging_on=true; shift; }
 
   shifu_read_script_functions $(shifu_caller_script)
 
