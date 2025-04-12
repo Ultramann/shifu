@@ -13,19 +13,19 @@ shifu_read_test_functions() {
 
 shifu_report_success() {
   if [ "$shifu_verbose_tests" = true ]; then
-    printf "${shifu_green}%-10s${shifu_reset}%s\n" success $1
+    printf "$shifu_green%-10s$shifu_reset%s\n" success $1
   fi
 }
 
 shifu_report_failure() {
-  printf "${shifu_red}%-10s${shifu_reset}%s\n" fail $1
+  printf "$shifu_red%-10s$shifu_reset%s\n" fail $1
 }
 
 shifu_report_context() {
   local header=$1; shift
-  printf "${shifu_grey}%10s%s${shifu_reset}\n" "" "$header"
+  printf "$shifu_grey%10s%s$shifu_reset\n" "" "$header"
   for arg in "$@"; do
-    printf "${shifu_grey}%12s%s${shifu_reset}\n" "" "$arg"
+    printf "$shifu_grey%12s%s$shifu_reset\n" "" "$arg"
   done
 }
 
@@ -203,7 +203,7 @@ shifu_run_test_suite() {
   fi
   local test_report="Tests $successful% successful"
   echo "============== $color $test_report $shifu_reset =============="
-  exit "${failures}"
+  exit $failures
 }
 
 shifu_run_test_suite $@

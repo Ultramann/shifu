@@ -1,4 +1,4 @@
-shifu_command_function_declaration='^(.*) ?\(\) {'
+shifu_command_function_pattern='^(.*) ?\(\) {'
 shifu_subcommand_delimiter='_'
 
 # for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
@@ -11,7 +11,7 @@ shifu_log_flag='--shifu-log'
 
 # Write input arguments to stdout starting with green "shifu"
 shifu_log() {
-  [ "${shifu_logging_on}" = true ] && echo "${shifu_green}shifu${shifu_reset}  $*"
+  [ "$shifu_logging_on" = true ] && echo "${shifu_green}shifu${shifu_reset}  $*"
 }
 
 # Write input to stderr
@@ -91,8 +91,8 @@ shifu_read_script_functions() {
   script_functions=$(
     cat "${script_path}" | \
     # -r: extended regex, -n: don't echo lines to stdout
-    sed -rn "/${shifu_command_function_pattern}/!d;
-            s/${shifu_command_function_pattern}/\1/p"
+    sed -rn "/$shifu_command_function_pattern/!d;
+            s/$shifu_command_function_pattern/\1/p"
   )
 }
 
@@ -115,7 +115,7 @@ shifu_infer_function_and_arguments() {
   done
   remaining_arguments=$(shifu_collapse "$remaining_arguments")
 
-  local maybe_function="${candidate%${shifu_subcommand_delimiter}}"
+  local maybe_function="${candidate%$shifu_subcommand_delimiter}"
   local found_function=$(shifu_array_contains "$script_functions" "$maybe_function")
 
   shifu_log maybe function: "$maybe_function"
@@ -134,7 +134,7 @@ shifu_infer_function_and_arguments() {
 }
 
 shifu_run() {
-  [ $1 = "${shifu_log_flag}" ] && { shifu_logging_on=true; shift; }
+  [ $1 = "$shifu_log_flag" ] && { shifu_logging_on=true; shift; }
 
   shifu_read_script_functions $(shifu_caller_script)
 
