@@ -11,38 +11,41 @@ shifu_log_flag='--shifu-log'
 
 # Write input arguments to stdout starting with green "shifu"
 shifu_log() {
-  [ "$shifu_logging_on" = true ] && echo "${shifu_green}shifu${shifu_reset}  $*"
+  [ "$shifu_logging_on" = true ] && echo "${shifu_green}shifu${shifu_reset}  $@"
 }
 
 # Write input to stderr
 shifu_stderr() {
-  echo "$*" >&2
+  echo "$@" >&2
 }
 
 # Write input arguments to stderr starting with red "debug"
 shifu_debug() {
-  shifu_stderr "${shifu_red}debug${shifu_reset}  $*"
+  shifu_stderr "${shifu_red}debug${shifu_reset}  $@"
+}
+
+shifu_count_char() {
+  printf $(tr -cd "$1" | wc -c)
 }
 
 # Convert spaces to newlines to enable looping
 shifu_iterate() {
-  echo "$1" | tr ' ' '\n'
+  printf "$1\n" | tr ' ' '\n'
 }
 
 # Convert newlines to spaces
 shifu_collapse() {
-  echo "$1" | tr '\n' ' '
+  printf "$1" | tr '\n' ' '
 }
 
 # Write newline separated "array" as "( arg1 arg2 ... argn )" to stdout
 shifu_array_fmt() {
-  echo "( $(shifu_collapse "$1"))"
+  printf "( $(shifu_collapse "$1") )"
 }
 
 # Write number of elements in newline separated "array" to stdout
 shifu_array_length() {
-  local array="$1"
-  shifu_iterate "$array" | wc -l
+  shifu_iterate "$1" | wc -l
 }
 
 # Write newline separated "array" with element added at end to stdout
@@ -96,38 +99,33 @@ shifu_read_script_functions() {
   )
 }
 
-shifu_infer_function_and_arguments() {
-  local array="$1"
-
+# This must be passed actual positional arguments
+shifu_infer_function_to_call() {
   function_to_call=""
-  remaining_arguments=""
 
   local candidate=""
   local filtered_functions="$script_functions"
   local argument
-  for argument in $(shifu_iterate "$array"); do
+  for argument in "$@"; do
     filtered_functions=$(shifu_array_filter_prefix "$filtered_functions" "$candidate")
-    if [ $(shifu_array_length "$filtered_functions") -le 1 ]; then
-      remaining_arguments=$(shifu_array_append "$remaining_arguments" "$argument")
-    else
-      candidate="${candidate}${argument}${shifu_subcommand_delimiter}"
-    fi
+    [ $(shifu_array_length "$filtered_functions") -le 1 ] && break
+    candidate="${candidate}${argument}${shifu_subcommand_delimiter}"
   done
-  remaining_arguments=$(shifu_collapse "$remaining_arguments")
 
   local maybe_function="${candidate%$shifu_subcommand_delimiter}"
   local found_function=$(shifu_array_contains "$script_functions" "$maybe_function")
 
   shifu_log maybe function: "$maybe_function"
-  shifu_log maybe function arguments: $(shifu_array_fmt "$remaining_arguments")
 
   if [ "$found_function" = true ]; then
     function_to_call="$maybe_function"
     shifu_log function to call: "$function_to_call"
     return 0
+  # todo: have branch for when function found and arg is --help
   else
     local parsed_candidate=$(echo ${candidate%_*_} | tr '_' ' ')
     shifu_stderr "$parsed_candidate has no subcommand ${maybe_function##*_}"
+    # call help "$candidate"
     return 1
   fi
 
@@ -138,9 +136,12 @@ shifu_run() {
 
   shifu_read_script_functions $(shifu_caller_script)
 
-  shifu_infer_function_and_arguments "$*"; status=$?
+  shifu_infer_function_to_call "$@"; status=$?
   [ $status != 0 ] && return $status
 
-  eval "$function_to_call $remaining_arguments"
+  local n_args=$(echo "$function_to_call" | tr -sc "_" "*" | tr -d "_"| wc -m)
+  for i in $(seq 1 $n_args); do shift; done;
+
+  $function_to_call "$@"
 }
 

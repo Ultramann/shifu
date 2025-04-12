@@ -14,7 +14,7 @@ test_() {
 # long: this function handles subbing
 #       yada yada
 #       more lines
-test_sub_() {
+test_sub__() {
   echo 1
 }
 
@@ -23,14 +23,14 @@ test_sub_() {
 #       yada yada
 #       more lines
 test_sub_func() {
-  echo test_sub_func $*
+  echo test_sub_func "$#" "$@"
 }
 
 # help: this is the subcommand other
 # long: this subcommand handles other things
 #       yada yada yada
 #       more lines yay
-other_() {
+other__() {
   exit 1
 }
 
@@ -39,7 +39,7 @@ other_() {
 #       yada yada yada
 #       more lines yay
 other_stuff() {
-  echo other_stuff $*
+  echo other_stuff "$#" "$@"
 }
 
 # help: this is the missing function in the subcommand subcommand
@@ -50,4 +50,4 @@ subcommand_missing() {
   exit 0
 }
 
-shifu_run $*
+shifu_run "$@"

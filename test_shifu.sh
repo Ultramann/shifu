@@ -24,43 +24,50 @@ shifu_report_failure() {
 shifu_report_context() {
   local header=$1; shift
   printf "$shifu_grey%10s%s$shifu_reset\n" "" "$header"
+  local arg
   for arg in "$@"; do
     printf "$shifu_grey%12s%s$shifu_reset\n" "" "$arg"
   done
 }
 
-shifu_test_array() {
-  shifu_iterate $1
-}
-
 shifu_assert_zero() {
   local value=$1
   local header="Expected zero return code, got"
-  [ $value != 0 ] && { shifu_report_context "$header" $value; return 1; }
-  return 0
+  [ $value = 0 ] && return
+  shifu_report_context "$header" $value
+  errors=$(($errors + 1))
 }
 
 shifu_assert_non_zero() {
   local value=$1
   local header="Expected non-zero return code, got"
-  [ $value = 0 ] && { shifu_report_context "$header" $value; return 1; }
-  return 0
+  [ $value != 0 ] && return
+  shifu_report_context "$header" $value
+  errors=$(($errors + 1))
 }
 
 shifu_assert_equal() {
   local one="${1:-<empty>}"
   local two="${2:-<empty>}"
   local header="Expected values to be equal, got"
-  [ "$one" != "$two" ] && { shifu_report_context "$header" "$one" "$two"; return 1; }
-  return 0
+  [ "$one" = "$two" ] && return
+  shifu_report_context "$header" $one $two
+  errors=$(($errors + 1))
 }
 
 shifu_assert_strings_equal() {
   shifu_assert_equal "\"$1\"" "\"$2\""
 }
 
+test_shifu_iterate() {
+  local actual=$(shifu_iterate "*sh two three")
+  local expected=$(printf "*sh\ntwo\nthree")
+
+  shifu_assert_strings_equal "$actual" "$expected"
+}
+
 test_shifu_array_length() {
-  local in_array="$(shifu_iterate "arg other arg3")"
+  local in_array="$(shifu_iterate "arg* other arg3")"
 
   local actual=$(shifu_array_length "$in_array")
 
@@ -79,7 +86,7 @@ test_shifu_array_append() {
   local expected_array_length=$(shifu_array_length "$expected")
 
   shifu_assert_equal $actual_array_length $expected_array_length
-  shifu_assert_equal "$actual" "$expected"
+  shifu_assert_strings_equal "$actual" "$expected"
 }
 
 test_shifu_array_append_empty() {
@@ -92,7 +99,7 @@ test_shifu_array_append_empty() {
   local expected_array_length=$(shifu_array_length "$expected")
 
   shifu_assert_equal $actual_array_length $expected_array_length
-  shifu_assert_equal "$actual" "$expected"
+  shifu_assert_strings_equal "$actual" "$expected"
 }
 
 test_shifu_array_contains() {
@@ -115,7 +122,7 @@ test_shifu_array_filter_prefix() {
   local expected_array_length=$(shifu_array_length "$expected")
 
   shifu_assert_equal $actual_array_length $expected_array_length
-  shifu_assert_equal "$actual" "$expected"
+  shifu_assert_strings_equal "$actual" "$expected"
 }
 
 test_shifu_array_filter_prefix_empty_prefix() {
@@ -128,52 +135,46 @@ test_shifu_array_filter_prefix_empty_prefix() {
   local expected_array_length=$(shifu_array_length "$expected")
 
   shifu_assert_equal $actual_array_length $expected_array_length
-  shifu_assert_equal "$actual" "$expected"
+  shifu_assert_strings_equal "$actual" "$expected"
 }
 
-test_shifu_infer_function_and_arguments() {
+test_shifu_infer_function_to_call() {
   local script_functions="$(shifu_iterate "test_ test_sub_ test_sub_func")"
-  local fake_arguments="$(shifu_iterate "test sub func arg1 arg2")"
 
   local expected_function_to_call="test_sub_func"
-  local expected_remaining_arguments="$(shifu_collapse "arg1 arg2")"
 
-  shifu_infer_function_and_arguments "$fake_arguments"; local status=$?
+  shifu_infer_function_to_call test sub func arg1 arg2; local status=$?
 
-  local error_count=0
   shifu_assert_zero $status
-  error_count=$(($error_count + $?))
   shifu_assert_strings_equal "$function_to_call" "$expected_function_to_call"
-  error_count=$(($error_count + $?))
-  shifu_assert_strings_equal "$remaining_arguments" "$expected_remaining_arguments"
-  error_count=$(($error_count + $?))
-  return $error_count
 }
 
 test_shifu_infer_function_and_glob_arguments() {
   shifu_report_context "TODO: test not implemented"
-  return 1
+  errors=1
 }
 
 test_shifu_infer_function_and_arguments_only_subcommand() {
   local script_functions="$(shifu_iterate "test_ test_sub_ test_sub_func")"
-  local fake_arguments="$(shifu_iterate "test sub arg1 arg2")"
 
   local expected_function_to_call=""
 
-  shifu_infer_function_and_arguments "$fake_arguments"; local status=$?
+  shifu_infer_function_to_call test sub arg1 arg2; local status=$?
 
-  local error_count=0
   shifu_assert_non_zero $status
-  error_count=$(($error_count + $?))
   shifu_assert_strings_equal "$function_to_call" "$expected_function_to_call"
-  error_count=$(($error_count + $?))
-  return $error_count
 }
 
 shifu_run_test() {
   local test_function=$1
-  message=$("$test_function" 2> /dev/null)
+  local errors=0
+  "$test_function" 2> /dev/null
+  return $errors
+}
+
+shifu_run_test_and_report() {
+  local test_function=$1
+  message=$(shifu_run_test "$test_function")
   local test_result=$?
   if [ "$test_result" -eq 0 ]; then
     shifu_report_success "$test_function"
@@ -190,7 +191,7 @@ shifu_run_test_suite() {
   local failures=0
   local total=0
   for test_function in $(shifu_iterate "$test_functions"); do
-    shifu_run_test "$test_function"
+    shifu_run_test_and_report "$test_function"
     failures=$(($failures + $?))
     total=$(($total + 1))
   done
