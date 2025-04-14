@@ -100,9 +100,7 @@ shifu_read_script_functions() {
 }
 
 # This must be passed actual positional arguments
-shifu_infer_function_to_call() {
-  function_to_call=""
-
+shifu_determine_function_to_call() {
   local candidate=""
   local filtered_functions="$script_functions"
   local argument
@@ -134,9 +132,11 @@ shifu_infer_function_to_call() {
 shifu_run() {
   [ "$1" = "$shifu_log_flag" ] && { shifu_logging_on=true; shift; }
 
+  local script_functions
   shifu_read_script_functions $(shifu_caller_script)
 
-  shifu_infer_function_to_call "$@"; status=$?
+  local function_to_call
+  shifu_determine_function_to_call "$@"; status=$?
   [ $status != 0 ] && return $status
 
   local n_args=$(echo "$function_to_call" | tr -sc "_" "*" | tr -d "_"| wc -m)
