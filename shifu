@@ -1,6 +1,6 @@
 shifu_command_function_pattern='^(.*) ?\(\) {'
-shifu_subcommand_delimiter='_'
-shifu_parsed_args_delimiter='-'
+shifu_uscore='_'
+shifu_space=' '
 
 # for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
 shifu_grey="$(tput setaf 0)"
@@ -103,18 +103,18 @@ shifu_read_script_functions() {
 # This must be passed actual positional arguments
 shifu_determine_function_to_call() {
   local uscore_candidate=""
-  local dashed_candidate=""
+  local spaced_candidate=""
   local filtered_functions="$script_functions"
   local argument
   for argument in "$@"; do
     tmp_functions=$(shifu_array_filter_prefix "$filtered_functions" "$uscore_candidate")
     [ $(shifu_array_length "$tmp_functions") -le 1 ] && break
-    uscore_candidate="${uscore_candidate}${argument}${shifu_subcommand_delimiter}"
-    dashed_candidate="${dashed_candidate}${argument}${shifu_parsed_args_delimiter}"
+    uscore_candidate="${uscore_candidate}${argument}${shifu_uscore}"
+    spaced_candidate="${spaced_candidate}${argument}${shifu_space}"
     filtered_functions="$tmp_functions"
   done
 
-  local candidate_function="${uscore_candidate%$shifu_subcommand_delimiter}"
+  local candidate_function="${uscore_candidate%$shifu_uscore}"
   local found_function=$(shifu_array_contains "$script_functions" "$candidate_function")
 
   shifu_log filtered functions: $(shifu_array_fmt "$filtered_functions")
@@ -126,8 +126,9 @@ shifu_determine_function_to_call() {
     return 0
   # todo: have branch for when function found and arg is --help
   else
-    local parsed_candidate=$(echo ${dashed_candidate%-*-} | tr '-' ' ')
-    shifu_stderr "$parsed_candidate has no subcommand ${maybe_function##*_}"
+    local parsed_candidate="${spaced_candidate%$shifu_space*$shifu_space}"
+    local unknown_subcommand="${candidate_function##*$shifu_uscore}"
+    shifu_stderr "$parsed_candidate has no subcommand $unknown_subcommand"
     return 1
   fi
 
