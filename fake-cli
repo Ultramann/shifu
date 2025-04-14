@@ -6,7 +6,7 @@
 # long: this command handles test things
 #       yada
 #       line
-test_() {
+test__() {
   exit 1
 }
 
@@ -18,12 +18,20 @@ test_sub__() {
   echo 1
 }
 
-# help: this is the function in the test sub subcommand
+# help: this is a function in the test sub subcommand
 # long: this function handles functioning
 #       yada yada
 #       more lines
 test_sub_func() {
   echo test_sub_func "$#" "$@"
+}
+
+# help: this is another function in the test sub subcommand
+# long: this function handles functioning
+#       yada yada
+#       more lines
+test_sub_function() {
+  echo test_sub_function "$#" "$@"
 }
 
 # help: this is the subcommand other

@@ -1,5 +1,6 @@
 shifu_command_function_pattern='^(.*) ?\(\) {'
 shifu_subcommand_delimiter='_'
+shifu_parsed_args_delimiter='-'
 
 # for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
 shifu_grey="$(tput setaf 0)"
@@ -101,29 +102,32 @@ shifu_read_script_functions() {
 
 # This must be passed actual positional arguments
 shifu_determine_function_to_call() {
-  local candidate=""
+  local uscore_candidate=""
+  local dashed_candidate=""
   local filtered_functions="$script_functions"
   local argument
   for argument in "$@"; do
-    filtered_functions=$(shifu_array_filter_prefix "$filtered_functions" "$candidate")
-    [ $(shifu_array_length "$filtered_functions") -le 1 ] && break
-    candidate="${candidate}${argument}${shifu_subcommand_delimiter}"
+    tmp_functions=$(shifu_array_filter_prefix "$filtered_functions" "$uscore_candidate")
+    [ $(shifu_array_length "$tmp_functions") -le 1 ] && break
+    uscore_candidate="${uscore_candidate}${argument}${shifu_subcommand_delimiter}"
+    dashed_candidate="${dashed_candidate}${argument}${shifu_parsed_args_delimiter}"
+    filtered_functions="$tmp_functions"
   done
 
-  local maybe_function="${candidate%$shifu_subcommand_delimiter}"
-  local found_function=$(shifu_array_contains "$script_functions" "$maybe_function")
+  local candidate_function="${uscore_candidate%$shifu_subcommand_delimiter}"
+  local found_function=$(shifu_array_contains "$script_functions" "$candidate_function")
 
-  shifu_log maybe function: "$maybe_function"
+  shifu_log filtered functions: $(shifu_array_fmt "$filtered_functions")
+  shifu_log candidate function: "$candidate_function"
 
   if [ "$found_function" = true ]; then
-    function_to_call="$maybe_function"
+    function_to_call="$candidate_function"
     shifu_log function to call: "$function_to_call"
     return 0
   # todo: have branch for when function found and arg is --help
   else
-    local parsed_candidate=$(echo ${candidate%_*_} | tr '_' ' ')
+    local parsed_candidate=$(echo ${dashed_candidate%-*-} | tr '-' ' ')
     shifu_stderr "$parsed_candidate has no subcommand ${maybe_function##*_}"
-    # call help "$candidate"
     return 1
   fi
 
