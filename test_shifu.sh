@@ -1,5 +1,7 @@
 . ./shifu
 
+shifu_test_shell=$(ps -p $$ -o 'comm=')
+
 shifu_test_function_declaration='^(test_.*) ?\(\) {'
 shifu_read_test_functions() {
   local test_script_path="$1"
@@ -102,12 +104,22 @@ test_shifu_array_append_empty() {
   shifu_assert_strings_equal "$actual" "$expected"
 }
 
-test_shifu_array_contains() {
+test_shifu_array_contains_true() {
   local in_array="$(shifu_iterate "arg other arg3")"
 
   local actual=$(shifu_array_contains "$in_array" "arg")
 
   local expected=true
+
+  shifu_assert_equal "$actual" "$expected"
+}
+
+test_shifu_array_contains_false() {
+  local in_array="$(shifu_iterate "arg other arg3")"
+
+  local actual=$(shifu_array_contains "$in_array" "nope")
+
+  local expected=false
 
   shifu_assert_equal "$actual" "$expected"
 }
@@ -231,6 +243,7 @@ shifu_run_test_suite() {
   local percent_passed=$(echo "scale=2; $n_passed * 100 / $n_tests" | bc)
   if [ $n_failed -eq 0 ]; then
     local color="$shifu_green"
+    percent_passed=100.0
   else
     local color="$shifu_red"
   fi

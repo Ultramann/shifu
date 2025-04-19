@@ -12,7 +12,7 @@ shifu_log_flag='--shifu-log'
 
 # Write input arguments to stdout starting with green "shifu"
 shifu_log() {
-  [ "$shifu_logging_on" = true ] && echo "${shifu_green}shifu${shifu_reset}  $@"
+  [ "$shifu_logging" = true ] && echo "${shifu_green}shifu${shifu_reset}  $@"
 }
 
 # Write input to stderr
@@ -53,20 +53,21 @@ shifu_array_length() {
 shifu_array_append() {
   local array="$1"
   local element="$2"
-  [ "${#array}" -gt 0 ] && echo "$array\n$element" || echo "$element"
+  [ "${#array}" -gt 0 ] && { echo "$array"; echo "$element"; } || echo "$element"
 }
 
 # Test if newline separated array contains first argument,
-# write true to stdout if found. Examples
+# write true to stdout if found, else false. Examples
 # [argument other arg] arg -> true
-# [argument other arg] nar -> false
+# [argument other arg] no -> false
 shifu_array_contains() {
   local array="$1"
   local value="$2"
   local element
   for element in $(shifu_iterate "$array"); do
-    [ "$element" = "$value" ] && { echo true; break; }
+    [ "$element" = "$value" ] && { echo true; return; }
   done
+  echo false
 }
 
 # Filter newline separated "array" by words containing first argment as prefix,
@@ -140,7 +141,7 @@ shifu_function_to_call_argument_length() {
 }
 
 shifu_run() {
-  [ "$1" = "$shifu_log_flag" ] && { shifu_logging_on=true; shift; }
+  [ "$1" = "$shifu_log_flag" ] && { shifu_logging=true; shift; }
 
   local script_functions
   shifu_read_script_functions $(shifu_caller_script)
