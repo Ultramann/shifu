@@ -122,16 +122,21 @@ shifu_determine_function_to_call() {
 
   if [ "$found_function" = true ]; then
     function_to_call="$candidate_function"
+    arguments_in_function="${spaced_candidate%$shifu_space}"
     shifu_log function to call: "$function_to_call"
     return 0
   # todo: have branch for when function found and arg is --help
   else
-    local parsed_candidate="${spaced_candidate%$shifu_space*$shifu_space}"
     local unknown_subcommand="${candidate_function##*$shifu_uscore}"
-    shifu_stderr "$parsed_candidate has no subcommand $unknown_subcommand"
+    local parsed_arguments="${spaced_candidate%$shifu_space*$shifu_space}"
+    shifu_stderr "$parsed_arguments has no subcommand $unknown_subcommand"
     return 1
   fi
 
+}
+
+shifu_function_to_call_argument_length() {
+  echo "$arguments_in_function" | tr -sc "$shifu_space" "*" | tr -d "$shifu_space" | wc -m
 }
 
 shifu_run() {
@@ -141,11 +146,12 @@ shifu_run() {
   shifu_read_script_functions $(shifu_caller_script)
 
   local function_to_call
+  local arguments_in_function
   shifu_determine_function_to_call "$@"; status=$?
   [ $status != 0 ] && return $status
 
-  local n_args=$(echo "$function_to_call" | tr -sc "_" "*" | tr -d "_"| wc -m)
-  for i in $(seq 1 $n_args); do shift; done;
+  # shift input arguments function length to leave intended arguments
+  for i in $(seq 1 $(shifu_function_to_call_argument_length)); do shift; done;
 
   $function_to_call "$@"
 }
