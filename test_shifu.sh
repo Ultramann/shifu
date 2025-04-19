@@ -142,29 +142,55 @@ test_shifu_determine_function_to_call() {
   local script_functions="$(shifu_iterate "test_ test_sub_ test_sub_func")"
 
   local expected_function_to_call="test_sub_func"
+  local expected_arguments_in_function="test sub func"
 
   local function_to_call
+  local arguments_in_function
   shifu_determine_function_to_call test sub func arg1 arg2; local status=$?
 
   shifu_assert_zero $status
   shifu_assert_strings_equal "$function_to_call" "$expected_function_to_call"
+  shifu_assert_strings_equal "$arguments_in_function" "$expected_arguments_in_function"
 }
 
-test_shifu_infer_function_and_glob_arguments() {
-  shifu_report_context "TODO: test not implemented"
-  errors=1
+test_shifu_infer_function_with_underscore_arguments() {
+  local script_functions="$(shifu_iterate "test_ test_sub_ test_sub_func")"
+
+  local expected_function_to_call="test_sub_func"
+  local expected_arguments_in_function="test_sub func"
+
+  local function_to_call
+  local arguments_in_function
+  shifu_determine_function_to_call test_sub func arg1 arg2; local status=$?
+
+  shifu_assert_zero $status
+  shifu_assert_strings_equal "$function_to_call" "$expected_function_to_call"
+  shifu_assert_strings_equal "$arguments_in_function" "$expected_arguments_in_function"
 }
 
 test_shifu_infer_function_and_arguments_only_subcommand() {
   local script_functions="$(shifu_iterate "test_ test_sub_ test_sub_func")"
 
   local expected_function_to_call=""
+  local expected_arguments_in_function=""
 
   local function_to_call
+  local arguments_in_function
   shifu_determine_function_to_call test sub arg1 arg2; local status=$?
 
   shifu_assert_non_zero $status
   shifu_assert_strings_equal "$function_to_call" "$expected_function_to_call"
+  shifu_assert_strings_equal "$arguments_in_function" "$expected_arguments_in_function"
+}
+
+test_shifu_function_to_call_argument_length() {
+  local arguments_in_function="arg1 arg2 arg3_arg4"
+
+  local actual=$(shifu_function_to_call_argument_length)
+
+  local expected=3
+
+  shifu_assert_equal $actual $expected
 }
 
 shifu_run_test() {
