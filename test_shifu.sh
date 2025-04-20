@@ -16,18 +16,18 @@ shifu_read_test_functions() {
 shifu_report_success() {
   # 1: function name
   if [ "$shifu_verbose_tests" = true ]; then
-    printf "$shifu_green%-7s$shifu_reset%s\n" pass $1
+    printf "$shifu_green%-7s$shifu_reset%s\n" pass "$1"
   fi
 }
 
 shifu_report_failure() {
   # 1: function name
-  printf "$shifu_red%-7s$shifu_reset%s\n" fail $1
+  printf "$shifu_red%-7s$shifu_reset%s\n" fail "$1"
 }
 
 shifu_report_context() {
   # 1: header
-  printf "$shifu_grey%7s%s$shifu_reset\n" "" "$1"
+  printf "$shifu_grey%7s%s$shifu_reset\n" "" "$1"; shift
   shifu_var_store argument
   for argument in "$@"; do
     printf "$shifu_grey%10s%s$shifu_reset\n" "" "$argument"
@@ -59,6 +59,21 @@ shifu_assert_equal() {
 shifu_assert_strings_equal() {
   # 1: first, 2: second
   shifu_assert_equal "\"$1\"" "\"$2\""
+}
+
+var_store_restore_test_func() {
+  shifu_var_store shifu_test_var_1 shifu_test_var_2
+  shifu_test_var_1="new"
+  shifu_test_var_2="newer"
+  shifu_var_restore shifu_test_var_1 shifu_test_var_2
+}
+
+test_shifu_var_store_restore() {
+  shifu_test_var_1="value"
+  shifu_test_var_2="other"
+  var_store_restore_test_func
+  shifu_assert_strings_equal "$shifu_test_var_1" "value"
+  shifu_assert_strings_equal "$shifu_test_var_2" "other"
 }
 
 test_shifu_iterate() {
