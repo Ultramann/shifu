@@ -180,18 +180,19 @@ shifu_run() {
   shifu_var_restore script_functions function_to_call arguments_in_function
 }
 
-shifu_invalid_variable_name() {
-  [ -n $(eval "$1= && echo valid") ] && return 1 || return 0
+shifu_invalid_var_name() {
+  # Returns 0 if variable name is invalid, else 1
+  # 1: variable name
+  (eval "$1=") > /dev/null 2>&1  # run in subshell to not clobber current value
+  [ $? -ne 0 ] && return 0 || return 1
 }
 
 shifu_arg_oa() {
   # 1: option, 2: variable name, 3: help
   case "$shifu_mode" in
     "$shifu_mode_init")
-      if shifu_invalid_variable_name "$2"; then
-        echo "Invalid variable name: $2"
-        return 1
-      fi
+      [ $# -ne 3 ] && { echo "Expected 3 arguments, got $#: $@"; exit 1; }
+      shifu_invalid_var_name "$2" && { echo "Invalid variable name: $2"; exit 1; }
       ;;
     "$shifu_mode_parse")
       [ "$shifu_one" = "--$1" ] && { eval "$2=$shifu_two"; shifu_parsed=2; }
@@ -205,14 +206,12 @@ shifu_arg_ob() {
   # 1: option, 2: variable name, 3: set value, 4: help
   case "$shifu_mode" in
     "$shifu_mode_init")
-      if shifu_invalid_variable_name "$2"; then
-        echo "Invalid variable name: $2"
-        return 1
-      fi
+      [ $# -ne 4 ] && { echo "Expected 4 arguments, got $#: $@"; exit 1; }
+      shifu_invalid_var_name "$2" && { echo "Invalid variable name: $2"; exit 1; }
       case "$3" in
         true) eval "$2=false" ;;
         false) eval "$2=true" ;;
-        *) echo "Set value expected to be boolean, got: $3"; exit 1 ;;
+        *) echo "Set value must be true/false, got: $3"; exit 1 ;;
       esac
       ;;
     "$shifu_mode_parse")
