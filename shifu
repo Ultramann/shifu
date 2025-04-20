@@ -1,3 +1,5 @@
+# Dependencies: tr, wc
+
 shifu_command_function_pattern='^(.*) ?\(\) {'
 shifu_uscore='_'
 shifu_space=' '
@@ -23,6 +25,20 @@ shifu_stderr() {
 # Write input arguments to stderr starting with red "debug"
 shifu_debug() {
   shifu_stderr "${shifu_red}debug${shifu_reset}  $@"
+}
+
+shifu_var_store() {
+  while [ $# -ne 0 ]; do
+    eval "${1}_old=\$$1"
+    shift
+  done
+}
+
+shifu_var_restore() {
+  while [ $# -ne 0 ]; do
+    eval "$1=\$${1}_old; unset \$${1}_old"
+    shift
+  done
 }
 
 shifu_count_char() {
@@ -51,9 +67,8 @@ shifu_array_length() {
 
 # Write newline separated "array" with element added at end to stdout
 shifu_array_append() {
-  local array="$1"
-  local element="$2"
-  [ "${#array}" -gt 0 ] && { echo "$array"; echo "$element"; } || echo "$element"
+  # 1: array, 2: element
+  [ "${#1}" -gt 0 ] && { echo "$1"; echo "$2"; } || echo "$2"
 }
 
 # Test if newline separated array contains first argument,
@@ -61,13 +76,14 @@ shifu_array_append() {
 # [argument other arg] arg -> true
 # [argument other arg] no -> false
 shifu_array_contains() {
-  local array="$1"
-  local value="$2"
-  local element
-  for element in $(shifu_iterate "$array"); do
-    [ "$element" = "$value" ] && { echo true; return; }
+  # 1: array, 2: value
+  shifu_var_store element result
+  result=false
+  for element in $(shifu_iterate "$1"); do
+    [ "$element" = "$2" ] && { result=true; break; }
   done
-  echo false
+  echo $result
+  shifu_var_restore element result
 }
 
 # Filter newline separated "array" by words containing first argment as prefix,
@@ -75,13 +91,13 @@ shifu_array_contains() {
 #   [argument other arg3] arg -> "argument arg3"
 #   [argument other arg3] oth -> "other"
 shifu_array_filter_prefix() {
-  local array="$1"
-  local prefix="$2"
-  [ -z "$prefix" ] && { echo "$array"; return; }
-  local element
-  for element in $(shifu_iterate "$array"); do
-    [ "${element#"$prefix"}" != "$element" ] && echo "$element"
+  # 1: array, 2: prefix
+  [ -z "$2" ] && { echo "$1"; return; }
+  shifu_var_store element
+  for element in $(shifu_iterate "$1"); do
+    [ "${element#"$2"}" != "$element" ] && echo "$element"
   done
+  shifu_var_restore element
 }
 
 # Write the absolute path of the calling script, $0, to stdout
@@ -92,9 +108,9 @@ shifu_caller_script() {
 # Reads function names in passed script path matching the regex pattern
 # shifu_command_function_pattern to global variable `script_functions`
 shifu_read_script_functions() {
-  local script_path="$1"
+  # 1: script path
   script_functions=$(
-    cat "${script_path}" | \
+    cat "$1" | \
     # -r: extended regex, -n: don't echo lines to stdout
     sed -rn "/$shifu_command_function_pattern/!d;
             s/$shifu_command_function_pattern/\1/p"
@@ -103,37 +119,43 @@ shifu_read_script_functions() {
 
 # This must be passed actual positional arguments
 shifu_determine_function_to_call() {
-  local uscore_candidate=""
-  local spaced_candidate=""
-  local filtered_functions="$script_functions"
-  local argument
+  shifu_var_store uscore_candidate spaced_candidate filtered_functions
+  uscore_candidate=""
+  spaced_candidate=""
+  filtered_functions="$script_functions"
+
+  shifu_var_store argument tmp_functions
   for argument in "$@"; do
     tmp_functions=$(shifu_array_filter_prefix "$filtered_functions" "$uscore_candidate")
     [ $(shifu_array_length "$tmp_functions") -le 1 ] && break
-    uscore_candidate="${uscore_candidate}${argument}${shifu_uscore}"
-    spaced_candidate="${spaced_candidate}${argument}${shifu_space}"
+    uscore_candidate="${uscore_candidate}${argument}_"
+    spaced_candidate="${spaced_candidate}${argument} "
     filtered_functions="$tmp_functions"
   done
+  shifu_var_restore argument tmp_functions
 
-  local candidate_function="${uscore_candidate%$shifu_uscore}"
-  local found_function=$(shifu_array_contains "$script_functions" "$candidate_function")
+  shifu_var_store candidate_function found_function
+  candidate_function="${uscore_candidate%_}"
+  found_function=$(shifu_array_contains "$script_functions" "$candidate_function")
 
   shifu_log filtered functions: $(shifu_array_fmt "$filtered_functions")
   shifu_log candidate function: "$candidate_function"
 
+  shifu_var_restore uscore_candidate filtered_functions
+
   if [ "$found_function" = true ]; then
     function_to_call="$candidate_function"
-    arguments_in_function="${spaced_candidate%$shifu_space}"
+    arguments_in_function="${spaced_candidate% }"
     shifu_log function to call: "$function_to_call"
+    shifu_var_restore candidate_function found_function
     return 0
   # todo: have branch for when function found and arg is --help
   else
-    local unknown_subcommand="${candidate_function##*$shifu_uscore}"
-    local parsed_arguments="${spaced_candidate%$shifu_space*$shifu_space}"
-    shifu_stderr "$parsed_arguments has no subcommand $unknown_subcommand"
+    shifu_stderr "${spaced_candidate% * } has no subcommand ${candidate_function##*_}"
+    # shifu_help "${spaced_candidate% * }"
+    shifu_var_restore candidate_function found_function spaced_candidate
     return 1
   fi
-
 }
 
 shifu_function_to_call_argument_length() {
@@ -143,17 +165,14 @@ shifu_function_to_call_argument_length() {
 shifu_run() {
   [ "$1" = "$shifu_log_flag" ] && { shifu_logging=true; shift; }
 
-  local script_functions
-  shifu_read_script_functions $(shifu_caller_script)
+  shifu_var_store script_functions function_to_call arguments_in_function
 
-  local function_to_call
-  local arguments_in_function
+  shifu_read_script_functions $(shifu_caller_script)
   shifu_determine_function_to_call "$@"; status=$?
   [ $status != 0 ] && return $status
-
   # shift input arguments function length to leave intended arguments
   for i in $(seq 1 $(shifu_function_to_call_argument_length)); do shift; done;
-
   $function_to_call "$@"
-}
 
+  shifu_var_restore script_functions function_to_call arguments_in_function
+}
