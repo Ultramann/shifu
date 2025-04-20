@@ -233,7 +233,7 @@ shifu_run_test_suite() {
     color="$shifu_red"
   fi
   test_report="$percent_passed% tests passed"
-  echo "================ $color $test_report $shifu_reset ================"
+  echo "==================== $color $test_report $shifu_reset ===================="
   exit $failures
 }
 
