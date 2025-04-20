@@ -1,8 +1,6 @@
 # Dependencies: tr, wc
 
 shifu_command_function_pattern='^(.*) ?\(\) {'
-shifu_uscore='_'
-shifu_space=' '
 
 # for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
 shifu_grey="$(tput setaf 0)"
@@ -159,7 +157,7 @@ shifu_determine_function_to_call() {
 }
 
 shifu_function_to_call_argument_length() {
-  echo "$arguments_in_function" | tr -sc "$shifu_space" "*" | tr -d "$shifu_space" | wc -m
+  echo "$arguments_in_function" | tr -sc " " "*" | tr -d " " | wc -m
 }
 
 shifu_run() {

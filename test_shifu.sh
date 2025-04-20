@@ -2,14 +2,13 @@
 
 shifu_test_shell=$(ps -p $$ -o 'comm=')
 
-shifu_test_function_declaration='^(test_.*) ?\(\) {'
 shifu_read_test_functions() {
   # 1: test script path
   test_functions=$(
     cat "$1" | \
     # -r: extended regex, -n: don't echo lines to stdout
-    sed -rn "/$shifu_test_function_declaration/!d;
-            s/$shifu_test_function_declaration/\1/p"
+    sed -rn "/^(test_.*) ?\(\) {/!d;
+            s/^(test_.*) ?\(\) {/\1/p"
   )
 }
 
