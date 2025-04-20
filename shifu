@@ -36,7 +36,7 @@ shifu_var_store() {
 
 shifu_var_restore() {
   while [ $# -ne 0 ]; do
-    eval "$1=\$${1}_old; unset \$${1}_old"
+    eval "$1=\$${1}_old; unset -v ${1}_old"
     shift
   done
 }
