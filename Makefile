@@ -9,6 +9,10 @@ test-all:
 	echo "\n=======================  ash   ========================"; \
 	ash test_shifu.sh ${VERBOSE}; \
 	fi
+	@if [ -n "$$(which ksh)" ]; then \
+	echo "\n=======================  ksh   ========================"; \
+	ksh test_shifu.sh ${VERBOSE}; \
+	fi
 	@if [ -n "$$(which dash)" ]; then \
 	echo "\n=======================  dash  ========================"; \
 	dash test_shifu.sh ${VERBOSE}; \
