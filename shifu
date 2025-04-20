@@ -1,6 +1,11 @@
 # Dependencies: tr, wc
 
+# Future options?
 shifu_command_function_pattern='^(.*) ?\(\) {'
+
+shifu_mode_init="shifu_mode_init"
+shifu_mode_parse="shifu_mode_parse"
+shifu_mode_help="shifu_mode_help"
 
 # for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
 shifu_grey="$(tput setaf 0)"
@@ -173,4 +178,51 @@ shifu_run() {
   $function_to_call "$@"
 
   shifu_var_restore script_functions function_to_call arguments_in_function
+}
+
+shifu_parse_args() {
+  # 1: function, @: args to parse
+  shifu_var_store shifu_mode shifu_parsed
+  shift
+
+  shifu_mode="$shifu_mode_init"
+  $1 "$@"
+
+  shifu_mode="$shifu_mode_parse"
+  while true; do
+    $shifu_one=$1
+    $shifu_two=$2
+    $shifu_parsed=0
+    $1 "$@"
+    if [ $shifu_parsed -ne 0 ]; then
+      for i in $(seq 0 $shifu_parsed); do shift; done
+    fi
+  done
+  shifu_positional_args="$@"
+}
+
+shifu_invalid_variable_name() {
+  [ -n $(eval "$1= && echo valid") ] && return 1 || return 0
+}
+
+shifu_arg_ob() {
+  # 1: option, 2: variable name, 3: set value, 4: help
+  case "$shifu_mode" in
+    "$shifu_mode_init")
+      if shifu_invalid_variable_name "$2"; then
+        echo "Invalid variable name: $1"
+        return 1
+      fi
+      case "$3" in
+        true) eval "$2=false" ;;
+        false) eval "$2=true" ;;
+        *) echo "Set value expected to be boolean, got: $3"; exit 1 ;;
+      esac
+      ;;
+    "$shifu_mode_parse")
+      [ "$shifu_one" = "--$1" ] && { eval "$2=$3"; shifu_parsed=1; }
+      ;;
+    "$shifu_mode_help") echo "$4"
+      ;;
+  esac
 }

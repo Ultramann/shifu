@@ -34,17 +34,22 @@ shifu_report_context() {
   shifu_var_restore argument
 }
 
+shifu_assert_impossible() {
+  shifu_report_context "This code path should not be reached"
+  errors=$(($errors + 1))
+}
+
 shifu_assert_zero() {
   # 1: value
   [ $1 = 0 ] && return
-  shifu_report_context ""Expected zero return code, got"" $value
+  shifu_report_context "Expected zero return code, got" $1
   errors=$(($errors + 1))
 }
 
 shifu_assert_non_zero() {
   # 1: value
   [ $1 != 0 ] && return
-  shifu_report_context "Expected non-zero return code, got" $value
+  shifu_report_context "Expected non-zero return code, got" $1
   errors=$(($errors + 1))
 }
 
@@ -186,6 +191,49 @@ test_shifu_function_to_call_argument_length() {
   arguments_in_function="arg1 arg2 arg3_arg4"
   shifu_assert_equal $(shifu_function_to_call_argument_length) 3
   shifu_var_restore arguments_in_function
+}
+
+test_shifu_invalid_variable_name() {
+  if shifu_invalid_variable_name good_var_name; then
+    shifu_assert_impossible
+  fi
+  shifu_invalid_variable_name bad-var-name
+  shifu_assert_non_zero $?
+}
+
+test_shifu_arg_ob_set() {
+  shifu_var_store shifu_mode shifu_parsed shifu_one test_option
+  shifu_mode="$shifu_mode_init"
+  shifu_arg_ob test-option test_option true
+  shifu_mode="$shifu_mode_parse"
+  shifu_parsed=0
+  shifu_one="--test-option"
+  shifu_arg_ob test-option test_option true
+  shifu_assert_equal "$test_option" true
+  shifu_assert_equal "$shifu_parsed" 1
+  shifu_var_restore shifu_mode shifu_parsed shifu_one test_option
+}
+
+test_shifu_arg_ob_unset() {
+  shifu_var_store shifu_mode shifu_parsed shifu_one test_option
+  shifu_mode="$shifu_mode_init"
+  shifu_arg_ob test-option test_option true
+  shifu_mode="$shifu_mode_parse"
+  shifu_parsed=0
+  shifu_one="--random-option"
+  shifu_arg_ob test-option test_option true
+  shifu_assert_equal "$test_option" false
+  shifu_assert_equal "$shifu_parsed" 0
+  shifu_var_restore shifu_mode shifu_parsed shifu_one test_option
+}
+
+test_shifu_arg_ob_bad_set() {
+  shifu_var_store shifu_mode shifu_one test_option message
+  shifu_mode="$shifu_mode_init"
+  message=$(shifu_arg_ob test-option test_option bad)
+  shifu_assert_non_zero $?
+  shifu_assert_equal "$message" "Set value expected to be boolean, got: bad"
+  shifu_var_restore shifu_mode shifu_one test_option message
 }
 
 shifu_run_test() {
