@@ -39,6 +39,13 @@ shifu_assert_impossible() {
   errors=$(($errors + 1))
 }
 
+shifu_assert_zero_length() {
+  # 1: value
+  [ -z "$1" ] && return
+  shifu_report_context "Expected length zero, got" "${#1}"
+  errors=$(($errors + 1))
+}
+
 shifu_assert_zero() {
   # 1: value
   [ $1 = 0 ] && return
@@ -201,6 +208,34 @@ test_shifu_invalid_variable_name() {
   shifu_assert_non_zero $?
 }
 
+test_shifu_arg_oa_set() {
+  shifu_var_store shifu_mode shifu_parsed shifu_one shifu_two test_option
+  shifu_mode="$shifu_mode_init"
+  shifu_arg_oa test-option test_option
+  shifu_mode="$shifu_mode_parse"
+  shifu_parsed=0
+  shifu_one="--test-option"
+  shifu_two="option_value"
+  shifu_arg_oa test-option test_option
+  shifu_assert_equal "$test_option" "option_value"
+  shifu_assert_equal "$shifu_parsed" 2
+  shifu_var_restore shifu_mode shifu_parsed shifu_one shifu_two test_option
+}
+
+test_shifu_arg_oa_unset() {
+  shifu_var_store shifu_mode shifu_parsed shifu_one shifu_two test_option
+  shifu_mode="$shifu_mode_init"
+  shifu_arg_oa test-option test_option
+  shifu_mode="$shifu_mode_parse"
+  shifu_parsed=0
+  shifu_one="--random-option"
+  shifu_two="option_value"
+  shifu_arg_oa test-option test_option
+  shifu_assert_zero_length "$test_option"
+  shifu_assert_equal "$shifu_parsed" 0
+  shifu_var_restore shifu_mode shifu_parsed shifu_one shifu_two test_option
+}
+
 test_shifu_arg_ob_set() {
   shifu_var_store shifu_mode shifu_parsed shifu_one test_option
   shifu_mode="$shifu_mode_init"
@@ -237,21 +272,26 @@ test_shifu_arg_ob_bad_set() {
 }
 
 parse_args_test__shifu() {
-  shifu_arg_ob binary-option binary_option true "binary option help"
+  shifu_arg_ob option-binary option_binary true "binary option help"
+  shifu_arg_oa option-argument option_argument "argument option help"
 }
 
 test_shifu_parse_args_set() {
-  shifu_var_store binary_option
-  shifu_parse_args parse_args_test__shifu --binary-option
-  shifu_assert_equal "$binary_option" true
-  shifu_var_restore binary_option
+  shifu_var_store option_binary option_argument
+  shifu_parse_args parse_args_test__shifu \
+                   --option-binary \
+                   --option-argument option_value
+  shifu_assert_equal "$option_binary" true
+  shifu_assert_equal "$option_argument" "option_value"
+  shifu_var_restore option_binary option_argument
 }
 
 test_shifu_parse_args_unset() {
-  shifu_var_store binary_option
+  shifu_var_store option_binary option_argument
   shifu_parse_args parse_args_test__shifu
-  shifu_assert_equal "$binary_option" false
-  shifu_var_restore binary_option
+  shifu_assert_equal "$option_binary" false
+  shifu_assert_zero_length "$test_option"
+  shifu_var_restore option_binary option_argument
 }
 
 shifu_run_test() {
