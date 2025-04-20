@@ -1,4 +1,4 @@
-# Dependencies: tr, wc
+# Dependencies: cat, sed, tr, wc
 
 # Future options?
 shifu_command_function_pattern='^(.*) ?\(\) {'
@@ -7,7 +7,8 @@ shifu_mode_init="shifu_mode_init"
 shifu_mode_parse="shifu_mode_parse"
 shifu_mode_help="shifu_mode_help"
 
-# for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
+# to see more color options run:
+#   for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
 shifu_grey="$(tput setaf 0)"
 shifu_red="$(tput setaf 1)"
 shifu_green="$(tput setaf 2)"
@@ -63,21 +64,26 @@ shifu_array_fmt() {
   printf "( $(shifu_collapse "$1") )"
 }
 
-# Write number of elements in newline separated "array" to stdout
+# Write number of elements in newline separated "array" to stdout.
+# Examples (arrays shown with spaces not newlines):
+#   "argument other arg3" -> 3
 shifu_array_length() {
+  # 1: array
   shifu_iterate "$1" | wc -l
 }
 
-# Write newline separated "array" with element added at end to stdout
+# Write newline separated "array" with element added at end to stdout.
+# Examples (arrays shown with spaces not newlines):
+#   "argument other arg3" another -> "argument other arg3 another"
 shifu_array_append() {
   # 1: array, 2: element
   [ "${#1}" -gt 0 ] && { echo "$1"; echo "$2"; } || echo "$2"
 }
 
-# Test if newline separated array contains first argument,
-# write true to stdout if found, else false. Examples
-# [argument other arg] arg -> true
-# [argument other arg] no -> false
+# Test if newline separated array contains first argument, write true to stdout
+# if found, else false. Examples (arrays shown with spaces not newlines):
+#   "argument other arg3" arg -> true
+#   "argument other arg3" no -> false
 shifu_array_contains() {
   # 1: array, 2: value
   shifu_var_store element result
@@ -89,10 +95,10 @@ shifu_array_contains() {
   shifu_var_restore element result
 }
 
-# Filter newline separated "array" by words containing first argment as prefix,
-# write matching elements to stdout. Examples
-#   [argument other arg3] arg -> "argument arg3"
-#   [argument other arg3] oth -> "other"
+# Filter newline separated "array" by words containing second argment as prefix,
+# write matching elements to stdout. Examples (arrays shown with spaces not newlines):
+#   "argument other arg3" arg -> "argument arg3"
+#   "argument other arg3" oth -> "other"
 shifu_array_filter_prefix() {
   # 1: array, 2: prefix
   [ -z "$2" ] && { echo "$1"; return; }
