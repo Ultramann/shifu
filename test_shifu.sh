@@ -236,6 +236,24 @@ test_shifu_arg_ob_bad_set() {
   shifu_var_restore shifu_mode shifu_one test_option message
 }
 
+parse_args_test__shifu() {
+  shifu_arg_ob binary-option binary_option true "binary option help"
+}
+
+test_shifu_parse_args_set() {
+  shifu_var_store binary_option
+  shifu_parse_args parse_args_test__shifu --binary-option
+  shifu_assert_equal "$binary_option" true
+  shifu_var_restore binary_option
+}
+
+test_shifu_parse_args_unset() {
+  shifu_var_store binary_option
+  shifu_parse_args parse_args_test__shifu
+  shifu_assert_equal "$binary_option" false
+  shifu_var_restore binary_option
+}
+
 shifu_run_test() {
   # 1: test function
   errors=0  # doesn't need to be stored/restored because always run in subshell
