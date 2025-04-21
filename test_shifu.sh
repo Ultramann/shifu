@@ -207,6 +207,145 @@ test_shifu_invalid_var_name() {
   shifu_assert_zero $?
 }
 
+test_shifu_arg_fb_set() {
+  shifu_var_store shifu_mode shifu_parsed shifu_one test_flag
+  shifu_mode="$shifu_mode_init"
+  shifu_arg_fb f test_flag true help
+  shifu_mode="$shifu_mode_parse"
+  shifu_parsed=0
+  shifu_one="-f"
+  shifu_arg_fb f test_flag true help
+  shifu_assert_equal "$test_flag" true
+  shifu_assert_equal "$shifu_parsed" 1
+  shifu_var_restore shifu_mode shifu_parsed shifu_one test_flag
+}
+
+test_shifu_arg_fb_unset() {
+  shifu_var_store shifu_mode shifu_parsed shifu_one test_flag
+  shifu_mode="$shifu_mode_init"
+  shifu_arg_fb f test_flag true help
+  shifu_mode="$shifu_mode_parse"
+  shifu_parsed=0
+  shifu_one="-r"
+  shifu_arg_fb f test_flag true help
+  shifu_assert_equal "$test_flag" false
+  shifu_assert_equal "$shifu_parsed" 0
+  shifu_var_restore shifu_mode shifu_parsed shifu_one test_flag
+}
+
+test_shifu_arg_fb_bad_set() {
+  shifu_var_store shifu_mode shifu_one test_flag message
+  shifu_mode="$shifu_mode_init"
+  message=$(shifu_arg_fb f test_flag bad help)
+  shifu_assert_non_zero $?
+  shifu_assert_equal "$message" "Set value must be true/false, got: bad"
+  shifu_var_restore shifu_mode shifu_one test_flag message
+}
+
+test_shifu_arg_fb_bad_args() {
+  shifu_var_store shifu_mode message
+  shifu_mode="$shifu_mode_init"
+  message=$(shifu_arg_fb f test_flag bad)
+  shifu_assert_equal "$message" "Expected 4 arguments, got 3: f test_flag bad"
+  shifu_var_restore shifu_mode message
+}
+
+test_shifu_arg_fb_bad_flag() {
+  shifu_var_store shifu_mode message
+  shifu_mode="$shifu_mode_init"
+  message=$(shifu_arg_fb bad test_flag bad)
+  shifu_assert_equal "$message" "Flag must be one character, got 3: bad"
+  shifu_var_restore shifu_mode message
+}
+
+test_shifu_arg_fa_set() {
+  shifu_var_store shifu_mode shifu_parsed shifu_one shifu_two test_flag
+  shifu_mode="$shifu_mode_init"
+  shifu_arg_fa f test_flag help
+  shifu_mode="$shifu_mode_parse"
+  shifu_parsed=0
+  shifu_one="-f"
+  shifu_two="flag_value"
+  shifu_arg_fa f test_flag help
+  shifu_assert_equal "$test_flag" "flag_value"
+  shifu_assert_equal "$shifu_parsed" 2
+  shifu_var_restore shifu_mode shifu_parsed shifu_one shifu_two test_flag
+}
+
+test_shifu_arg_fa_unset() {
+  shifu_var_store shifu_mode shifu_parsed shifu_one shifu_two test_flag
+  shifu_mode="$shifu_mode_init"
+  shifu_arg_fa f test_flag help
+  shifu_mode="$shifu_mode_parse"
+  shifu_parsed=0
+  shifu_one="-r"
+  shifu_two="flag_value"
+  shifu_arg_fa f test_flag help
+  shifu_assert_zero_length "$test_flag"
+  shifu_assert_equal "$shifu_parsed" 0
+  shifu_var_restore shifu_mode shifu_parsed shifu_one shifu_two test_flag
+}
+
+test_shifu_arg_fa_bad_args() {
+  shifu_var_store shifu_mode message
+  shifu_mode="$shifu_mode_init"
+  message=$(shifu_arg_fa f test_flag)
+  shifu_assert_equal "$message" "Expected 3 arguments, got 2: f test_flag"
+  shifu_var_restore shifu_mode message
+}
+
+test_shifu_arg_fa_bad_flag() {
+  shifu_var_store shifu_mode message
+  shifu_mode="$shifu_mode_init"
+  message=$(shifu_arg_fa bad test_flag bad)
+  shifu_assert_equal "$message" "Flag must be one character, got 3: bad"
+  shifu_var_restore shifu_mode message
+}
+
+test_shifu_arg_fad_set() {
+  shifu_var_store shifu_mode shifu_parsed shifu_one shifu_two test_flag
+  shifu_mode="$shifu_mode_init"
+  shifu_arg_fad f test_flag flag_default help
+  shifu_mode="$shifu_mode_parse"
+  shifu_parsed=0
+  shifu_one="-f"
+  shifu_two="flag_value"
+  shifu_arg_fad f test_flag help
+  shifu_assert_equal "$test_flag" "flag_value"
+  shifu_assert_equal "$shifu_parsed" 2
+  shifu_var_restore shifu_mode shifu_parsed shifu_one shifu_two test_flag
+}
+
+test_shifu_arg_fad_unset() {
+  shifu_var_store shifu_mode shifu_parsed shifu_one shifu_two test_flag
+  shifu_mode="$shifu_mode_init"
+  shifu_arg_fad f test_flag flag_default help
+  shifu_mode="$shifu_mode_parse"
+  shifu_parsed=0
+  shifu_one="-r"
+  shifu_two="flag_value"
+  shifu_arg_fad f test_flag help
+  shifu_assert_equal "$test_flag" "flag_default"
+  shifu_assert_equal "$shifu_parsed" 0
+  shifu_var_restore shifu_mode shifu_parsed shifu_one shifu_two test_flag
+}
+
+test_shifu_arg_fad_bad_args() {
+  shifu_var_store shifu_mode message
+  shifu_mode="$shifu_mode_init"
+  message=$(shifu_arg_fad f test_flag)
+  shifu_assert_equal "$message" "Expected 4 arguments, got 2: f test_flag"
+  shifu_var_restore shifu_mode message
+}
+
+test_shifu_arg_fad_bad_flag() {
+  shifu_var_store shifu_mode message
+  shifu_mode="$shifu_mode_init"
+  message=$(shifu_arg_fad bad test_flag bad)
+  shifu_assert_equal "$message" "Flag must be one character, got 3: bad"
+  shifu_var_restore shifu_mode message
+}
+
 test_shifu_arg_ob_set() {
   shifu_var_store shifu_mode shifu_parsed shifu_one test_option
   shifu_mode="$shifu_mode_init"
@@ -323,30 +462,46 @@ test_shifu_arg_oad_bad_args() {
 }
 
 parse_args_test__shifu() {
+  shifu_arg_fb  f flag_bin false "binary flag help"
+  shifu_arg_fa  a flag_arg "flag argument help"
+  shifu_arg_fad d flag_arg_d default_flag "default argument flag help"
   shifu_arg_ob  option-bin option_bin true "binary option help"
   shifu_arg_oa  option-arg option_arg "argument option help"
   shifu_arg_oad option-arg-d option_arg_d default_opt "default argument option help"
 }
 
 test_shifu_parse_args_set() {
-  shifu_var_store option_bin option_arg option_arg_d
+  shifu_var_store flag_bin flag_arg flag_arg_d \
+                  option_bin option_arg option_arg_d
   shifu_parse_args parse_args_test__shifu \
+                   -f \
+                   -a flag_value \
+                   -d not_default_flag_value \
                    --option-bin \
                    --option-arg option_value \
                    --option-arg-d not_default_option_value
   shifu_assert_equal "$option_bin" true
   shifu_assert_equal "$option_arg" "option_value"
   shifu_assert_equal "$option_arg_d" "not_default_option_value"
-  shifu_var_restore option_bin option_arg option_arg_d
+  shifu_assert_equal "$flag_bin" false
+  shifu_assert_equal "$flag_arg" "flag_value"
+  shifu_assert_equal "$flag_arg_d" "not_default_flag_value"
+  shifu_var_restore flag_bin flag_arg flag_arg_d \
+                    option_bin option_arg option_arg_d
 }
 
 test_shifu_parse_args_unset() {
-  shifu_var_store option_bin option_arg
+  shifu_var_store flag_bin flag_arg flag_arg_d \
+                  option_bin option_arg option_arg_d
   shifu_parse_args parse_args_test__shifu
   shifu_assert_equal "$option_bin" false
   shifu_assert_zero_length "$option_arg"
   shifu_assert_equal "$option_arg_d" "default_opt"
-  shifu_var_restore option_bin option_arg option_arg_d
+  shifu_assert_equal "$flag_bin" true
+  shifu_assert_zero_length "$flag_arg"
+  shifu_assert_equal "$flag_arg_d" "default_flag"
+  shifu_var_restore flag_bin flag_arg flag_arg_d \
+                    option_bin option_arg option_arg_d
 }
 
 shifu_run_test() {
