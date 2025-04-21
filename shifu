@@ -193,6 +193,26 @@ shifu_invalid_var_name() {
   [ $? -ne 0 ] && return 0 || return 1
 }
 
+shifu_arg_ob() {
+  # 1: option, 2: variable name, 3: set value, 4: help
+  case "$shifu_mode" in
+    "$shifu_mode_init")
+      [ $# -ne 4 ] && { echo "Expected 4 arguments, got $#: $@"; exit 1; }
+      shifu_invalid_var_name "$2" && { echo "Invalid variable name: $2"; exit 1; }
+      case "$3" in
+        true) eval "$2=false" ;;
+        false) eval "$2=true" ;;
+        *) echo "Set value must be true/false, got: $3"; exit 1 ;;
+      esac
+      ;;
+    "$shifu_mode_parse")
+      [ "$shifu_one" = "--$1" ] && { eval "$2=$3"; shifu_parsed=1; }
+      ;;
+    "$shifu_mode_help") echo "$4"
+      ;;
+  esac
+}
+
 shifu_arg_oa() {
   # 1: option, 2: variable name, 3: help
   case "$shifu_mode" in
@@ -208,20 +228,16 @@ shifu_arg_oa() {
   esac
 }
 
-shifu_arg_ob() {
-  # 1: option, 2: variable name, 3: set value, 4: help
+shifu_arg_oad() {
+  # 1: option, 2: variable name, 3: default value, 4: help
   case "$shifu_mode" in
     "$shifu_mode_init")
       [ $# -ne 4 ] && { echo "Expected 4 arguments, got $#: $@"; exit 1; }
       shifu_invalid_var_name "$2" && { echo "Invalid variable name: $2"; exit 1; }
-      case "$3" in
-        true) eval "$2=false" ;;
-        false) eval "$2=true" ;;
-        *) echo "Set value must be true/false, got: $3"; exit 1 ;;
-      esac
+      eval "$2=$3"
       ;;
     "$shifu_mode_parse")
-      [ "$shifu_one" = "--$1" ] && { eval "$2=$3"; shifu_parsed=1; }
+      [ "$shifu_one" = "--$1" ] && { eval "$2=$shifu_two"; shifu_parsed=2; }
       ;;
     "$shifu_mode_help") echo "$4"
       ;;

@@ -207,42 +207,6 @@ test_shifu_invalid_var_name() {
   shifu_assert_zero $?
 }
 
-test_shifu_arg_oa_set() {
-  shifu_var_store shifu_mode shifu_parsed shifu_one shifu_two test_option
-  shifu_mode="$shifu_mode_init"
-  shifu_arg_oa test-option test_option help
-  shifu_mode="$shifu_mode_parse"
-  shifu_parsed=0
-  shifu_one="--test-option"
-  shifu_two="option_value"
-  shifu_arg_oa test-option test_option help
-  shifu_assert_equal "$test_option" "option_value"
-  shifu_assert_equal "$shifu_parsed" 2
-  shifu_var_restore shifu_mode shifu_parsed shifu_one shifu_two test_option
-}
-
-test_shifu_arg_oa_unset() {
-  shifu_var_store shifu_mode shifu_parsed shifu_one shifu_two test_option
-  shifu_mode="$shifu_mode_init"
-  shifu_arg_oa test-option test_option help
-  shifu_mode="$shifu_mode_parse"
-  shifu_parsed=0
-  shifu_one="--random-option"
-  shifu_two="option_value"
-  shifu_arg_oa test-option test_option
-  shifu_assert_zero_length "$test_option"
-  shifu_assert_equal "$shifu_parsed" 0
-  shifu_var_restore shifu_mode shifu_parsed shifu_one shifu_two test_option
-}
-
-test_shifu_arg_oa_bad_args() {
-  shifu_var_store shifu_mode message
-  shifu_mode="$shifu_mode_init"
-  message=$(shifu_arg_oa test-option test_option)
-  shifu_assert_equal "$message" "Expected 3 arguments, got 2: test-option test_option"
-  shifu_var_restore shifu_mode message
-}
-
 test_shifu_arg_ob_set() {
   shifu_var_store shifu_mode shifu_parsed shifu_one test_option
   shifu_mode="$shifu_mode_init"
@@ -278,7 +242,7 @@ test_shifu_arg_ob_bad_set() {
   shifu_var_restore shifu_mode shifu_one test_option message
 }
 
-test_shifu_arg_oa_bad_args() {
+test_shifu_arg_ob_bad_args() {
   shifu_var_store shifu_mode message
   shifu_mode="$shifu_mode_init"
   message=$(shifu_arg_ob test-option test_option bad)
@@ -286,27 +250,103 @@ test_shifu_arg_oa_bad_args() {
   shifu_var_restore shifu_mode message
 }
 
+test_shifu_arg_oa_set() {
+  shifu_var_store shifu_mode shifu_parsed shifu_one shifu_two test_option
+  shifu_mode="$shifu_mode_init"
+  shifu_arg_oa test-option test_option help
+  shifu_mode="$shifu_mode_parse"
+  shifu_parsed=0
+  shifu_one="--test-option"
+  shifu_two="option_value"
+  shifu_arg_oa test-option test_option help
+  shifu_assert_equal "$test_option" "option_value"
+  shifu_assert_equal "$shifu_parsed" 2
+  shifu_var_restore shifu_mode shifu_parsed shifu_one shifu_two test_option
+}
+
+test_shifu_arg_oa_unset() {
+  shifu_var_store shifu_mode shifu_parsed shifu_one shifu_two test_option
+  shifu_mode="$shifu_mode_init"
+  shifu_arg_oa test-option test_option help
+  shifu_mode="$shifu_mode_parse"
+  shifu_parsed=0
+  shifu_one="--random-option"
+  shifu_two="option_value"
+  shifu_arg_oa test-option test_option help
+  shifu_assert_zero_length "$test_option"
+  shifu_assert_equal "$shifu_parsed" 0
+  shifu_var_restore shifu_mode shifu_parsed shifu_one shifu_two test_option
+}
+
+test_shifu_arg_oa_bad_args() {
+  shifu_var_store shifu_mode message
+  shifu_mode="$shifu_mode_init"
+  message=$(shifu_arg_oa test-option test_option)
+  shifu_assert_equal "$message" "Expected 3 arguments, got 2: test-option test_option"
+  shifu_var_restore shifu_mode message
+}
+
+test_shifu_arg_oad_set() {
+  shifu_var_store shifu_mode shifu_parsed shifu_one shifu_two test_option
+  shifu_mode="$shifu_mode_init"
+  shifu_arg_oad test-option test_option option_default help
+  shifu_mode="$shifu_mode_parse"
+  shifu_parsed=0
+  shifu_one="--test-option"
+  shifu_two="option_value"
+  shifu_arg_oad test-option test_option help
+  shifu_assert_equal "$test_option" "option_value"
+  shifu_assert_equal "$shifu_parsed" 2
+  shifu_var_restore shifu_mode shifu_parsed shifu_one shifu_two test_option
+}
+
+test_shifu_arg_oad_unset() {
+  shifu_var_store shifu_mode shifu_parsed shifu_one shifu_two test_option
+  shifu_mode="$shifu_mode_init"
+  shifu_arg_oad test-option test_option option_default help
+  shifu_mode="$shifu_mode_parse"
+  shifu_parsed=0
+  shifu_one="--random-option"
+  shifu_two="option_value"
+  shifu_arg_oad test-option test_option help
+  shifu_assert_equal "$test_option" "option_default"
+  shifu_assert_equal "$shifu_parsed" 0
+  shifu_var_restore shifu_mode shifu_parsed shifu_one shifu_two test_option
+}
+
+test_shifu_arg_oad_bad_args() {
+  shifu_var_store shifu_mode message
+  shifu_mode="$shifu_mode_init"
+  message=$(shifu_arg_oad test-option test_option)
+  shifu_assert_equal "$message" "Expected 4 arguments, got 2: test-option test_option"
+  shifu_var_restore shifu_mode message
+}
+
 parse_args_test__shifu() {
-  shifu_arg_ob option-binary option_binary true "binary option help"
-  shifu_arg_oa option-argument option_argument "argument option help"
+  shifu_arg_ob  option-bin option_bin true "binary option help"
+  shifu_arg_oa  option-arg option_arg "argument option help"
+  shifu_arg_oad option-arg-d option_arg_d default_opt "default argument option help"
 }
 
 test_shifu_parse_args_set() {
-  shifu_var_store option_binary option_argument
+  shifu_var_store option_bin option_arg option_arg_d
   shifu_parse_args parse_args_test__shifu \
-                   --option-binary \
-                   --option-argument option_value
-  shifu_assert_equal "$option_binary" true
-  shifu_assert_equal "$option_argument" "option_value"
-  shifu_var_restore option_binary option_argument
+                   --option-bin \
+                   --option-arg option_value \
+                   --option-arg-d not_default_option_value
+  shifu_assert_equal "$option_bin" true
+  shifu_assert_equal "$option_arg" "option_value"
+  shifu_assert_equal "$option_arg_d" "not_default_option_value"
+  shifu_var_restore option_bin option_arg option_arg_d
 }
 
 test_shifu_parse_args_unset() {
-  shifu_var_store option_binary option_argument
+  shifu_var_store option_bin option_arg
   shifu_parse_args parse_args_test__shifu
-  shifu_assert_equal "$option_binary" false
-  shifu_assert_zero_length "$test_option"
-  shifu_var_restore option_binary option_argument
+  shifu_assert_equal "$option_bin" false
+  shifu_assert_zero_length "$option_arg"
+  shifu_assert_equal "$option_arg_d" "default_opt"
+  shifu_var_restore option_bin option_arg option_arg_d
 }
 
 shifu_run_test() {
