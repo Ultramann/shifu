@@ -3,9 +3,8 @@
 # Future options?
 shifu_command_function_pattern='^(.*) ?\(\) {'
 
-shifu_mode_init="shifu_mode_init"
-shifu_mode_parse="shifu_mode_parse"
-shifu_mode_help="shifu_mode_help"
+shifu_mode_parse=0
+shifu_mode_help=1
 
 # to see more color options run:
 #   for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
@@ -186,189 +185,77 @@ shifu_run() {
   shifu_var_restore script_functions function_to_call arguments_in_function
 }
 
-shifu_invalid_var_name() {
-  # Returns 0 if variable name is invalid, else 1
-  # 1: variable name
-  (eval "$1=") > /dev/null 2>&1  # run in subshell to not clobber current value
-  [ $? -ne 0 ] && return 0 || return 1
+shifu_is_arg() {
+  [ $# -gt 1 ] && [ "$1" != -- ]
 }
 
-shifu_arg_fb() {
-  # 1: flag, 2: variable name, 3: set value, 4: help
-  case "$shifu_mode" in
-    "$shifu_mode_init")
-      [ "${#1}" -ne 1 ] && { echo "Flag must be one character, got ${#1}: $1"; exit 1; }
-      [ $# -ne 4 ] && { echo "Expected 4 arguments, got $#: $@"; exit 1; }
-      shifu_invalid_var_name "$2" && { echo "Invalid variable name: $2"; exit 1; }
-      case "$3" in
-        true) eval "$2=false" ;;
-        false) eval "$2=true" ;;
-        *) echo "Set value must be true/false, got: $3"; exit 1 ;;
-      esac
-      ;;
-    "$shifu_mode_parse")
-      [ "$shifu_one" = "-$1" ] && { eval "$2=$3"; shifu_parsed=1; }
-      ;;
-    "$shifu_mode_help") echo "$4"
-      ;;
-  esac
+shifu_arg() {
+  has_options=0
+  if [ $shifu_mode -eq $shifu_mode_help ]; then
+    while [ $# -ne 1 ]; do shift; done; echo $1; return
+  fi
+  shifu_is_arg "$@" && { has_options=1; case_stmt="$case_stmt $1"; shift; }
+  while shifu_is_arg "$@"; do
+    case_stmt="${case_stmt}|$1"; shift
+  done; shift
+  # remaining
+  if [ $# -eq 1 ]; then
+    parse_stage=2
+  # positional
+  elif [ $has_options -eq 0 ]; then
+    if [ $parse_stage -lt 1 ]; then
+      parse_stage=1
+      case_stmt="$case_stmt *)"
+    elif [ $parse_stage -gt 1 ]; then
+      echo "No arguments after remaining are declared: $1"; exit 1;
+    fi
+    eval "$1=" > /dev/null 2>&1
+    [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
+    case_stmt="$case_stmt [ \$# -eq 0 ] && { echo 'Missing positional argument $1'; exit 1; }; "
+    case_stmt="$case_stmt $1=\$1; shift; "
+  # option + argument without default
+  elif [ $# -eq 2 ]; then
+    [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
+    eval "$1=" > /dev/null 2>&1
+    [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
+    case_stmt="$case_stmt) $1=\$2; shift; shift ;; "
+  # option + argument with default
+  elif [ $# -eq 3 ]; then
+    [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
+    eval "$1=$2" > /dev/null 2>&1
+    [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
+    case_stmt="$case_stmt) $1=\$2; shift; shift ;; "
+  # option no argument default set
+  elif [ $# -eq 4 ]; then
+    [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
+    eval "$1=$2" > /dev/null 2>&1
+    [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
+    case_stmt="$case_stmt) $1=$3; shift ;; "
+  fi
 }
 
-shifu_arg_fa() {
-  # 1: flag, 2: variable name, 3: help
-  case "$shifu_mode" in
-    "$shifu_mode_init")
-      [ "${#1}" -ne 1 ] && { echo "Flag must be one character, got ${#1}: $1"; exit 1; }
-      [ $# -ne 3 ] && { echo "Expected 3 arguments, got $#: $@"; exit 1; }
-      shifu_invalid_var_name "$2" && { echo "Invalid variable name: $2"; exit 1; }
-      ;;
-    "$shifu_mode_parse")
-      [ "$shifu_one" = "-$1" ] && { eval "$2=$shifu_two"; shifu_parsed=2; }
-      ;;
-    "$shifu_mode_help") echo "$3"
-      ;;
-  esac
-}
-
-shifu_arg_fad() {
-  # 1: flag, 2: variable name, 3: default value, 4: help
-  case "$shifu_mode" in
-    "$shifu_mode_init")
-      [ "${#1}" -ne 1 ] && { echo "Flag must be one character, got ${#1}: $1"; exit 1; }
-      [ $# -ne 4 ] && { echo "Expected 4 arguments, got $#: $@"; exit 1; }
-      shifu_invalid_var_name "$2" && { echo "Invalid variable name: $2"; exit 1; }
-      eval "$2=$3"
-      ;;
-    "$shifu_mode_parse")
-      [ "$shifu_one" = "-$1" ] && { eval "$2=$shifu_two"; shifu_parsed=2; }
-      ;;
-    "$shifu_mode_help") echo "$4"
-      ;;
-  esac
-}
-
-shifu_arg_ob() {
-  # 1: option, 2: variable name, 3: set value, 4: help
-  case "$shifu_mode" in
-    "$shifu_mode_init")
-      [ $# -ne 4 ] && { echo "Expected 4 arguments, got $#: $@"; exit 1; }
-      shifu_invalid_var_name "$2" && { echo "Invalid variable name: $2"; exit 1; }
-      case "$3" in
-        true) eval "$2=false" ;;
-        false) eval "$2=true" ;;
-        *) echo "Set value must be true/false, got: $3"; exit 1 ;;
-      esac
-      ;;
-    "$shifu_mode_parse")
-      [ "$shifu_one" = "--$1" ] && { eval "$2=$3"; shifu_parsed=1; }
-      ;;
-    "$shifu_mode_help") echo "$4"
-      ;;
-  esac
-}
-
-shifu_arg_oa() {
-  # 1: option, 2: variable name, 3: help
-  case "$shifu_mode" in
-    "$shifu_mode_init")
-      [ $# -ne 3 ] && { echo "Expected 3 arguments, got $#: $@"; exit 1; }
-      shifu_invalid_var_name "$2" && { echo "Invalid variable name: $2"; exit 1; }
-      ;;
-    "$shifu_mode_parse")
-      [ "$shifu_one" = "--$1" ] && { eval "$2=$shifu_two"; shifu_parsed=2; }
-      ;;
-    "$shifu_mode_help") echo "$3"
-      ;;
-  esac
-}
-
-shifu_arg_oad() {
-  # 1: option, 2: variable name, 3: default value, 4: help
-  case "$shifu_mode" in
-    "$shifu_mode_init")
-      [ $# -ne 4 ] && { echo "Expected 4 arguments, got $#: $@"; exit 1; }
-      shifu_invalid_var_name "$2" && { echo "Invalid variable name: $2"; exit 1; }
-      eval "$2=$3"
-      ;;
-    "$shifu_mode_parse")
-      [ "$shifu_one" = "--$1" ] && { eval "$2=$shifu_two"; shifu_parsed=2; }
-      ;;
-    "$shifu_mode_help") echo "$4"
-      ;;
-  esac
-}
-
-shifu_arg_fob() {
-  # 1: flag, 2: option, 3: variable name, 4: set value, 5: help
-  case "$shifu_mode" in
-    "$shifu_mode_init")
-      [ "${#1}" -ne 1 ] && { echo "Flag must be one character, got ${#1}: $1"; exit 1; }
-      [ $# -ne 5 ] && { echo "Expected 5 arguments, got $#: $@"; exit 1; }
-      shifu_invalid_var_name "$3" && { echo "Invalid variable name: $3"; exit 1; }
-      case "$4" in
-        true) eval "$3=false" ;;
-        false) eval "$3=true" ;;
-        *) echo "Set value must be true/false, got: $4"; exit 1 ;;
-      esac
-      ;;
-    "$shifu_mode_parse")
-      [ "$shifu_one" = "-$1" -o "$shifu_one" = "--$2" ] && { eval "$3=$4"; shifu_parsed=1; }
-      ;;
-    "$shifu_mode_help") echo "$5"
-      ;;
-  esac
-}
-
-shifu_arg_foa() {
-  # 1: flag, 2: option, 3: variable name, 4: help
-  case "$shifu_mode" in
-    "$shifu_mode_init")
-      [ "${#1}" -ne 1 ] && { echo "Flag must be one character, got ${#1}: $1"; exit 1; }
-      [ $# -ne 4 ] && { echo "Expected 4 arguments, got $#: $@"; exit 1; }
-      shifu_invalid_var_name "$3" && { echo "Invalid variable name: $3"; exit 1; }
-      ;;
-    "$shifu_mode_parse")
-      [ "$shifu_one" = "-$1" -o "$shifu_one" = "--$2" ] && { eval "$3=$shifu_two"; shifu_parsed=2; }
-      ;;
-    "$shifu_mode_help") echo "$3"
-      ;;
-  esac
-}
-
-shifu_arg_foad() {
-  # 1: flag, 2: option, 3 variable name, 4: default value, 5: help
-  case "$shifu_mode" in
-    "$shifu_mode_init")
-      [ "${#1}" -ne 1 ] && { echo "Flag must be one character, got ${#1}: $1"; exit 1; }
-      [ $# -ne 5 ] && { echo "Expected 5 arguments, got $#: $@"; exit 1; }
-      shifu_invalid_var_name "$3" && { echo "Invalid variable name: $3"; exit 1; }
-      eval "$3=$4"
-      ;;
-    "$shifu_mode_parse")
-      [ "$shifu_one" = "-$1" -o "$shifu_one" = "--$2" ] && { eval "$3=$shifu_two"; shifu_parsed=2; }
-      ;;
-    "$shifu_mode_help") echo "$5"
-      ;;
-  esac
+shifu_save_remaining_args () {
+for i do printf %s\\n "$i" | sed "s/'/'\\\\''/g;1s/^/'/;\$s/\$/' \\\\/" ; done
+echo " "
 }
 
 shifu_parse_args() {
   # 1: function, 2-: args to parse
-  shifu_var_store shifu_func shifu_mode shifu_one shifu_two shifu_parsed
-  shifu_func="$1"; shift
-
-  shifu_mode="$shifu_mode_init"
-  $shifu_func "$@"
-
-  shifu_mode="$shifu_mode_parse"
+  shifu_var_store shifu_mode parse_stage case_stmt has_options
+  shifu_mode=$shifu_mode_parse
+  parse_stage=0
+  case_stmt="case \$1 in"
+  $1; shift # run the cmd function
+  [ $parse_stage -eq 0 ] && case_stmt="$case_stmt *) break ;;" || case_stmt="$case_stmt break ;;"
+  case_stmt="$case_stmt esac"
   while true; do
-    shifu_one="$1"
-    shifu_two="$2"
-    shifu_parsed=0
-    $shifu_func "$@"
-    [ $shifu_parsed -eq 0 ] && break
-    for i in $(seq 1 $shifu_parsed); do shift; done
+    eval "$case_stmt"
   done
-  shifu_positional_args="$@"
-  shifu_var_restore shifu_func shifu_mode shifu_one shifu_two shifu_parsed
+  shifu_remaining_args=$(shifu_save_remaining_args "$@")
+  shifu_var_restore shifu_mode parse_stage case_stmt has_options
+}
+
+shifu_help() {
+  shifu_mode=$shifu_mode_help
+  $1
 }
