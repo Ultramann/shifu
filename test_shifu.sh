@@ -200,53 +200,44 @@ test_shifu_function_to_call_argument_length() {
   shifu_var_restore arguments_in_function
 }
 
-parse_args_test__shifu() {
-  shifu_arg -f                     -- flag_bin          true false \
-            "binary flag help"
-  shifu_arg -a                     -- flag_arg \
-            "flag argument help"
-  shifu_arg -d                     -- flag_arg_d        default_flag \
-            "default argument flag help"
-  shifu_arg --option-bin           -- option_bin        false true \
-            "binary option help"
-  shifu_arg --option-arg           -- option_arg \
-            "argument option help"
-  shifu_arg --option-arg-d         -- option_arg_d      default_opt \
-            "default argument option help"
-  shifu_arg -F --flag-option-bin   -- flag_option_bin   false true \
-            "binary flag/option help"
-  shifu_arg -A --flag-option-arg   -- flag_option_arg \
-            "argument flag/option help"
-  shifu_arg -D --flag-option-arg-d -- flag_option_arg_d default_flag_opt \
-            "default argument flag/option help"
-  shifu_arg                        -- positional_arg \
-            "positional argument help"
+parse_args_test_one() {
+  shifu_arg -f -- flag_bin 0 1      "binary flag help"
+  shifu_arg -a -- flag_arg          "flag argument help"
+  shifu_arg -d -- flag_def def_flag "default argument flag help"
+  shifu_arg --option-bin -- option_bin 0 1     "binary option help"
+  shifu_arg --option-arg -- option_arg         "argument option help"
+  shifu_arg --option-def -- option_def def_opt "default argument option help"
+  shifu_arg -F --flag-option-bin -- flag_option_bin 0 1 "binary flag/option help"
+  shifu_arg -A --flag-option-arg -- flag_option_arg     "argument flag/option help"
+  shifu_arg -D --flag-option-def -- flag_option_def def_flag_opt \
+                                    "default argument flag/option help"
+  shifu_arg                      -- positional_arg "positional argument help"
 }
 
-test_shifu_parse_args_set() {
+test_shifu_parse_args_one_set() {
   shifu_var_store flag_bin flag_arg flag_arg_d \
                   option_bin option_arg option_arg_d \
                   flag_option_bin flag_option_arg flag_option_arg_d
-  shifu_parse_args parse_args_test__shifu \
+  shifu_parse_args parse_args_test_one \
                    -f \
                    -a flag_value \
                    -d not_default_flag_value \
                    --option-bin \
                    --option-arg option_value \
-                   --option-arg-d not_default_option_value \
+                   --option-def not_default_option_value \
                    --flag-option-bin \
                    --flag-option-arg flag_option_value \
                    -D not_default_flag_option_value \
                    positional_arg_value
-  shifu_assert_equal "$flag_bin" false
+  shifu_assert_equal "$flag_bin" 1
   shifu_assert_equal "$flag_arg" "flag_value"
-  shifu_assert_equal "$flag_arg_d" "not_default_flag_value"
-  shifu_assert_equal "$option_bin" true
+  shifu_assert_equal "$flag_def" "not_default_flag_value"
+  shifu_assert_equal "$option_bin" 1
   shifu_assert_equal "$option_arg" "option_value"
-  shifu_assert_equal "$option_arg_d" "not_default_option_value"
-  shifu_assert_equal "$flag_option_bin" true
+  shifu_assert_equal "$option_def" "not_default_option_value"
+  shifu_assert_equal "$flag_option_bin" 1
   shifu_assert_equal "$flag_option_arg" "flag_option_value"
-  shifu_assert_equal "$flag_option_arg_d" "not_default_flag_option_value"
+  shifu_assert_equal "$flag_option_def" "not_default_flag_option_value"
   shifu_assert_equal "$positional_arg" "positional_arg_value"
   shifu_var_restore flag_bin flag_arg flag_arg_d \
                     option_bin option_arg option_arg_d \
@@ -258,16 +249,16 @@ test_shifu_parse_args_unset() {
                   option_bin option_arg option_arg_d \
                   flag_option_bin flag_option_arg flag_option_arg_d \
                   positional_arg
-  shifu_parse_args parse_args_test__shifu positional_arg_value
-  shifu_assert_equal "$flag_bin" true
+  shifu_parse_args parse_args_test_one positional_arg_value
+  shifu_assert_equal "$flag_bin" 0
   shifu_assert_zero_length "$flag_arg"
-  shifu_assert_equal "$flag_arg_d" "default_flag"
-  shifu_assert_equal "$option_bin" false
+  shifu_assert_equal "$flag_def" "def_flag"
+  shifu_assert_equal "$option_bin" 0
   shifu_assert_zero_length "$option_arg"
-  shifu_assert_equal "$option_arg_d" "default_opt"
-  shifu_assert_equal "$flag_option_bin" false
+  shifu_assert_equal "$option_def" "def_opt"
+  shifu_assert_equal "$flag_option_bin" 0
   shifu_assert_zero_length "$flag_option_arg"
-  shifu_assert_equal "$flag_option_arg_d" "default_flag_opt"
+  shifu_assert_equal "$flag_option_def" "def_flag_opt"
   shifu_assert_equal "$positional_arg" "positional_arg_value"
   shifu_var_restore flag_bin flag_arg flag_arg_d \
                     option_bin option_arg option_arg_d \
