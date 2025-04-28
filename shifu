@@ -73,7 +73,7 @@ shifu_root_cmds() {
 }
 
 shifu_run() {
-  shifu_var_store mode arg cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
+  shifu_var_store mode arg arg_matched cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
   mode=$shifu_mode_cmds
   while [ $# -ne 0 ]; do
     arg="$1"; shift
@@ -93,7 +93,7 @@ shifu_run() {
     exit 1
   done
   $cmd_func "$@"
-  shifu_var_restore mode arg cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
+  shifu_var_restore mode arg arg_matched cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
 }
 
 shifu_is_arg() {
