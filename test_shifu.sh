@@ -5,7 +5,7 @@ shifu_test_shell=$(ps -p $$ -o 'comm=')
 shifu_read_test_functions() {
   # 1: test script path
   test_functions=$(
-    cat "$1" | \
+    cat $(realpath $(basename $0)) | \
     # -r: extended regex, -n: don't echo lines to stdout
     sed -rn "/^(test_.*) ?\(\) {/!d;
             s/^(test_.*) ?\(\) {/\1/p"
@@ -87,120 +87,105 @@ test_shifu_var_store_restore() {
   shifu_assert_strings_equal "$shifu_test_var_2" "other"
 }
 
-test_shifu_iterate() {
-  shifu_var_store actual expected
-  actual=$(shifu_iterate "*sh two three")
-  expected=$(printf "*sh\ntwo\nthree")
-  shifu_assert_strings_equal "$actual" "$expected"
-  shifu_var_store actual expected
+shifu_run_test_root_cmd() {
+  shifu_cmd_name root
+  shifu_cmd_help Test root cmd help
+  shifu_cmd_subs shifu_run_test_sub_one_cmd shifu_run_test_sub_two_cmd
 }
 
-test_shifu_array_length() {
-  shifu_var_store actual expected
-  actual=$(shifu_array_length "$(shifu_iterate "arg* other arg3")")
-  expected=3
-  shifu_assert_equal $actual $expected
-  shifu_var_restore actual expected
+shifu_run_test_sub_one_cmd() {
+  shifu_cmd_name sub-one
+  shifu_cmd_help Test sub one cmd help
+  shifu_cmd_subs shifu_run_test_leaf_one_cmd shifu_run_test_leaf_two_cmd
 }
 
-test_shifu_array_append() {
-  shifu_var_store actual actual_length expected expected_length
-  actual=$(shifu_array_append "$(shifu_iterate "arg other arg3")" "new")
-  actual_length=$(shifu_array_length "$actual")
-  expected="$(shifu_iterate "arg other arg3 new")"
-  expected_length=$(shifu_array_length "$expected")
-  shifu_assert_equal $actual_length $expected_length
-  shifu_assert_strings_equal "$actual" "$expected"
-  shifu_var_restore actual actual_length expected expected_length
+shifu_run_test_sub_two_cmd() {
+  shifu_cmd_name sub-two
+  shifu_cmd_help Test sub two cmd help
+  shifu_cmd_subs shifu_run_test_leaf_two_cmd shifu_run_test_leaf_four_cmd
 }
 
-test_shifu_array_append_empty() {
-  shifu_var_store actual actual_length expected expected_length
-  actual=$(shifu_array_append "$(shifu_iterate "")" "new")
-  actual_length=$(shifu_array_length "$actual")
-  expected="$(shifu_iterate "new")"
-  expected_length=$(shifu_array_length "$expected")
-  shifu_assert_equal $actual_length $expected_length
-  shifu_assert_strings_equal "$actual" "$expected"
-  shifu_var_restore actual actual_length expected expected_length
+shifu_run_test_leaf_one_cmd() {
+  shifu_cmd_name leaf-one
+  shifu_cmd_help Test leaf one cmd help
+  shifu_cmd_func shifu_test_leaf_func_one
 }
 
-test_shifu_array_contains_true() {
-  shifu_var_store acutal expected
-  actual=$(shifu_array_contains "$(shifu_iterate "arg other arg3")" "arg")
-  expected=true
-  shifu_assert_equal "$actual" "$expected"
-  shifu_var_restore acutal expected
+shifu_run_test_leaf_two_cmd() {
+  shifu_cmd_name leaf-two
+  shifu_cmd_help Test leaf two cmd help
+  shifu_cmd_func shifu_test_leaf_func_two
 }
 
-test_shifu_array_contains_false() {
-  shifu_var_store acutal expected
-  actual=$(shifu_array_contains "$(shifu_iterate "arg other arg3")" "nope")
-  expected=false
-  shifu_assert_equal "$actual" "$expected"
-  shifu_var_restore acutal expected
+shifu_run_test_leaf_three_cmd() {
+  shifu_cmd_name leaf-three
+  shifu_cmd_help Test leaf three cmd help
+  shifu_cmd_func shifu_test_leaf_func_three
 }
 
-test_shifu_array_filter_prefix() {
-  shifu_var_store actual actual_length expected expected_length
-  actual=$(shifu_array_filter_prefix "$(shifu_iterate "arg other arg3")" "arg")
-  actual_length=$(shifu_array_length "$actual")
-  expected="$(shifu_iterate "arg arg3")"
-  expected_length=$(shifu_array_length "$expected")
-  shifu_assert_equal $actual_length $expected_length
-  shifu_assert_strings_equal "$actual" "$expected"
-  shifu_var_restore actual actual_length expected expected_length
+shifu_run_test_leaf_four_cmd() {
+  shifu_cmd_name leaf-four
+  shifu_cmd_help Test leaf four cmd help
+  shifu_cmd_func shifu_test_leaf_func_four
 }
 
-test_shifu_array_filter_prefix_empty_prefix() {
-  shifu_var_store actual actual_length expected expected_length
-  actual=$(shifu_array_filter_prefix "$(shifu_iterate "arg other arg3")" "")
-  actual_length=$(shifu_array_length "$actual")
-  expected="$(shifu_iterate "arg other arg3")"
-  expected_length=$(shifu_array_length "$expected")
-  shifu_assert_equal $actual_length $expected_length
-  shifu_assert_strings_equal "$actual" "$expected"
-  shifu_var_restore actual actual_length expected expected_length
+shifu_test_leaf_func_one() {
+  echo test leaf func one $# "$@"
 }
 
-test_shifu_determine_function_to_call() {
-  shifu_var_store script_functions function_to_call arguments_in_function status
-  script_functions="$(shifu_iterate "test_ test_sub_ test_sub_func")"
-  shifu_determine_function_to_call test sub func arg1 arg2; status=$?
-  shifu_assert_zero $status
-  shifu_assert_strings_equal "$function_to_call" "test_sub_func"
-  shifu_assert_strings_equal "$arguments_in_function" "test sub func"
-  shifu_var_restore script_functions function_to_call arguments_in_function status
+shifu_test_leaf_func_two() {
+  echo test leaf func two $# "$@"
 }
 
-test_shifu_infer_function_with_underscore_arguments() {
-  shifu_var_store script_functions function_to_call arguments_in_function status
-  script_functions="$(shifu_iterate "test_ test_sub_ test_sub_func")"
-  shifu_determine_function_to_call test_sub func arg1 arg2; status=$?
-  shifu_assert_zero $status
-  shifu_assert_strings_equal "$function_to_call" "test_sub_func"
-  shifu_assert_strings_equal "$arguments_in_function" "test_sub func"
-  shifu_var_restore script_functions function_to_call arguments_in_function status
+shifu_test_leaf_func_three() {
+  echo test leaf func three $# "$@"
 }
 
-test_shifu_infer_function_and_arguments_only_subcommand() {
-  shifu_var_store script_functions function_to_call arguments_in_function status
-  script_functions="$(shifu_iterate "test_ test_sub_ test_sub_func")"
-  shifu_determine_function_to_call test sub arg1 arg2; status=$?
-  shifu_assert_non_zero $status
-  shifu_assert_strings_equal "$function_to_call" ""
-  shifu_assert_strings_equal "$arguments_in_function" ""
-  shifu_var_restore script_functions function_to_call arguments_in_function status
+shifu_test_leaf_func_four() {
+  echo test leaf func four $# "$@"
 }
 
-test_shifu_function_to_call_argument_length() {
-  shifu_var_store arguments_in_function
-  arguments_in_function="arg1 arg2 arg3_arg4"
-  shifu_assert_equal $(shifu_function_to_call_argument_length) 3
-  shifu_var_restore arguments_in_function
+test_shifu_run_good() {
+  shifu_var_store expected actual
+  shifu_root_cmds shifu_run_test_root_cmd
+  expected="test leaf func two 2 one two"
+  actual=$(shifu_run root sub-one leaf-two one two)
+  shifu_assert_zero $#
+  shifu_assert_equal "$expected" "$actual"
+  shifu_var_restore expected actual
 }
 
-parse_args_test_all() {
+test_shifu_run_bad_root_cmd() {
+  shifu_var_store expected actual
+  shifu_root_cmds shifu_run_test_root_cmd
+  expected="unknown command: bad"
+  actual=$(shifu_run bad sub-one leaf-two one two)
+  shifu_assert_non_zero $?
+  shifu_assert_equal "$expected" "$actual"
+  shifu_var_restore expected actual
+}
+
+test_shifu_run_bad_sub_cmd() {
+  shifu_var_store expected actual
+  shifu_root_cmds shifu_run_test_root_cmd
+  expected="unknown command: sub-bad"
+  actual=$(shifu_run root sub-bad leaf-two one two)
+  shifu_assert_non_zero $?
+  shifu_assert_equal "$expected" "$actual"
+  shifu_var_restore expected actual
+}
+
+test_shifu_run_bad_leaf_cmd() {
+  shifu_var_store expected actual
+  shifu_root_cmds shifu_run_test_root_cmd
+  expected="unknown command: leaf-bad"
+  actual=$(shifu_run root sub-two leaf-bad one two)
+  shifu_assert_non_zero $?
+  shifu_assert_equal "$expected" "$actual"
+  shifu_var_restore expected actual
+}
+
+parse_args_test_cmd_all() {
   shifu_arg -f -- flag_bin 0 1      "binary flag help"
   shifu_arg -a -- flag_arg          "flag argument help"
   shifu_arg -d -- flag_def def_flag "default argument flag help"
@@ -219,7 +204,7 @@ test_shifu_parse_args_all_set() {
   shifu_var_store flag_bin flag_arg flag_arg_d \
                   option_bin option_arg option_arg_d \
                   flag_option_bin flag_option_arg flag_option_arg_d
-  shifu_parse_args parse_args_test_all \
+  shifu_parse_args parse_args_test_cmd_all \
                    -f \
                    -a flag_value \
                    -d not_default_flag_value \
@@ -254,7 +239,7 @@ test_shifu_parse_args_all_unset() {
                   option_bin option_arg option_arg_d \
                   flag_option_bin flag_option_arg flag_option_arg_d \
                   positional_arg
-  shifu_parse_args parse_args_test_all positional_arg_value
+  shifu_parse_args parse_args_test_cmd_all positional_arg_value
   eval "set -- $shifu_remaining_args"
   shifu_assert_equal "$flag_bin" 0
   shifu_assert_zero_length "$flag_arg"
@@ -302,11 +287,11 @@ shifu_run_test_suite() {
 
   [ $# -gt 0 ] && [ "$1" = "-v" ] && shifu_verbose_tests=true
 
-  shifu_read_test_functions $(shifu_caller_script)
+  shifu_read_test_functions
   n_tests=0
   n_passed=0
   n_failed=0
-  for test_function in $(shifu_iterate "$test_functions"); do
+  for test_function in $test_functions; do
     shifu_run_test_and_report "$test_function"
   done
 

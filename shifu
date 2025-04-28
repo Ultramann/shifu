@@ -1,10 +1,8 @@
-# Dependencies: cat, sed, tr, wc
-
-# Future options?
-shifu_command_function_pattern='^(.*) ?\(\) {'
+# Dependencies: sed
 
 shifu_mode_parse=0
 shifu_mode_help=1
+shifu_mode_cmds=2
 
 # to see more color options run:
 #   for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
@@ -44,145 +42,58 @@ shifu_var_restore() {
   done
 }
 
-shifu_count_char() {
-  printf $(tr -cd "$1" | wc -c)
+shifu_cmd_name() {
+  # 1: command name
+  [ $# -ne 1 ] && { echo "Commands cannot contain spaces got: \"$@\""; exit 1; }
+  [ $mode -eq $shifu_mode_cmds ] && cmd_name="$1"
 }
 
-# Convert spaces to newlines to enable looping
-shifu_iterate() {
-  printf "$1\n" | tr ' ' '\n'
+shifu_cmd_help() {
+  # @: help string
+  [ $mode -eq $shifu_mode_cmds ] && cmd_help="$@"
 }
 
-# Convert newlines to spaces
-shifu_collapse() {
-  printf "$1" | tr '\n' ' '
+shifu_cmd_long() {
+  # @: long help string
+  [ $mode -eq $shifu_mode_cmds ] && cmd_long="$@"
 }
 
-# Write newline separated "array" as "( arg1 arg2 ... argn )" to stdout
-shifu_array_fmt() {
-  printf "( $(shifu_collapse "$1") )"
+shifu_cmd_subs() {
+  # @: subcommand function names
+  [ $mode -eq $shifu_mode_cmds ] && cmd_subs="$@"
 }
 
-# Write number of elements in newline separated "array" to stdout.
-# Examples (arrays shown with spaces not newlines):
-#   "argument other arg3" -> 3
-shifu_array_length() {
-  # 1: array
-  shifu_iterate "$1" | wc -l
+shifu_cmd_func() {
+  # @: command function name
+  [ $mode -eq $shifu_mode_cmds ] && cmd_func="$@"
 }
 
-# Write newline separated "array" with element added at end to stdout.
-# Examples (arrays shown with spaces not newlines):
-#   "argument other arg3" another -> "argument other arg3 another"
-shifu_array_append() {
-  # 1: array, 2: element
-  [ "${#1}" -gt 0 ] && { echo "$1"; echo "$2"; } || echo "$2"
-}
-
-# Test if newline separated array contains first argument, write true to stdout
-# if found, else false. Examples (arrays shown with spaces not newlines):
-#   "argument other arg3" arg -> true
-#   "argument other arg3" no -> false
-shifu_array_contains() {
-  # 1: array, 2: value
-  shifu_var_store element result
-  result=false
-  for element in $(shifu_iterate "$1"); do
-    [ "$element" = "$2" ] && { result=true; break; }
-  done
-  echo $result
-  shifu_var_restore element result
-}
-
-# Filter newline separated "array" by words containing second argment as prefix,
-# write matching elements to stdout. Examples (arrays shown with spaces not newlines):
-#   "argument other arg3" arg -> "argument arg3"
-#   "argument other arg3" oth -> "other"
-shifu_array_filter_prefix() {
-  # 1: array, 2: prefix
-  [ -z "$2" ] && { echo "$1"; return; }
-  shifu_var_store element
-  for element in $(shifu_iterate "$1"); do
-    [ "${element#"$2"}" != "$element" ] && echo "$element"
-  done
-  shifu_var_restore element
-}
-
-# Write the absolute path of the calling script, $0, to stdout
-shifu_caller_script() {
-  echo $(realpath $(basename $0))
-}
-
-# Reads function names in passed script path matching the regex pattern
-# shifu_command_function_pattern to global variable `script_functions`
-shifu_read_script_functions() {
-  # 1: script path
-  script_functions=$(
-    cat "$1" | \
-    # -r: extended regex, -n: don't echo lines to stdout
-    sed -rn "/$shifu_command_function_pattern/!d;
-            s/$shifu_command_function_pattern/\1/p"
-  )
-}
-
-# This must be passed actual positional arguments
-shifu_determine_function_to_call() {
-  shifu_var_store uscore_candidate spaced_candidate filtered_functions
-  uscore_candidate=""
-  spaced_candidate=""
-  filtered_functions="$script_functions"
-
-  shifu_var_store argument tmp_functions
-  for argument in "$@"; do
-    tmp_functions=$(shifu_array_filter_prefix "$filtered_functions" "$uscore_candidate")
-    [ $(shifu_array_length "$tmp_functions") -le 1 ] && break
-    uscore_candidate="${uscore_candidate}${argument}_"
-    spaced_candidate="${spaced_candidate}${argument} "
-    filtered_functions="$tmp_functions"
-  done
-  shifu_var_restore argument tmp_functions
-
-  shifu_var_store candidate_function found_function
-  candidate_function="${uscore_candidate%_}"
-  found_function=$(shifu_array_contains "$script_functions" "$candidate_function")
-
-  shifu_log filtered functions: $(shifu_array_fmt "$filtered_functions")
-  shifu_log candidate function: "$candidate_function"
-
-  shifu_var_restore uscore_candidate filtered_functions
-
-  if [ "$found_function" = true ]; then
-    function_to_call="$candidate_function"
-    arguments_in_function="${spaced_candidate% }"
-    shifu_log function to call: "$function_to_call"
-    shifu_var_restore candidate_function found_function
-    return 0
-  # todo: have branch for when function found and arg is --help
-  else
-    shifu_stderr "${spaced_candidate% * } has no subcommand ${candidate_function##*_}"
-    # shifu_help "${spaced_candidate% * }"
-    shifu_var_restore candidate_function found_function spaced_candidate
-    return 1
-  fi
-}
-
-shifu_function_to_call_argument_length() {
-  echo "$arguments_in_function" | tr -sc " " "*" | tr -d " " | wc -m
+shifu_root_cmds() {
+  shifu_cmds="$@"
 }
 
 shifu_run() {
-  [ "$1" = "$shifu_log_flag" ] && { shifu_logging=true; shift; }
-
-  shifu_var_store script_functions function_to_call arguments_in_function
-
-  shifu_read_script_functions $(shifu_caller_script)
-  shifu_determine_function_to_call "$@"; status=$?
-  [ $status != 0 ] && return $status
-  # shift input arguments function length to leave intended arguments
-  for i in $(seq 1 $(shifu_function_to_call_argument_length)); do shift; done;
-  $function_to_call "$@"
-
-  shifu_var_restore script_functions function_to_call arguments_in_function
+  shifu_var_store mode arg cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
+  mode=$shifu_mode_cmds
+  while [ $# -ne 0 ]; do
+    arg="$1"; shift
+    arg_matched=''
+    for cmd in $shifu_cmds; do
+      cmd_name='' cmd_help='' cmd_long='' cmd_subs='' cmd_func=''
+      $cmd
+      [ "$arg" != "$cmd_name" ] && continue
+      arg_matched=true
+      [ -n "$cmd_func" ] && break
+      shifu_cmds="$cmd_subs"
+      break
+    done
+    [ "$arg_matched" = true -a -n "$cmd_func" ] && break
+    [ "$arg_matched" = true -a -n "$cmd_subs" ] && continue
+    echo "unknown command: $arg"
+    exit 1
+  done
+  $cmd_func "$@"
+  shifu_var_restore mode arg cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
 }
 
 shifu_is_arg() {
@@ -194,6 +105,7 @@ shifu_arg() {
   if [ $shifu_mode -eq $shifu_mode_help ]; then
     while [ $# -ne 1 ]; do shift; done; echo $1; return
   fi
+  [ $shifu_mode -ne $shifu_mode_parse ] && return
   shifu_is_arg "$@" && { has_options=1; case_stmt="$case_stmt $1"; shift; }
   while shifu_is_arg "$@"; do
     case_stmt="${case_stmt}|$1"; shift
@@ -205,6 +117,7 @@ shifu_arg() {
   elif [ $has_options -eq 0 ]; then
     if [ $parse_stage -lt 1 ]; then
       parse_stage=1
+      case_stmt="$case_stmt -*|--*) echo 'Invalid option $1'; exit 1 ;; "
       case_stmt="$case_stmt *)"
     elif [ $parse_stage -gt 1 ]; then
       echo "No arguments after remaining are declared: $1"; exit 1;
@@ -246,8 +159,8 @@ shifu_parse_args() {
   parse_stage=0
   case_stmt="case \$1 in"
   $1; shift # run the cmd function
-  [ $parse_stage -eq 0 ] && case_stmt="$case_stmt *) break ;;" || case_stmt="$case_stmt break ;;"
-  case_stmt="$case_stmt esac"
+  [ $parse_stage -eq 0 ] && case_stmt="$case_stmt *) "
+  case_stmt="$case_stmt break ;; esac"
   while true; do
     eval "$case_stmt"
   done
