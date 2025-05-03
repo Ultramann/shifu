@@ -30,14 +30,16 @@ shifu_debug() {
 
 shifu_var_store() {
   while [ $# -ne 0 ]; do
-    eval "${1}_old=\$$1"
+    [ -z "$1" ] && { shift; continue; }
+    eval "[ -z \$shifu_${1}_shifu ] && shifu_${1}_shifu=\$$1 || \\
+          { echo \"Cannot use variable 'shifu_${1}_shifu'\"; exit 1; }"
     shift
   done
 }
 
 shifu_var_restore() {
   while [ $# -ne 0 ]; do
-    eval "$1=\$${1}_old; unset -v ${1}_old"
+    eval "$1=\$shifu_${1}_shifu; unset -v shifu_${1}_shifu"
     shift
   done
 }

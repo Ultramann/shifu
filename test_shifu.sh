@@ -2,19 +2,28 @@
 
 shifu_test_shell=$(ps -p $$ -o 'comm=')
 
-var_store_restore_test_func() {
+test_shifu_var_store_restore() {
+  shifu_test_var_1="value"
+  shifu_test_var_2="other"
   shifu_var_store shifu_test_var_1 shifu_test_var_2
   shifu_test_var_1="new"
   shifu_test_var_2="newer"
   shifu_var_restore shifu_test_var_1 shifu_test_var_2
-}
-
-test_shifu_var_store_restore() {
-  shifu_test_var_1="value"
-  shifu_test_var_2="other"
-  var_store_restore_test_func
   shifu_assert_strings_equal "$shifu_test_var_1" "value"
   shifu_assert_strings_equal "$shifu_test_var_2" "other"
+  unset -v shifu_test_var_1
+  unset -v shifu_test_var_2
+}
+
+test_shifu_var_store_shifu_var_fails() {
+  bad_var=5
+  shifu_bad_var_shifu="Shouldn't use this"
+  error_message=$(shifu_var_store bad_var shifu_bad_var_shifu)
+  shifu_assert_non_zero $?
+  shifu_assert_strings_equal "$error_message" "Cannot use variable 'shifu_bad_var_shifu'"
+  unset -v bad_var
+  unset -v shifu_bad_var_shifu
+  unset -v error_message
 }
 
 shifu_run_test_root_cmd() {
