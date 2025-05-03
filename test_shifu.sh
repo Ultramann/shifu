@@ -9,8 +9,9 @@ test_shifu_var_store_restore() {
   shifu_test_var_1="new"
   shifu_test_var_2="newer"
   shifu_var_restore shifu_test_var_1 shifu_test_var_2
-  shifu_assert_strings_equal "$shifu_test_var_1" "value"
-  shifu_assert_strings_equal "$shifu_test_var_2" "other"
+  shifu_assert_zero status $?
+  shifu_assert_strings_equal shifu_test_var_1 "$shifu_test_var_1" "value"
+  shifu_assert_strings_equal shifu_test_var_2 "$shifu_test_var_2" "other"
   unset -v shifu_test_var_1
   unset -v shifu_test_var_2
 }
@@ -19,8 +20,8 @@ test_shifu_var_store_shifu_var_fails() {
   bad_var=5
   shifu_bad_var_shifu="Shouldn't use this"
   error_message=$(shifu_var_store bad_var shifu_bad_var_shifu)
-  shifu_assert_non_zero $?
-  shifu_assert_strings_equal "$error_message" "Cannot use variable 'shifu_bad_var_shifu'"
+  shifu_assert_non_zero status $?
+  shifu_assert_strings_equal error_message "$error_message" "Cannot use variable 'shifu_bad_var_shifu'"
   unset -v bad_var
   unset -v shifu_bad_var_shifu
   unset -v error_message
@@ -89,8 +90,8 @@ test_shifu_run_good() {
   shifu_root_cmds shifu_run_test_root_cmd
   expected="test leaf func two 2 one two"
   actual=$(shifu_run root sub-one leaf-two one two)
-  shifu_assert_zero $#
-  shifu_assert_equal "$expected" "$actual"
+  shifu_assert_zero status $#
+  shifu_assert_equal 'output' "$expected" "$actual"
   shifu_var_restore expected actual
 }
 
@@ -99,8 +100,8 @@ test_shifu_run_bad_root_cmd() {
   shifu_root_cmds shifu_run_test_root_cmd
   expected="unknown command: bad"
   actual=$(shifu_run bad sub-one leaf-two one two)
-  shifu_assert_non_zero $?
-  shifu_assert_equal "$expected" "$actual"
+  shifu_assert_non_zero status $?
+  shifu_assert_equal output "$expected" "$actual"
   shifu_var_restore expected actual
 }
 
@@ -109,8 +110,8 @@ test_shifu_run_bad_sub_cmd() {
   shifu_root_cmds shifu_run_test_root_cmd
   expected="unknown command: sub-bad"
   actual=$(shifu_run root sub-bad leaf-two one two)
-  shifu_assert_non_zero $?
-  shifu_assert_equal "$expected" "$actual"
+  shifu_assert_non_zero status $?
+  shifu_assert_equal 'error message' "$expected" "$actual"
   shifu_var_restore expected actual
 }
 
@@ -119,8 +120,8 @@ test_shifu_run_bad_leaf_cmd() {
   shifu_root_cmds shifu_run_test_root_cmd
   expected="unknown command: leaf-bad"
   actual=$(shifu_run root sub-two leaf-bad one two)
-  shifu_assert_non_zero $?
-  shifu_assert_equal "$expected" "$actual"
+  shifu_assert_non_zero status $?
+  shifu_assert_equal 'error message' "$expected" "$actual"
   shifu_var_restore expected actual
 }
 
@@ -154,20 +155,21 @@ test_shifu_parse_args_all_set() {
                    --flag-option-arg flag_option_value \
                    -D not_default_flag_option_value \
                    positional_arg_value remaining arguments
+  shifu_assert_zero status $?
   eval "set -- $shifu_remaining_args"
-  shifu_assert_equal "$flag_bin" 1
-  shifu_assert_equal "$flag_arg" "flag_value"
-  shifu_assert_equal "$flag_def" "not_default_flag_value"
-  shifu_assert_equal "$option_bin" 1
-  shifu_assert_equal "$option_arg" "option_value"
-  shifu_assert_equal "$option_def" "not_default_option_value"
-  shifu_assert_equal "$flag_option_bin" 1
-  shifu_assert_equal "$flag_option_arg" "flag_option_value"
-  shifu_assert_equal "$flag_option_def" "not_default_flag_option_value"
-  shifu_assert_equal "$positional_arg" "positional_arg_value"
-  shifu_assert_equal $# 2
-  shifu_assert_equal "$1" "remaining"
-  shifu_assert_equal "$2" "arguments"
+  shifu_assert_equal flag_bin "$flag_bin" 1
+  shifu_assert_equal flag_arg "$flag_arg" "flag_value"
+  shifu_assert_equal flag_def "$flag_def" "not_default_flag_value"
+  shifu_assert_equal option_bin "$option_bin" 1
+  shifu_assert_equal option_arg "$option_arg" "option_value"
+  shifu_assert_equal option_def "$option_def" "not_default_option_value"
+  shifu_assert_equal flag_option_bin "$flag_option_bin" 1
+  shifu_assert_equal flag_option_arg "$flag_option_arg" "flag_option_value"
+  shifu_assert_equal flag_option_def "$flag_option_def" "not_default_flag_option_value"
+  shifu_assert_equal positional_arg "$positional_arg" "positional_arg_value"
+  shifu_assert_equal '$#' $# 2
+  shifu_assert_equal '$1' "$1" "remaining"
+  shifu_assert_equal '$2' "$2" "arguments"
   shifu_var_restore flag_bin flag_arg flag_arg_d \
                     option_bin option_arg option_arg_d \
                     flag_option_bin flag_option_arg flag_option_arg_d
@@ -179,18 +181,19 @@ test_shifu_parse_args_all_unset() {
                   flag_option_bin flag_option_arg flag_option_arg_d \
                   positional_arg
   shifu_parse_args parse_args_test_cmd_all positional_arg_value
+  shifu_assert_zero status $?
   eval "set -- $shifu_remaining_args"
-  shifu_assert_equal "$flag_bin" 0
-  shifu_assert_zero_length "$flag_arg"
-  shifu_assert_equal "$flag_def" "def_flag"
-  shifu_assert_equal "$option_bin" 0
-  shifu_assert_zero_length "$option_arg"
-  shifu_assert_equal "$option_def" "def_opt"
-  shifu_assert_equal "$flag_option_bin" 0
-  shifu_assert_zero_length "$flag_option_arg"
-  shifu_assert_equal "$flag_option_def" "def_flag_opt"
-  shifu_assert_equal "$positional_arg" "positional_arg_value"
-  shifu_assert_equal $# 0
+  shifu_assert_equal flag_bin "$flag_bin" 0
+  shifu_assert_zero_length flag_arg "$flag_arg"
+  shifu_assert_equal flag_def "$flag_def" "def_flag"
+  shifu_assert_equal option_bin "$option_bin" 0
+  shifu_assert_zero_length option_arg "$option_arg"
+  shifu_assert_equal option_def "$option_def" "def_opt"
+  shifu_assert_equal flag_option_bin "$flag_option_bin" 0
+  shifu_assert_zero_length flag_option_arg "$flag_option_arg"
+  shifu_assert_equal flag_option_def "$flag_option_def" "def_flag_opt"
+  shifu_assert_equal positional_arg "$positional_arg" "positional_arg_value"
+  shifu_assert_equal "array length" $# 0
   shifu_var_restore flag_bin flag_arg flag_arg_d \
                     option_bin option_arg option_arg_d \
                     flag_option_bin flag_option_arg flag_option_arg_d \
@@ -203,36 +206,36 @@ shifu_assert_impossible() {
 }
 
 shifu_assert_zero_length() {
-  # 1: value
-  [ -z "$1" ] && return
-  shifu_report_context "Expected length zero, got" "${#1}"
+  # 1: identifier, 2: value
+  [ -z "$2" ] && return
+  shifu_report_context "$1: expected length zero, got" "${#1}"
   errors=$(($errors + 1))
 }
 
 shifu_assert_zero() {
-  # 1: value
-  [ $1 = 0 ] && return
-  shifu_report_context "Expected zero return code, got" $1
+  # 1: identifier, 2: value
+  [ $2 = 0 ] && return
+  shifu_report_context "$1, expected zero value, got" $1
   errors=$(($errors + 1))
 }
 
 shifu_assert_non_zero() {
-  # 1: value
-  [ $1 != 0 ] && return
-  shifu_report_context "Expected non-zero return code, got" $1
+  # 1: identifier, 2: value
+  [ $2 != 0 ] && return
+  shifu_report_context "$1: expected non-zero value, got" $1
   errors=$(($errors + 1))
 }
 
 shifu_assert_equal() {
-  # 1: first, 2: second
-  [ "$1" = "$2" ] && return
-  shifu_report_context "Expected values to be equal, got" "${1:-<empty>}" "${2:-<empty>}"
+  # 1: identifier, 2: first, 3: second
+  [ "$2" = "$3" ] && return
+  shifu_report_context "$1: expected values to be equal, got" "${2:-<empty>}" "${3:-<empty>}"
   errors=$(($errors + 1))
 }
 
 shifu_assert_strings_equal() {
-  # 1: first, 2: second
-  shifu_assert_equal "\"$1\"" "\"$2\""
+  # 1: identifier, 2: first, 3: second
+  shifu_assert_equal "$1" "\"$2\"" "\"$3\""
 }
 
 shifu_report_success() {
