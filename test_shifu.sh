@@ -2,76 +2,6 @@
 
 shifu_test_shell=$(ps -p $$ -o 'comm=')
 
-shifu_read_test_functions() {
-  # 1: test script path
-  test_functions=$(
-    cat $(realpath $(basename $0)) | \
-    # -r: extended regex, -n: don't echo lines to stdout
-    sed -rn "/^(test_.*) ?\(\) {/!d;
-            s/^(test_.*) ?\(\) {/\1/p"
-  )
-}
-
-shifu_report_success() {
-  # 1: function name
-  if [ "$shifu_verbose_tests" = true ]; then
-    printf "$shifu_green%-7s$shifu_reset%s\n" pass "$1"
-  fi
-}
-
-shifu_report_failure() {
-  # 1: function name
-  printf "$shifu_red%-7s$shifu_reset%s\n" fail "$1"
-}
-
-shifu_report_context() {
-  # 1: header
-  printf "$shifu_grey%7s%s$shifu_reset\n" "" "$1"; shift
-  shifu_var_store argument
-  for argument in "$@"; do
-    printf "$shifu_grey%10s%s$shifu_reset\n" "" "$argument"
-  done
-  shifu_var_restore argument
-}
-
-shifu_assert_impossible() {
-  shifu_report_context "This code path should not be reached"
-  errors=$(($errors + 1))
-}
-
-shifu_assert_zero_length() {
-  # 1: value
-  [ -z "$1" ] && return
-  shifu_report_context "Expected length zero, got" "${#1}"
-  errors=$(($errors + 1))
-}
-
-shifu_assert_zero() {
-  # 1: value
-  [ $1 = 0 ] && return
-  shifu_report_context "Expected zero return code, got" $1
-  errors=$(($errors + 1))
-}
-
-shifu_assert_non_zero() {
-  # 1: value
-  [ $1 != 0 ] && return
-  shifu_report_context "Expected non-zero return code, got" $1
-  errors=$(($errors + 1))
-}
-
-shifu_assert_equal() {
-  # 1: first, 2: second
-  [ "$1" = "$2" ] && return
-  shifu_report_context "Expected values to be equal, got" "${1:-<empty>}" "${2:-<empty>}"
-  errors=$(($errors + 1))
-}
-
-shifu_assert_strings_equal() {
-  # 1: first, 2: second
-  shifu_assert_equal "\"$1\"" "\"$2\""
-}
-
 var_store_restore_test_func() {
   shifu_var_store shifu_test_var_1 shifu_test_var_2
   shifu_test_var_1="new"
@@ -258,6 +188,66 @@ test_shifu_parse_args_all_unset() {
                     positional_arg
 }
 
+shifu_assert_impossible() {
+  shifu_report_context "This code path should not be reached"
+  errors=$(($errors + 1))
+}
+
+shifu_assert_zero_length() {
+  # 1: value
+  [ -z "$1" ] && return
+  shifu_report_context "Expected length zero, got" "${#1}"
+  errors=$(($errors + 1))
+}
+
+shifu_assert_zero() {
+  # 1: value
+  [ $1 = 0 ] && return
+  shifu_report_context "Expected zero return code, got" $1
+  errors=$(($errors + 1))
+}
+
+shifu_assert_non_zero() {
+  # 1: value
+  [ $1 != 0 ] && return
+  shifu_report_context "Expected non-zero return code, got" $1
+  errors=$(($errors + 1))
+}
+
+shifu_assert_equal() {
+  # 1: first, 2: second
+  [ "$1" = "$2" ] && return
+  shifu_report_context "Expected values to be equal, got" "${1:-<empty>}" "${2:-<empty>}"
+  errors=$(($errors + 1))
+}
+
+shifu_assert_strings_equal() {
+  # 1: first, 2: second
+  shifu_assert_equal "\"$1\"" "\"$2\""
+}
+
+shifu_report_success() {
+  # 1: function name
+  if [ "$shifu_verbose_tests" = true ]; then
+    printf "$shifu_green%-7s$shifu_reset%s\n" pass "$1"
+  fi
+}
+
+shifu_report_failure() {
+  # 1: function name
+  printf "$shifu_red%-7s$shifu_reset%s\n" fail "$1"
+}
+
+shifu_report_context() {
+  # 1: header
+  printf "$shifu_grey%7s%s$shifu_reset\n" "" "$1"; shift
+  shifu_var_store argument
+  for argument in "$@"; do
+    printf "$shifu_grey%10s%s$shifu_reset\n" "" "$argument"
+  done
+  shifu_var_restore argument
+}
+
 shifu_run_test() {
   # 1: test function
   errors=0  # doesn't need to be stored/restored because always run in subshell
@@ -306,5 +296,16 @@ shifu_run_test_suite() {
   echo "==================== $color $test_report $shifu_reset ===================="
   exit $failures
 }
+
+shifu_read_test_functions() {
+  # 1: test script path
+  test_functions=$(
+    cat $(realpath $(basename $0)) | \
+    # -r: extended regex, -n: don't echo lines to stdout
+    sed -rn "/^(test_.*) ?\(\) {/!d;
+            s/^(test_.*) ?\(\) {/\1/p"
+  )
+}
+
 
 shifu_run_test_suite "$@"
