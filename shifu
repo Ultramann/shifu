@@ -1,8 +1,8 @@
 # Dependencies: sed
 
-shifu_mode_parse=0
-shifu_mode_help=1
-shifu_mode_cmds=2
+shifu_mode_cmds=0
+shifu_mode_args=1
+shifu_mode_help=2
 
 # to see more color options run:
 #   for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
@@ -92,24 +92,50 @@ shifu_run() {
     [ "$arg_matched" = true -a -n "$cmd_func" ] && break
     [ "$arg_matched" = true -a -n "$cmd_subs" ] && continue
     echo "unknown command: $arg"
+    shifu_help $cmd
     exit 1
   done
-  $cmd_func "$@"
+  [ "$1" = "-h" -o "$1" = "--help" ] && shifu_help $cmd || $cmd_func "$@"
   shifu_var_restore mode arg arg_matched cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
 }
 
-shifu_is_arg() {
-  [ $# -gt 1 ] && [ "$1" != -- ]
+_shifu_arg_help() {
+  has_options=0
+  [ $# -gt 1 -a "$1" != -- ] && { has_options=1; help_options="$help_options $1"; shift; }
+  while [ $# -gt 1 -a "$1" != -- ]; do help_options="$help_options, $1"; done; shift
+ # remaining
+  if [ $# -eq 1 ]; then
+    help_stage=2
+    help_usage="$help_usage ..."
+    help_arguments="$help_arguments\nRemaining\n\t$1"
+  # positional
+  elif [ $has_options -eq 0 ]; then
+    if [ $help_stage -lt 1 ]; then
+      help_stage=1
+    elif [ $help_stage -gt 1 ]; then
+      echo "No arguments after remaining are declared: $1"; exit 1;
+    fi
+    help_usage="$help_usage $1"
+    help_arguments="$help_arguments\n$1\n$2"
+  # option + argument without default
+  elif [ $# -eq 2 ]; then
+    [ $help_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
+    help_options="\t [$1]\n\t$2"
+  # option + argument with default
+  elif [ $# -eq 3 ]; then
+    [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
+    help_options="\t [$1]\n\t$3. Default: $2."
+  # option no argument default set
+  elif [ $# -eq 4 ]; then
+    [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
+    help_options="\n\t$4. Options: $2, $3. Default: $2."
+  fi
 }
 
-shifu_arg() {
+_shifu_parse_arg() {
   has_options=0
-  if [ $shifu_mode -eq $shifu_mode_help ]; then
-    while [ $# -ne 1 ]; do shift; done; echo $1; return
-  fi
-  [ $shifu_mode -ne $shifu_mode_parse ] && return
-  shifu_is_arg "$@" && { has_options=1; case_stmt="$case_stmt $1"; shift; }
-  while shifu_is_arg "$@"; do
+  [ $# -gt 1 -a "$1" != -- ] && { has_options=1; case_stmt="$case_stmt $1"; shift; }
+  while [ $# -gt 1 -a "$1" != -- ]; do
     case_stmt="${case_stmt}|$1"; shift
   done; shift
   # remaining
@@ -149,6 +175,14 @@ shifu_arg() {
   fi
 }
 
+shifu_arg() {
+  case $mode in
+    $shifu_mode_help) _shifu_arg_help "$@" ;;
+    $shifu_mode_args) _shifu_parse_arg "$@" ;;
+    *) return
+  esac
+}
+
 shifu_save_remaining_args () {
 for i do printf %s\\n "$i" | sed "s/'/'\\\\''/g;1s/^/'/;\$s/\$/' \\\\/" ; done
 echo " "
@@ -156,10 +190,10 @@ echo " "
 
 shifu_parse_args() {
   # 1: function, 2-: args to parse
-  shifu_var_store shifu_mode parse_stage case_stmt has_options
-  shifu_mode=$shifu_mode_parse
+  shifu_var_store mode parse_stage case_stmt has_options
+  mode=$shifu_mode_args
   parse_stage=0
-  case_stmt="case \$1 in"
+  case_stmt="case \$1 in -h|--help) shifu_help \$1; break ;; "
   $1; shift # run the cmd function
   [ $parse_stage -eq 0 ] && case_stmt="$case_stmt *) "
   case_stmt="$case_stmt break ;; esac"
@@ -167,10 +201,23 @@ shifu_parse_args() {
     eval "$case_stmt"
   done
   shifu_remaining_args=$(shifu_save_remaining_args "$@")
-  shifu_var_restore shifu_mode parse_stage case_stmt has_options
+  shifu_var_restore mode parse_stage case_stmt has_options
 }
 
 shifu_help() {
-  shifu_mode=$shifu_mode_help
+  add_to_help_string() {
+    [ -z "$help_string" ] && help_string="$1" || help_string="$help_string\n\n$1"
+  }
+  shifu_var_store mode help_stage help_usage help_arguments help_options help_string has_options
+  mode=$shifu_mode_help
+  help_stage=0 help_usage='' help_arguments='' help_options='' help_string=''
   $1
+  [ -n "$help_usage" ] && help_usage="$cmd_name [OPTIONS] $help_usage"
+  [ -n "$cmd_help" ] && add_to_help_string "$cmd_help"
+  [ -n "$cmd_long" ] && add_to_help_string "$cmd_long"
+  [ -n "$help_usage" ] && add_to_help_string "Usage\n\t$help_usage"
+  [ -n "$help_arguments" ] && add_to_help_string "Arguments\n$help_arguments"
+  [ -n "$help_options" ] && add_to_help_string "Options\n$help_options"
+  [ -n "$help_string" ] && echo "$help_string"
+  shifu_var_restore mode help_stage help_usage help_arguments help_options help_string has_options
 }
