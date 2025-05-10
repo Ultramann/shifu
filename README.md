@@ -1,6 +1,6 @@
 # shifu
 
-SHell Interface Function Utiltities, or shifu, is a set of utility functions to make creating a cli from a shell script easy. Shell scripts make gluing together functionality very easy and fairly portable. However, if you want to extend the functionality to have a cli like interface: have related but distinct entry points, nested subcommands, parse many command line options, or write and maintain documentation, shell languages can quickly turn from helpful glue to a messy kindergarden project: cute, but mostly useless. Shifu aims to address that problem and make creating a cli interface from a shell script easy and mainable.
+SHell Interface Function Utiltities, or shifu, is a set of utility functions to make creating a cli from a shell script simple. Shell scripts make gluing together functionality very easy and fairly portable. However, if you want to extend the functionality to have a cli like interface: have related but distinct entry points, nested subcommands, parse many command line options, or write and maintain documentation, shell languages can quickly turn from helpful glue to a messy kindergarden project: cute, but mostly useless. Shifu aims to address that problem and make creating a cli interface from a shell script declarative and mainable.
 
 Shifu has the following qualities:
 * POSIX compliance, aka compatibility many shells
@@ -8,7 +8,6 @@ Shifu has the following qualities:
 * subcommand dispatching
 * declarative argument parsing
 * scoped help string generation
-* tab completion, for interactive shells (future)
 
 Some people may say that this is not what shells are for; and perhaps they're right. However, sometimes a shell is all you want to require your users to need while still enabling a sophisticated cli ux; shifu can help deal with the cli boilerplate in those situations and let you focus on the real functionality. Plus, consider the following quote.
 
@@ -18,8 +17,72 @@ Some people may say that this is not what shells are for; and perhaps they're ri
 
 Shifu gives cli shell scripts the opportunity to be better than they are.
 
-## Examples
+## Quickstart
+
+Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ calls shifu functions. These functions provide a declarative way to tell shifu how to wire together your cli. Commands are passed to one of shifu's command runners: `shifu_parse_args` and `shifu_run_cmd`.
+
+Let's take a look at some toy scripts to get an introduction to writing shifu commands.
+
+1. [Argument parsing](#argument-parsing)
+2. [Subcommand dispatch](#subcommand-dispatch)
+3. [Help generation](#help-generation)
+
+### Argument parsing
+
+[`examples/kfp-parse`](/examples/kfp-parse)
+
+```sh
+#! /bin/sh
+
+. "$(dirname "$0")"/shifu || exit 1
+
+kfp_parse_cmd() {
+  shifu_arg -l --loud  -- LOUD false true "Perform action loudly!"
+  shifu_arg -q --quiet -- QUIET false true "Try to perform action quietly!"
+  shifu_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po"
+}
+
+shifu_parse_args kfp_parse_cmd "$@"
+
+case "$CHARACTER" in
+  oogway) string="One often meets his destiny on the road he takes to avoid it." ;;
+  shifu) string="There is now a level zero." ;;
+  po) string="I love kung fuuuuuu!!!" ;;
+  *) echo "Unknown option $1"; exit 1 ;;
+esac
+
+[ "$LOUD" = true ] && string=$(echo "$string" | awk '{ print toupper($0) }')
+[ "$QUIET" = true ] && string="$string shhhh!!"
+echo "$string"
+```
+
+Running this script with some different arguments will help clarify what's going on.
+
+```txt
+$ examples/kfp-parse oogway
+One often meets his destiny on the road he takes to avoid it.
+$ examples/kfp-parse -q shifu
+There is now a level zero. shhhh!!
+$ examples/kfp-parse --loud po
+I LOVE KUNG FUUUUUU!!!
+```
+
+The script starts by sourcing the shifu source, then proceeds to defining a shifu command, `kfp_parse_cmd`. As you can see, the `shifu_arg` function enables declaration of argument for shifu to parse and store in variables, `LOUD`, `QUIET`, and `CHARACTER`. This example uses two of the ways arguments can be declared, binary options and positional arguments; there are a few more though, see the api section on [`shifu_arg`](#shifu_arg) for more information.
+
+Just before the main logic of the script begins there's a call to `shifu_parse_args`. This command runner takes a command, here `kfp_parse_cmd`, and all the arguments, `"$@"` (it's good practice to include quotes). When `shifu_parse_args` runs, the `shifu_arg` usages in `kfp_parse_cmd` will parse the arguments in `$@` to values in the variables `LOUD`, `QUIET`, and `CHARACTER`.
+
+The rest of the script simply uses the variables that were parsed.
+
+### Subcommand dispatch
+
+### Help generation
 
 ## Installation
 
 ## API
+
+### Command runners
+
+### Command functions
+
+#### `shifu_arg`

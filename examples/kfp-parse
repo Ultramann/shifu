@@ -1,0 +1,22 @@
+# /bin/sh
+
+. "$(dirname "$0")"/shifu || exit 1
+
+kfp_parse_cmd() {
+  shifu_arg -l --loud  -- LOUD false true "Perform action loudly!"
+  shifu_arg -q --quiet -- QUIET false true "Try to perform action quietly!"
+  shifu_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po"
+}
+
+shifu_parse_args kfp_parse_cmd "$@"
+
+case "$CHARACTER" in
+  oogway) string="One often meets his destiny on the road he takes to avoid it." ;;
+  shifu) string="There is now a level zero." ;;
+  po) string="I love kung fuuuuuu!!!" ;;
+  *) echo "Unknown option $1"; exit 1 ;;
+esac
+
+[ "$LOUD" = true ] && string=$(echo "$string" | awk '{ print toupper($0) }')
+[ "$QUIET" = true ] && string="$string shhhh!!"
+echo "$string"
