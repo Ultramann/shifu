@@ -1,6 +1,11 @@
 . ./shifu
 
-shifu_test_shell=$(ps -p $$ -o 'comm=')
+# to see more color options run:
+#   for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
+shifu_grey="$(tput setaf 0)"
+shifu_red="$(tput setaf 1)"
+shifu_green="$(tput setaf 2)"
+shifu_reset="$(tput sgr0)"
 
 test_shifu_var_store_restore() {
   shifu_test_var_1="value"

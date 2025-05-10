@@ -1,17 +1,9 @@
+#! /bin/sh
 # Dependencies: sed
 
 shifu_mode_cmds=0
 shifu_mode_args=1
 shifu_mode_help=2
-
-# to see more color options run:
-#   for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
-shifu_grey="$(tput setaf 0)"
-shifu_red="$(tput setaf 1)"
-shifu_green="$(tput setaf 2)"
-shifu_reset="$(tput sgr0)"
-
-shifu_log_flag='--shifu-log'
 
 shifu_cmd_name() {
   # 1: command name
@@ -104,21 +96,6 @@ shifu_help() {
   [ -n "$help_options" ] && _shifu_add_to_help_string "Options\n$help_options"
   [ -n "$help_string" ] && echo "$help_string"
   shifu_var_restore mode help_stage help_usage help_arguments help_options help_string has_options
-}
-
-# Write input arguments to stdout starting with green "shifu"
-shifu_log() {
-  [ "$shifu_logging" = true ] && echo "${shifu_green}shifu${shifu_reset}  $@"
-}
-
-# Write input to stderr
-shifu_stderr() {
-  echo "$@" >&2
-}
-
-# Write input arguments to stderr starting with red "debug"
-shifu_debug() {
-  shifu_stderr "${shifu_red}debug${shifu_reset}  $@"
 }
 
 shifu_var_store() {
