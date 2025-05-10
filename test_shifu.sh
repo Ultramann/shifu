@@ -110,7 +110,6 @@ test_shifu_run_bad_first_cmd() {
 
 test_shifu_run_bad_sub_cmd() {
   shifu_var_store expected actual
-  shifu_root_cmds shifu_run_test_root_cmd
   expected="unknown command: sub-bad"
   expected="$(echo unknown command: sub-bad; echo Test sub one cmd help)"
   actual=$(shifu_run shifu_run_test_root_cmd sub-one sub-bad one two)
@@ -121,7 +120,6 @@ test_shifu_run_bad_sub_cmd() {
 
 test_shifu_run_bad_leaf_cmd() {
   shifu_var_store expected actual
-  shifu_root_cmds shifu_run_test_root_cmd
   expected="$(echo unknown command: leaf-bad; echo Test sub two cmd help)"
   actual=$(shifu_run shifu_run_test_root_cmd sub-two leaf-bad one two)
   shifu_assert_non_zero status $?
