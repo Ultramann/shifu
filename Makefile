@@ -21,6 +21,10 @@ test-all:
 	echo "\n===========================  bash  ============================"; \
 	bash test_shifu.sh ${VERBOSE}; \
 	fi
+	@if [ -n "$$(which zsh)" ]; then \
+	echo "\n===========================  zsh   ============================"; \
+	zsh test_shifu.sh ${VERBOSE}; \
+	fi
 	@echo
 
 

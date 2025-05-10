@@ -316,12 +316,12 @@ shifu_run_test_suite() {
 shifu_read_test_functions() {
   # 1: test script path
   test_functions=$(
-    cat $(realpath $(basename $0)) | \
+    cat "$this_script" | \
     # -r: extended regex, -n: don't echo lines to stdout
     sed -rn "/^(test_.*) ?\(\) {/!d;
             s/^(test_.*) ?\(\) {/\1/p"
   )
 }
 
-
+this_script=$(realpath $(basename "$0"))  # at global for zsh compatibility
 shifu_run_test_suite "$@"
