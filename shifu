@@ -70,33 +70,35 @@ shifu_cmd_func() {
   [ $mode -eq $shifu_mode_cmds ] && cmd_func="$@"
 }
 
-shifu_root_cmds() {
-  shifu_cmds="$@"
-}
-
 shifu_run() {
-  shifu_var_store mode arg arg_matched cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
+  shifu_var_store mode parent arg arg_matched cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
   mode=$shifu_mode_cmds
+  parent="$1"; shift; "$parent"; shifu_cmds="$cmd_subs"
   while [ $# -ne 0 ]; do
     arg="$1"; shift
     arg_matched=''
     for cmd in $shifu_cmds; do
-      cmd_name='' cmd_help='' cmd_long='' cmd_subs='' cmd_func=''
-      $cmd
+      _shifu_clear_cmd_vars
+      "$cmd"
       [ "$arg" != "$cmd_name" ] && continue
       arg_matched=true
       [ -n "$cmd_func" ] && break
+      parent="$cmd"
       shifu_cmds="$cmd_subs"
       break
     done
     [ "$arg_matched" = true -a -n "$cmd_func" ] && break
     [ "$arg_matched" = true -a -n "$cmd_subs" ] && continue
     echo "unknown command: $arg"
-    shifu_help $cmd
+    shifu_help "$parent"
     exit 1
   done
-  [ "$1" = "-h" -o "$1" = "--help" ] && shifu_help $cmd || $cmd_func "$@"
-  shifu_var_restore mode arg arg_matched cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
+  [ "$1" = "-h" -o "$1" = "--help" ] && shifu_help "$cmd" || "$cmd_func" "$@"
+  shifu_var_restore mode parent arg arg_matched cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
+}
+
+_shifu_clear_cmd_vars() {
+    cmd_name='' cmd_help='' cmd_long='' cmd_subs='' cmd_func=''
 }
 
 _shifu_arg_help() {
@@ -204,20 +206,22 @@ shifu_parse_args() {
   shifu_var_restore mode parse_stage case_stmt has_options
 }
 
+_shifu_add_to_help_string() {
+  [ -z "$help_string" ] && help_string="$1" || help_string="$help_string\n\n$1"
+}
+
 shifu_help() {
-  add_to_help_string() {
-    [ -z "$help_string" ] && help_string="$1" || help_string="$help_string\n\n$1"
-  }
   shifu_var_store mode help_stage help_usage help_arguments help_options help_string has_options
   mode=$shifu_mode_help
+  _shifu_clear_cmd_vars
   help_stage=0 help_usage='' help_arguments='' help_options='' help_string=''
-  $1
+  "$1"
   [ -n "$help_usage" ] && help_usage="$cmd_name [OPTIONS] $help_usage"
-  [ -n "$cmd_help" ] && add_to_help_string "$cmd_help"
-  [ -n "$cmd_long" ] && add_to_help_string "$cmd_long"
-  [ -n "$help_usage" ] && add_to_help_string "Usage\n\t$help_usage"
-  [ -n "$help_arguments" ] && add_to_help_string "Arguments\n$help_arguments"
-  [ -n "$help_options" ] && add_to_help_string "Options\n$help_options"
+  [ -n "$cmd_help" ] && _shifu_add_to_help_string "$cmd_help"
+  [ -n "$cmd_long" ] && _shifu_add_to_help_string "$cmd_long"
+  [ -n "$help_usage" ] && _shifu_add_to_help_string "Usage\n\t$help_usage"
+  [ -n "$help_arguments" ] && _shifu_add_to_help_string "Arguments\n$help_arguments"
+  [ -n "$help_options" ] && _shifu_add_to_help_string "Options\n$help_options"
   [ -n "$help_string" ] && echo "$help_string"
   shifu_var_restore mode help_stage help_usage help_arguments help_options help_string has_options
 }
