@@ -39,7 +39,7 @@ shifu_arg() {
   esac
 }
 
-shifu_run() {
+shifu_run_cmd() {
   shifu_var_store mode parent arg arg_matched cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
   mode=$shifu_mode_cmds
   parent="$1"; shift; "$parent"; shifu_cmds="$cmd_subs"

@@ -93,7 +93,7 @@ shifu_test_leaf_func_four() {
 test_shifu_run_good() {
   shifu_var_store expected actual
   expected="test leaf func two 2 one two"
-  actual=$(shifu_run shifu_run_test_root_cmd sub-one leaf-two one two)
+  actual=$(shifu_run_cmd shifu_run_test_root_cmd sub-one leaf-two one two)
   shifu_assert_zero status $#
   shifu_assert_equal 'output' "$expected" "$actual"
   shifu_var_restore expected actual
@@ -102,7 +102,7 @@ test_shifu_run_good() {
 test_shifu_run_bad_first_cmd() {
   shifu_var_store expected actual
   expected="$(echo unknown command: bad; echo Test root cmd help)"
-  actual=$(shifu_run shifu_run_test_root_cmd bad sub-one leaf-two one two)
+  actual=$(shifu_run_cmd shifu_run_test_root_cmd bad sub-one leaf-two one two)
   shifu_assert_non_zero status $?
   shifu_assert_strings_equal output "$expected" "$actual"
   shifu_var_restore expected actual
@@ -112,7 +112,7 @@ test_shifu_run_bad_sub_cmd() {
   shifu_var_store expected actual
   expected="unknown command: sub-bad"
   expected="$(echo unknown command: sub-bad; echo Test sub one cmd help)"
-  actual=$(shifu_run shifu_run_test_root_cmd sub-one sub-bad one two)
+  actual=$(shifu_run_cmd shifu_run_test_root_cmd sub-one sub-bad one two)
   shifu_assert_non_zero status $?
   shifu_assert_equal 'error message' "$expected" "$actual"
   shifu_var_restore expected actual
@@ -121,7 +121,7 @@ test_shifu_run_bad_sub_cmd() {
 test_shifu_run_bad_leaf_cmd() {
   shifu_var_store expected actual
   expected="$(echo unknown command: leaf-bad; echo Test sub two cmd help)"
-  actual=$(shifu_run shifu_run_test_root_cmd sub-two leaf-bad one two)
+  actual=$(shifu_run_cmd shifu_run_test_root_cmd sub-two leaf-bad one two)
   shifu_assert_non_zero status $?
   shifu_assert_equal 'error message' "$expected" "$actual"
   shifu_var_restore expected actual
