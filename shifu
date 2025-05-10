@@ -62,6 +62,7 @@ shifu_run() {
     shifu_help "$parent"
     exit 1
   done
+  [ -z "$cmd_func" ] && { echo "$cmd_name" requires arguments; shifu_help "$cmd"; exit 1; }
   [ "$1" = "-h" -o "$1" = "--help" ] && shifu_help "$cmd" || "$cmd_func" "$@"
   shifu_var_restore mode parent arg arg_matched cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
 }
