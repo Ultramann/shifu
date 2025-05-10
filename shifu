@@ -90,12 +90,13 @@ shifu_help() {
   _shifu_clear_cmd_vars
   help_stage=0 help_usage='' help_arguments='' help_options='' help_string=''
   "$1"
-  [ -n "$help_usage" ] && help_usage="$cmd_name [OPTIONS] $help_usage"
+  # help_options=""
+  [ -n "$help_usage" ] && help_usage="$cmd_name [OPTIONS]$help_usage"
   [ -n "$cmd_help" ] && _shifu_add_to_help_string "$cmd_help"
   [ -n "$cmd_long" ] && _shifu_add_to_help_string "$cmd_long"
   [ -n "$help_usage" ] && _shifu_add_to_help_string "Usage\n\t$help_usage"
   [ -n "$help_arguments" ] && _shifu_add_to_help_string "Arguments\n$help_arguments"
-  [ -n "$help_options" ] && _shifu_add_to_help_string "Options\n$help_options"
+  [ -n "$help_options" ] && _shifu_add_to_help_string "Options$help_options"
   [ -n "$help_string" ] && printf "$help_string\n"
   shifu_var_restore mode help_stage help_usage help_arguments help_options help_string has_options
 }
@@ -122,9 +123,9 @@ _shifu_clear_cmd_vars() {
 
 _shifu_arg_help() {
   has_options=0
-  [ $# -gt 1 -a "$1" != -- ] && { has_options=1; help_options="$1"; shift; }
+  [ $# -gt 1 -a "$1" != -- ] && { has_options=1; help_options="$help_options\n  $1"; shift; }
   while [ $# -gt 1 -a "$1" != -- ]; do
-    help_options="$help_options, $1"; shift
+    help_options="  $help_options, $1"; shift
   done; shift
  # remaining
   if [ $# -eq 1 ]; then
@@ -138,20 +139,20 @@ _shifu_arg_help() {
     elif [ $help_stage -gt 1 ]; then
       echo "No arguments after remaining are declared: $1"; exit 1;
     fi
-    help_usage="$help_usage $1"
-    help_arguments="$help_arguments\n$1\n$2"
+    help_usage="$help_usage [$1]"
+    help_arguments="$help_arguments\n$1\n\t$2"
   # option + argument without default
   elif [ $# -eq 2 ]; then
     [ $help_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
     help_options="\t [$1]\n\t$2"
   # option + argument with default
   elif [ $# -eq 3 ]; then
-    [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
+    [ $help_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
     help_options="\t [$1]\n\t$3. Default: $2."
   # option no argument default set
   elif [ $# -eq 4 ]; then
-    [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
-    help_options="$help_options\n\t$4 Set: $3, default: $2."
+    [ $help_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
+    help_options="$help_options\n    $4 Set: $3, default: $2."
   fi
 }
 
