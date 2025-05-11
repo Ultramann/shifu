@@ -131,7 +131,7 @@ _shifu_arg_help() {
   if [ $# -eq 1 ]; then
     help_stage=2
     help_usage="$help_usage ..."
-    help_arguments="$help_arguments\nRemaining\n\t$1"
+    help_arguments="$help_arguments\n  REMAINING\n    $1"
   # positional
   elif [ $has_options -eq 0 ]; then
     if [ $help_stage -lt 1 ]; then
@@ -148,11 +148,11 @@ _shifu_arg_help() {
   # option + argument with default
   elif [ $# -eq 3 ]; then
     [ $help_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
-    help_options="$help_options $1\n    $3. Default: $2."
+    help_options="$help_options $1\n    $3. Default: $2"
   # option no argument default set
   elif [ $# -eq 4 ]; then
     [ $help_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
-    help_options="$help_options\n    $4 Set: $3, default: $2."
+    help_options="$help_options\n    $4 Set: $3, default: $2"
   fi
 }
 
