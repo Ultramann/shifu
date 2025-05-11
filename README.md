@@ -38,16 +38,20 @@ Let's take a look at some toy scripts to get an introduction to writing shifu co
 ```sh
 #! /bin/sh
 
+# 1. Source shifu
 . "$(dirname "$0")"/shifu || exit 1
 
+# 2. Define command
 kfp_parse_cmd() {
-  shifu_arg -l --loud  -- LOUD false true "Perform action loudly!"
-  shifu_arg -q --quiet -- QUIET false true "Try to perform action quietly!"
+  shifu_arg -l --loud  -- LOUD      false true "Perform action loudly!"
+  shifu_arg -q --quiet -- QUIET     false true "Try to perform action quietly!"
   shifu_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po"
 }
 
+# 3. Parse arguments with command
 shifu_parse_args kfp_parse_cmd "$@"
 
+# 4. Script things
 case "$CHARACTER" in
   oogway) string="One often meets his destiny on the road he takes to avoid it." ;;
   shifu) string="There is now a level zero." ;;
@@ -60,6 +64,12 @@ esac
 echo "$string"
 ```
 
+Let's walk through the steps outlined in comments.
+1. Source the shifu...source
+2. Define a shifu command, `kfp_parse_cmd`. As you can see, the `shifu_arg` function enables declaration of argument for shifu to parse and store in variables, `LOUD`, `QUIET`, and `CHARACTER`. This example uses two of the ways arguments can be declared, binary options and positional arguments; there are a few more though, see the api section on [`shifu_arg`](#shifu_arg) for more information
+3. Parse arguments with `shifu_parse_args`. This command runner takes a command, here `kfp_parse_cmd`, and all the arguments, `"$@"` (it's good practice to include quotes). When `shifu_parse_args` runs, the `shifu_arg` usages in `kfp_parse_cmd` will parse the arguments in `$@` to values in the variables `LOUD`, `QUIET`, and `CHARACTER`
+4. Do useful script things
+
 Running this script with some different arguments will help clarify what's going on.
 
 ```txt
@@ -70,12 +80,6 @@ There is now a level zero. shhhh!!
 $ examples/kfp-parse --loud po
 I LOVE KUNG FUUUUUU!!!
 ```
-
-The script starts by sourcing the shifu source, then proceeds to defining a shifu command, `kfp_parse_cmd`. As you can see, the `shifu_arg` function enables declaration of argument for shifu to parse and store in variables, `LOUD`, `QUIET`, and `CHARACTER`. This example uses two of the ways arguments can be declared, binary options and positional arguments; there are a few more though, see the api section on [`shifu_arg`](#shifu_arg) for more information.
-
-Just before the main logic of the script begins there's a call to `shifu_parse_args`. This command runner takes a command, here `kfp_parse_cmd`, and all the arguments, `"$@"` (it's good practice to include quotes). When `shifu_parse_args` runs, the `shifu_arg` usages in `kfp_parse_cmd` will parse the arguments in `$@` to values in the variables `LOUD`, `QUIET`, and `CHARACTER`.
-
-The rest of the script simply uses the variables that were parsed.
 
 ### Subcommand dispatch
 

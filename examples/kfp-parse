@@ -3,8 +3,8 @@
 . "$(dirname "$0")"/shifu || exit 1
 
 kfp_parse_cmd() {
-  shifu_arg -l --loud  -- LOUD false true "Perform action loudly!"
-  shifu_arg -q --quiet -- QUIET false true "Try to perform action quietly!"
+  shifu_arg -l --loud  -- LOUD      false true "Perform action loudly!"
+  shifu_arg -q --quiet -- QUIET     false true "Try to perform action quietly!"
   shifu_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po"
 }
 
