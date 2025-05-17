@@ -1,5 +1,4 @@
 #! /bin/sh
-# Dependencies: sed
 
 shifu_mode_cmds=0
 shifu_mode_args=1
@@ -58,7 +57,7 @@ shifu_run_cmd() {
     done
     [ "$arg_matched" = true -a -n "$cmd_func" ] && break
     [ "$arg_matched" = true -a -n "$cmd_subs" ] && continue
-    echo "unknown command: $arg"
+    [ "$arg" != "-h" -a "$arg" != "--help" ] && echo "unknown command: $arg"
     shifu_help "$parent"
     exit 1
   done
@@ -69,7 +68,7 @@ shifu_run_cmd() {
 
 shifu_parse_args() {
   # 1: function, 2-: args to parse
-  shifu_var_store mode parse_stage cmd case_stmt has_options
+  shifu_var_store mode parse_stage cmd case_stmt has_options i
   mode=$shifu_mode_args
   parse_stage=0
   cmd="$1"; shift
@@ -77,12 +76,15 @@ shifu_parse_args() {
   "$cmd"
   [ $parse_stage -eq 0 ] && case_stmt="$case_stmt *) "
   case_stmt="$case_stmt break ;; esac"
+  i=1
   while true; do
     eval "$case_stmt"
   done
-  shifu_remaining_args=$(_shifu_save_remaining_args "$@")
-  shifu_var_restore mode cmd parse_stage case_stmt has_options
+  _shifu_args_parsed="${_shifu_args_parsed# }"
+  shifu_var_restore mode cmd parse_stage case_stmt has_options i
 }
+
+shifu_shift_remaining="for shifu_counter in \$_shifu_args_parsed; do shift; done"
 
 shifu_help() {
   shifu_var_store mode help_stage help_usage help_arguments help_options help_string has_options
@@ -164,10 +166,14 @@ _shifu_parse_arg() {
   done; shift
   # remaining
   if [ $# -eq 1 ]; then
+    if [ $parse_stage -eq 0 ]; then
+      case_stmt="$case_stmt -*|--*) echo 'Invalid option $1'; exit 1 ;; "
+      case_stmt="$case_stmt *)"
+    fi
     parse_stage=2
   # positional
   elif [ $has_options -eq 0 ]; then
-    if [ $parse_stage -lt 1 ]; then
+    if [ $parse_stage -eq 0 ]; then
       parse_stage=1
       case_stmt="$case_stmt -*|--*) echo 'Invalid option $1'; exit 1 ;; "
       case_stmt="$case_stmt *)"
@@ -177,31 +183,30 @@ _shifu_parse_arg() {
     eval "$1=" > /dev/null 2>&1
     [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
     case_stmt="$case_stmt [ \$# -eq 0 ] && { echo 'Missing positional argument $1'; exit 1; }; "
-    case_stmt="$case_stmt $1=\$1; shift; "
+    case_stmt="$case_stmt $1=\$1; shift; _shifu_ack_arg; "
   # option + argument without default
   elif [ $# -eq 2 ]; then
     [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
     eval "$1=" > /dev/null 2>&1
     [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
-    case_stmt="$case_stmt) $1=\$2; shift; shift ;; "
+    case_stmt="$case_stmt) $1=\$2; shift; shift; _shifu_ack_arg; _shifu_ack_arg ;; "
   # option + argument with default
   elif [ $# -eq 3 ]; then
     [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
     eval "$1=$2" > /dev/null 2>&1
     [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
-    case_stmt="$case_stmt) $1=\$2; shift; shift ;; "
+    case_stmt="$case_stmt) $1=\$2; shift; shift; _shifu_ack_arg; _shifu_ack_arg ;; "
   # option no argument default set
   elif [ $# -eq 4 ]; then
     [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
     eval "$1=$2" > /dev/null 2>&1
     [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
-    case_stmt="$case_stmt) $1=$3; shift ;; "
+    case_stmt="$case_stmt) $1=$3; shift; _shifu_ack_arg ;; "
   fi
 }
 
-_shifu_save_remaining_args () {
-for i do printf %s\\n "$i" | sed "s/'/'\\\\''/g;1s/^/'/;\$s/\$/' \\\\/" ; done
-echo " "
+_shifu_ack_arg() {
+  _shifu_args_parsed="$_shifu_args_parsed 1"
 }
 
 _shifu_add_to_help_string() {

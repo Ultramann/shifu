@@ -167,7 +167,7 @@ test_shifu_parse_args_all_set() {
                    -D not_default_flag_option_value \
                    positional_arg_value remaining arguments
   shifu_assert_zero status $?
-  eval "set -- $shifu_remaining_args"
+  shifu_assert_equal args_parsed "$_shifu_args_parsed" "1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"
   shifu_assert_equal flag_bin "$flag_bin" 1
   shifu_assert_equal flag_arg "$flag_arg" "flag_value"
   shifu_assert_equal flag_def "$flag_def" "not_default_flag_value"
@@ -178,9 +178,6 @@ test_shifu_parse_args_all_set() {
   shifu_assert_equal flag_option_arg "$flag_option_arg" "flag_option_value"
   shifu_assert_equal flag_option_def "$flag_option_def" "not_default_flag_option_value"
   shifu_assert_equal positional_arg "$positional_arg" "positional_arg_value"
-  shifu_assert_equal '$#' $# 2
-  shifu_assert_equal '$1' "$1" "remaining"
-  shifu_assert_equal '$2' "$2" "arguments"
   shifu_var_restore flag_bin flag_arg flag_arg_d \
                     option_bin option_arg option_arg_d \
                     flag_option_bin flag_option_arg flag_option_arg_d
@@ -193,7 +190,7 @@ test_shifu_parse_args_all_unset() {
                   positional_arg
   shifu_parse_args parse_args_test_cmd_all positional_arg_value
   shifu_assert_zero status $?
-  eval "set -- $shifu_remaining_args"
+  shifu_assert_equal args_parsed "$_shifu_args_parsed" "1"
   shifu_assert_equal flag_bin "$flag_bin" 0
   shifu_assert_zero_length flag_arg "$flag_arg"
   shifu_assert_equal flag_def "$flag_def" "def_flag"
