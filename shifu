@@ -38,6 +38,14 @@ shifu_arg() {
   esac
 }
 
+shifu_arg_global() {
+  case $mode in
+    $shifu_mode_help) _shifu_arg_help_global "$@" ;;
+    $shifu_mode_args) _shifu_parse_arg_global "$@" ;;
+    *) return
+  esac
+}
+
 shifu_run_cmd() {
   shifu_var_store mode parent partial_parse arg arg_matched shifu_cmds cmd \
                   cmd_name cmd_help cmd_long cmd_subs cmd_func
@@ -74,27 +82,16 @@ shifu_run_cmd() {
 shifu_parse_args() {
   # 1: function, 2-: args to parse
   shifu_var_store mode parse_stage cmd case_stmt has_options
-  mode=$shifu_mode_args
-  parse_stage=0
-  cmd="$1"; shift
-  case_stmt="case \"\$1\" in -h|--help) _shifu_help \"$cmd\"; exit 0 ;; "
-  "$cmd"
-  [ $parse_stage -eq 0 -a partial_parse != true ] && case_stmt="$case_stmt *) "
-  case_stmt="$case_stmt break ;; esac"
-  _shifu_args_parsed=''
-  while true; do
-    eval "$case_stmt"
-  done
-  _shifu_args_parsed="${_shifu_args_parsed# }"
+  _shifu_parse_args "$@"
   shifu_var_restore mode cmd parse_stage case_stmt has_options
 }
 
 shifu_shift_remaining="for shifu_counter in \$_shifu_args_parsed; do shift; done"
 
 shifu_help() {
-  shifu_var_store mode help_stage help_usage help_arguments help_options help_string has_options
+  shifu_var_store mode help_stage help_usage help_arguments help_options help_options_g help_string has_options
   _shifu_help "$@"
-  shifu_var_restore mode help_stage help_usage help_arguments help_options help_string has_options
+  shifu_var_restore mode help_stage help_usage help_arguments help_options help_options_g help_string has_options
 }
 
 shifu_var_store() {
@@ -111,6 +108,21 @@ shifu_var_restore() {
     eval "$1=\$shifu_${1}_shifu; unset -v shifu_${1}_shifu"
     shift
   done
+}
+
+_shifu_parse_args() {
+  mode=$shifu_mode_args
+  parse_stage=0
+  cmd="$1"; shift
+  case_stmt="case \"\$1\" in $global_case -h|--help) _shifu_help \"$cmd\"; exit 0 ;; "
+  "$cmd"
+  [ $parse_stage -eq 0 -a partial_parse != true ] && case_stmt="$case_stmt *) "
+  case_stmt="$case_stmt break ;; esac"
+  _shifu_args_parsed=''
+  while true; do
+    eval "$case_stmt"
+  done
+  _shifu_args_parsed="${_shifu_args_parsed# }"
 }
 
 _shifu_parse_arg() {
@@ -160,6 +172,39 @@ _shifu_parse_arg() {
   fi
 }
 
+_shifu_parse_arg_global() {
+  has_options=0
+  [ $# -gt 1 -a "$1" != -- ] && { has_options=1; global_case="$global_case $1"; shift; }
+  while [ $# -gt 1 -a "$1" != -- ]; do
+    global_case="${global_case}|$1"; shift
+  done; shift
+  # remaining
+  if [ $# -eq 1 ]; then
+    echo "Remaining arguments cannot be global"; exit 1
+  # positional
+  elif [ $has_options -eq 0 ]; then
+    echo "Positional arguments cannot be global"; exit 1
+  # option + argument without default
+  elif [ $# -eq 2 ]; then
+    [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
+    eval "$1=" > /dev/null 2>&1
+    [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
+    global_case="$global_case) $1=\$2; shift; shift; _shifu_ack_arg; _shifu_ack_arg ;; "
+  # option + argument with default
+  elif [ $# -eq 3 ]; then
+    [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
+    eval "$1=$2" > /dev/null 2>&1
+    [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
+    global_case="$global_case) $1=\$2; shift; shift; _shifu_ack_arg; _shifu_ack_arg ;; "
+  # option no argument default set
+  elif [ $# -eq 4 ]; then
+    [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
+    eval "$1=$2" > /dev/null 2>&1
+    [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
+    global_case="$global_case) $1=$3; shift; _shifu_ack_arg ;; "
+  fi
+}
+
 _shifu_ack_arg() {
   _shifu_args_parsed="$_shifu_args_parsed 1"
 }
@@ -203,12 +248,39 @@ _shifu_arg_help() {
   fi
 }
 
+_shifu_arg_help_global() {
+  has_options=0
+  [ $# -gt 1 -a "$1" != -- ] && { has_options=1; help_options_g="$help_options_g\n  $1"; shift; }
+  while [ $# -gt 1 -a "$1" != -- ]; do
+    help_options_g="$help_options_g, $1"; shift
+  done; shift
+ # remaining
+  if [ $# -eq 1 ]; then
+    echo "Remaining arguments cannot be global"; exit 1
+  # positional
+  elif [ $has_options -eq 0 ]; then
+    echo "Positional arguments cannot be global"; exit 1
+  # option + argument without default
+  elif [ $# -eq 2 ]; then
+    [ $help_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
+    help_options_g="$help_options_g $1\n    $2"
+  # option + argument with default
+  elif [ $# -eq 3 ]; then
+    [ $help_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
+    help_options_g="$help_options_g $1\n    $3. Default: $2"
+  # option no argument default set
+  elif [ $# -eq 4 ]; then
+    [ $help_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
+    help_options_g="$help_options_g\n    $4 Set: $3, default: $2"
+  fi
+}
+
 _shifu_help() {
   mode=$shifu_mode_help
   _shifu_clear_cmd_vars
   help_stage=0 help_usage='' help_arguments='' help_options='' help_string=''
   "$1"
-  help_options="$help_options\n  -h, --help\n    Show this help"
+  help_options="$help_options$help_options_g\n  -h, --help\n    Show this help"
   [ -n "$help_usage" ] && help_usage="$cmd_name [OPTIONS]$help_usage"
   [ -n "$cmd_help" ] && _shifu_add_to_help_string "$cmd_help"
   [ -n "$cmd_long" ] && _shifu_add_to_help_string "$cmd_long"
@@ -220,4 +292,8 @@ _shifu_help() {
 
 _shifu_add_to_help_string() {
   [ -z "$help_string" ] && help_string="$1" || help_string="$help_string\n\n$1"
+}
+
+shifu_trace() {
+  eval "echo $1: \$$1"
 }
