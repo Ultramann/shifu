@@ -36,6 +36,8 @@ shifu_run_test_root_cmd() {
   shifu_cmd_name root
   shifu_cmd_help "Test root cmd help"
   shifu_cmd_subs shifu_run_test_sub_one_cmd shifu_run_test_sub_two_cmd
+
+  shifu_arg -t --test -- intermediate_test false true "A test intermediate cmd arg."
 }
 
 shifu_run_test_sub_one_cmd() {
@@ -79,7 +81,7 @@ shifu_test_leaf_func_one() {
 }
 
 shifu_test_leaf_func_two() {
-  echo test leaf func two $# "$@"
+  leaf_two_args="$@"
 }
 
 shifu_test_leaf_func_three() {
@@ -92,22 +94,37 @@ shifu_test_leaf_func_four() {
 
 test_shifu_run_good() {
   shifu_var_store expected actual
-  expected="test leaf func two 2 one two"
-  actual=$(shifu_run_cmd shifu_run_test_root_cmd sub-one leaf-two one two)
+  expected="test leaf func one 2 one two"
+  actual=$(shifu_run_cmd shifu_run_test_root_cmd sub-one leaf-one one two)
   shifu_assert_zero status $#
   shifu_assert_equal 'output' "$expected" "$actual"
   shifu_var_restore expected actual
+}
+
+test_shifu_run_good_intermediate_cmd_flag() {
+  shifu_var_store intermediate_test leaf_two_args
+  shifu_run_cmd shifu_run_test_root_cmd -t sub-one leaf-two one two
+  shifu_assert_zero status $#
+  shifu_assert_equal 'intermediate test' "$intermediate_test" true
+  shifu_assert_equal 'leaf two args' "$leaf_two_args" "one two"
+  shifu_var_restore intermediate_test leaf_two_args
 }
 
 test_shifu_run_bad_first_cmd() {
   shifu_var_store expected actual
   expected="$(
     echo 'unknown command: bad'
-    echo 'Test root cmd help\n\nOptions\n  -h, --help\n    Show this help'
+    printf 'Test root cmd help
+
+Options
+  -t, --test
+    A test intermediate cmd arg. Set: true, default: false
+  -h, --help
+    Show this help'
   )"
   actual=$(shifu_run_cmd shifu_run_test_root_cmd bad sub-one leaf-two one two)
   shifu_assert_non_zero status $?
-  shifu_assert_strings_equal output "$expected" "$actual"
+  shifu_assert_strings_equal 'error message' "$expected" "$actual"
   shifu_var_restore expected actual
 }
 
@@ -116,7 +133,11 @@ test_shifu_run_bad_sub_cmd() {
   expected="unknown command: sub-bad"
   expected="$(
     echo 'unknown command: sub-bad'
-    echo 'Test sub one cmd help\n\nOptions\n  -h, --help\n    Show this help'
+    printf 'Test sub one cmd help
+
+Options
+  -h, --help
+    Show this help'
   )"
   actual=$(shifu_run_cmd shifu_run_test_root_cmd sub-one sub-bad one two)
   shifu_assert_non_zero status $?
@@ -128,7 +149,11 @@ test_shifu_run_bad_leaf_cmd() {
   shifu_var_store expected actual
   expected="$(
     echo 'unknown command: leaf-bad'
-    echo 'Test sub two cmd help\n\nOptions\n  -h, --help\n    Show this help'
+    printf 'Test sub two cmd help
+
+Options
+  -h, --help
+    Show this help'
   )"
   actual=$(shifu_run_cmd shifu_run_test_root_cmd sub-two leaf-bad one two)
   shifu_assert_non_zero status $?
@@ -295,9 +320,13 @@ shifu_run_test_and_report() {
 shifu_run_test_suite() {
   # global variables only in this function because it is "main"
 
-  [ $# -gt 0 ] && [ "$1" = "-v" ] && shifu_verbose_tests=true
+  [ $# -gt 0 ] && [ "$1" = "-v" ] && { shifu_verbose_tests=true; shift; }
 
-  shifu_read_test_functions
+  if [ $# -gt 0 ]; then
+    test_functions="$@"
+  else
+    shifu_read_test_functions
+  fi
   n_tests=0
   n_passed=0
   n_failed=0
