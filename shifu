@@ -47,7 +47,6 @@ shifu_run_cmd() {
     partial_parse=true
     shifu_parse_args "$parent" "$@"
     eval "$shifu_shift_remaining"
-    _shifu_args_parsed=''
     arg="$1"; shift
     arg_matched=''
     for cmd in $shifu_cmds; do
@@ -74,7 +73,7 @@ shifu_run_cmd() {
 
 shifu_parse_args() {
   # 1: function, 2-: args to parse
-  shifu_var_store mode parse_stage cmd case_stmt has_options i
+  shifu_var_store mode parse_stage cmd case_stmt has_options
   mode=$shifu_mode_args
   parse_stage=0
   cmd="$1"; shift
@@ -82,12 +81,12 @@ shifu_parse_args() {
   "$cmd"
   [ $parse_stage -eq 0 -a partial_parse != true ] && case_stmt="$case_stmt *) "
   case_stmt="$case_stmt break ;; esac"
-  i=1
+  _shifu_args_parsed=''
   while true; do
     eval "$case_stmt"
   done
   _shifu_args_parsed="${_shifu_args_parsed# }"
-  shifu_var_restore mode cmd parse_stage case_stmt has_options i
+  shifu_var_restore mode cmd parse_stage case_stmt has_options
 }
 
 shifu_shift_remaining="for shifu_counter in \$_shifu_args_parsed; do shift; done"
