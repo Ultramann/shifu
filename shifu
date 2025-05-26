@@ -34,7 +34,6 @@ shifu_arg() {
   case $mode in
     $shifu_mode_help) _shifu_arg_help "$@" ;;
     $shifu_mode_args) _shifu_parse_arg "$@" ;;
-    *) return
   esac
 }
 
@@ -42,7 +41,6 @@ shifu_arg_global() {
   case $mode in
     $shifu_mode_help) _shifu_arg_help_global "$@" ;;
     $shifu_mode_args) _shifu_parse_arg_global "$@" ;;
-    *) return
   esac
 }
 
