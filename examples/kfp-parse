@@ -4,8 +4,8 @@
 
 kfp_parse_cmd() {
   shifu_arg -l --loud  -- LOUD      false true "Perform action loudly!"
-  shifu_arg -q --quiet -- QUIET     false true "Try to perform action quietly!"
-  shifu_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po"
+  shifu_arg -q --quiet -- QUIET     false true "Try to perform action quietly."
+  shifu_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po."
 }
 
 shifu_parse_args kfp_parse_cmd "$@"

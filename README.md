@@ -44,8 +44,8 @@ Let's take a look at some toy scripts to get an introduction to writing shifu co
 # 2. Define command
 kfp_parse_cmd() {
   shifu_arg -l --loud  -- LOUD      false true "Perform action loudly!"
-  shifu_arg -q --quiet -- QUIET     false true "Try to perform action quietly!"
-  shifu_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po"
+  shifu_arg -q --quiet -- QUIET     false true "Try to perform action quietly."
+  shifu_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po."
 }
 
 # 3. Parse arguments with command
