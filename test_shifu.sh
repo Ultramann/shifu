@@ -261,7 +261,7 @@ test_shifu_parse_args_all_unset() {
 shifu_assert_empty() {
   # 1: identifier, 2: value
   [ -z "$2" ] && return
-  shifu_report_context "$1: expected empty, got ${#1}"
+  shifu_report_context "$1: expected empty, got" "${#1}"
   errors=$(($errors + 1))
 }
 
