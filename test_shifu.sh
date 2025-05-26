@@ -101,7 +101,7 @@ test_shifu_run_good() {
   expected="test leaf func one 2 one two"
   actual=$(shifu_run_cmd shifu_run_test_root_cmd sub-one leaf-one one two)
   shifu_assert_zero status $#
-  shifu_assert_equal 'output' "$expected" "$actual"
+  shifu_assert_equal output "$expected" "$actual"
   shifu_var_restore expected actual
 }
 
@@ -147,7 +147,7 @@ Options
   )"
   actual=$(shifu_run_cmd shifu_run_test_root_cmd bad sub-one leaf-two one two)
   shifu_assert_non_zero status $?
-  shifu_assert_strings_equal 'error message' "$expected" "$actual"
+  shifu_assert_strings_equal error_message "$expected" "$actual"
   shifu_var_restore expected actual
 }
 
@@ -164,7 +164,7 @@ Options
   )"
   actual=$(shifu_run_cmd shifu_run_test_root_cmd sub-one sub-bad one two)
   shifu_assert_non_zero status $?
-  shifu_assert_strings_equal 'error message' "$expected" "$actual"
+  shifu_assert_strings_equal error_message "$expected" "$actual"
   shifu_var_restore expected actual
 }
 
@@ -182,7 +182,7 @@ Options
   )"
   actual=$(shifu_run_cmd shifu_run_test_root_cmd sub-two leaf-bad one two)
   shifu_assert_non_zero status $?
-  shifu_assert_strings_equal 'error message' "$expected" "$actual"
+  shifu_assert_strings_equal error_message "$expected" "$actual"
   shifu_var_restore expected actual
 }
 
@@ -251,7 +251,7 @@ test_shifu_parse_args_all_unset() {
   shifu_assert_empty flag_option_arg "$flag_option_arg"
   shifu_assert_equal flag_option_def "$flag_option_def" "def_flag_opt"
   shifu_assert_equal positional_arg "$positional_arg" "positional_arg_value"
-  shifu_assert_equal "array length" $# 0
+  shifu_assert_equal array_length $# 0
   shifu_var_restore flag_bin flag_arg flag_arg_d \
                     option_bin option_arg option_arg_d \
                     flag_option_bin flag_option_arg flag_option_arg_d \
