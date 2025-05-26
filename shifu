@@ -225,7 +225,7 @@ _shifu_arg_help() {
  # remaining
   if [ $# -eq 1 ]; then
     help_stage=2
-    help_usage="$help_usage ..."
+    help_usage="$help_usage ...[REMAINING]"
     help_arguments="$help_arguments\n  REMAINING\n    $1"
   # positional
   elif [ $has_options -eq 0 ]; then
@@ -234,20 +234,20 @@ _shifu_arg_help() {
     elif [ $help_stage -gt 1 ]; then
       echo "No arguments after remaining are declared: $1"; exit 1;
     fi
-    help_usage="$help_usage $1"
+    help_usage="$help_usage [$1]"
     help_arguments="$help_arguments\n  $1\n    $2"
   # option + argument without default
   elif [ $# -eq 2 ]; then
     [ $help_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
-    help_options="$help_options $1\n    $2"
+    help_options="$help_options [$1]\n    $2"
   # option + argument with default
   elif [ $# -eq 3 ]; then
     [ $help_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
-    help_options="$help_options $1\n    $3. Default: $2"
+    help_options="$help_options [$1]\n    $3. Default: $2"
   # option no argument default set
   elif [ $# -eq 4 ]; then
     [ $help_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
-    help_options="$help_options\n    $4 Set: $3, default: $2"
+    help_options="$help_options\n    $4. Set: $3, default: $2"
   fi
 }
 
@@ -274,7 +274,7 @@ _shifu_arg_help_global() {
   # option no argument default set
   elif [ $# -eq 4 ]; then
     [ $help_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
-    help_options_g="$help_options_g\n    $4 Set: $3, default: $2"
+    help_options_g="$help_options_g\n    $4. Set: $3, default: $2"
   fi
 }
 

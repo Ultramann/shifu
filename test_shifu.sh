@@ -32,47 +32,47 @@ test_shifu_var_store_shifu_var_fails() {
   unset -v error_message
 }
 
-shifu_run_test_root_cmd() {
+shifu_test_root_cmd() {
   shifu_cmd_name root
   shifu_cmd_help "Test root cmd help"
-  shifu_cmd_subs shifu_run_test_sub_one_cmd shifu_run_test_sub_two_cmd
+  shifu_cmd_subs shifu_test_sub_one_cmd shifu_test_sub_two_cmd
 
-  shifu_arg -t --test -- intermediate_test false true "A test intermediate cmd arg."
+  shifu_arg -t --test -- intermediate_test false true "A test intermediate cmd arg"
 }
 
-shifu_run_test_sub_one_cmd() {
+shifu_test_sub_one_cmd() {
   shifu_cmd_name sub-one
   shifu_cmd_help "Test sub one cmd help"
-  shifu_cmd_subs shifu_run_test_leaf_one_cmd shifu_run_test_leaf_two_cmd
+  shifu_cmd_subs shifu_test_leaf_one_cmd shifu_test_leaf_two_cmd
 }
 
-shifu_run_test_sub_two_cmd() {
+shifu_test_sub_two_cmd() {
   shifu_cmd_name sub-two
   shifu_cmd_help "Test sub two cmd help"
-  shifu_cmd_subs shifu_run_test_leaf_three_cmd shifu_run_test_leaf_four_cmd
+  shifu_cmd_subs shifu_test_leaf_three_cmd shifu_test_leaf_four_cmd
 
-  shifu_arg_global -g --global -- global_test false true "A test global cmd arg."
+  shifu_arg_global -g --global -- global_test false true "A test global cmd arg"
 }
 
-shifu_run_test_leaf_one_cmd() {
+shifu_test_leaf_one_cmd() {
   shifu_cmd_name leaf-one
   shifu_cmd_help "Test leaf one cmd help"
   shifu_cmd_func shifu_test_leaf_func_one
 }
 
-shifu_run_test_leaf_two_cmd() {
+shifu_test_leaf_two_cmd() {
   shifu_cmd_name leaf-two
   shifu_cmd_help "Test leaf two cmd help"
   shifu_cmd_func shifu_test_leaf_func_two
 }
 
-shifu_run_test_leaf_three_cmd() {
+shifu_test_leaf_three_cmd() {
   shifu_cmd_name leaf-three
   shifu_cmd_help "Test leaf three cmd help"
   shifu_cmd_func shifu_test_leaf_func_three
 }
 
-shifu_run_test_leaf_four_cmd() {
+shifu_test_leaf_four_cmd() {
   shifu_cmd_name leaf-four
   shifu_cmd_help "Test leaf four cmd help"
   shifu_cmd_func shifu_test_leaf_func_four
@@ -96,10 +96,29 @@ shifu_test_leaf_func_four() {
   echo test leaf func four $# "$@"
 }
 
+shifu_test_all_options_cmd() {
+  shifu_cmd_name all
+  shifu_cmd_help "Test cmd all help"
+  shifu_cmd_long "These are all the fancy things you can do with the all command"
+
+  shifu_arg -f -- FLAG_BIN 0 1      "binary flag help"
+  shifu_arg -a -- FLAG_ARG          "flag argument help"
+  shifu_arg -d -- FLAG_DEF def_flag "default argument flag help"
+  shifu_arg --option-bin -- OPTION_BIN 0 1     "binary option help"
+  shifu_arg --option-arg -- OPTION_ARG         "argument option help"
+  shifu_arg --option-def -- OPTION_DEF def_opt "default argument option help"
+  shifu_arg -F --flag-option-bin -- FLAG_OPTION_BIN 0 1 "binary flag/option help"
+  shifu_arg -A --flag-option-arg -- FLAG_OPTION_ARG     "argument flag/option help"
+  shifu_arg -D --flag-option-def -- FLAG_OPTION_DEF def_flag_opt \
+                                    "default argument flag/option help"
+  shifu_arg                      -- POSITIONAL_ARG "positional argument help"
+  shifu_arg                      --                "remaining arguments help"
+}
+
 test_shifu_run_good() {
   shifu_var_store expected actual
   expected="test leaf func one 2 one two"
-  actual=$(shifu_run_cmd shifu_run_test_root_cmd sub-one leaf-one one two)
+  actual=$(shifu_run_cmd shifu_test_root_cmd sub-one leaf-one one two)
   shifu_assert_zero status $#
   shifu_assert_equal output "$expected" "$actual"
   shifu_var_restore expected actual
@@ -107,7 +126,7 @@ test_shifu_run_good() {
 
 test_shifu_run_good_cmd_intermediate_arg() {
   shifu_var_store intermediate_test leaf_two_args
-  shifu_run_cmd shifu_run_test_root_cmd -t sub-one leaf-two one two
+  shifu_run_cmd shifu_test_root_cmd -t sub-one leaf-two one two
   shifu_assert_zero status $#
   shifu_assert_equal intermediate_test "$intermediate_test" true
   shifu_assert_equal leaf_two_args "$leaf_two_args" "one two"
@@ -116,7 +135,7 @@ test_shifu_run_good_cmd_intermediate_arg() {
 
 test_shifu_run_good_cmd_global_arg() {
   shifu_var_store global_test leaf_three_args
-  shifu_run_cmd shifu_run_test_root_cmd sub-two leaf-three -g one two
+  shifu_run_cmd shifu_test_root_cmd sub-two leaf-three -g one two
   shifu_assert_zero status $#
   shifu_assert_equal global_test "$global_test" true
   shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
@@ -125,7 +144,7 @@ test_shifu_run_good_cmd_global_arg() {
 
 test_shifu_run_good_cmd_global_and_intermediate_arg() {
   shifu_var_store intermediate_test global_test leaf_three_args
-  shifu_run_cmd shifu_run_test_root_cmd -t sub-two leaf-three -g one two
+  shifu_run_cmd shifu_test_root_cmd -t sub-two leaf-three -g one two
   shifu_assert_zero status $#
   shifu_assert_equal intermediate_test "$intermediate_test" true
   shifu_assert_equal global_test "$global_test" true
@@ -145,7 +164,7 @@ Options
   -h, --help
     Show this help'
   )"
-  actual=$(shifu_run_cmd shifu_run_test_root_cmd bad sub-one leaf-two one two)
+  actual=$(shifu_run_cmd shifu_test_root_cmd bad sub-one leaf-two one two)
   shifu_assert_non_zero status $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
   shifu_var_restore expected actual
@@ -161,7 +180,7 @@ Options
   -h, --help
     Show this help'
   )"
-  actual=$(shifu_run_cmd shifu_run_test_root_cmd sub-one sub-bad one two)
+  actual=$(shifu_run_cmd shifu_test_root_cmd sub-one sub-bad one two)
   shifu_assert_non_zero status $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
   shifu_var_restore expected actual
@@ -179,32 +198,18 @@ Options
   -h, --help
     Show this help'
   )"
-  actual=$(shifu_run_cmd shifu_run_test_root_cmd sub-two leaf-bad one two)
+  actual=$(shifu_run_cmd shifu_test_root_cmd sub-two leaf-bad one two)
   shifu_assert_non_zero status $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
   shifu_var_restore expected actual
 }
 
-parse_args_test_cmd_all() {
-  shifu_arg -f -- flag_bin 0 1      "binary flag help"
-  shifu_arg -a -- flag_arg          "flag argument help"
-  shifu_arg -d -- flag_def def_flag "default argument flag help"
-  shifu_arg --option-bin -- option_bin 0 1     "binary option help"
-  shifu_arg --option-arg -- option_arg         "argument option help"
-  shifu_arg --option-def -- option_def def_opt "default argument option help"
-  shifu_arg -F --flag-option-bin -- flag_option_bin 0 1 "binary flag/option help"
-  shifu_arg -A --flag-option-arg -- flag_option_arg     "argument flag/option help"
-  shifu_arg -D --flag-option-def -- flag_option_def def_flag_opt \
-                                    "default argument flag/option help"
-  shifu_arg                      -- positional_arg "positional argument help"
-  shifu_arg                      --                "remaining arguments help"
-}
-
 test_shifu_parse_args_all_set() {
-  shifu_var_store flag_bin flag_arg flag_arg_d \
-                  option_bin option_arg option_arg_d \
-                  flag_option_bin flag_option_arg flag_option_arg_d
-  shifu_parse_args parse_args_test_cmd_all \
+  shifu_var_store FLAG_BIN FLAG_ARG FLAG_DEF \
+                    OPTION_BIN OPTION_ARG OPTION_DEF \
+                    FLAG_OPTION_BIN FLAG_OPTION_ARG FLAG_OPTION_DEF \
+                    POSITIONAL_ARG
+  shifu_parse_args shifu_test_all_options_cmd \
                    -f \
                    -a flag_value \
                    -d not_default_flag_value \
@@ -217,44 +222,45 @@ test_shifu_parse_args_all_set() {
                    positional_arg_value remaining arguments
   shifu_assert_zero status $?
   shifu_assert_equal args_parsed "$_shifu_args_parsed" "1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"
-  shifu_assert_equal flag_bin "$flag_bin" 1
-  shifu_assert_equal flag_arg "$flag_arg" "flag_value"
-  shifu_assert_equal flag_def "$flag_def" "not_default_flag_value"
-  shifu_assert_equal option_bin "$option_bin" 1
-  shifu_assert_equal option_arg "$option_arg" "option_value"
-  shifu_assert_equal option_def "$option_def" "not_default_option_value"
-  shifu_assert_equal flag_option_bin "$flag_option_bin" 1
-  shifu_assert_equal flag_option_arg "$flag_option_arg" "flag_option_value"
-  shifu_assert_equal flag_option_def "$flag_option_def" "not_default_flag_option_value"
-  shifu_assert_equal positional_arg "$positional_arg" "positional_arg_value"
-  shifu_var_restore flag_bin flag_arg flag_arg_d \
-                    option_bin option_arg option_arg_d \
-                    flag_option_bin flag_option_arg flag_option_arg_d
+  shifu_assert_equal flag_bin "$FLAG_BIN" 1
+  shifu_assert_equal flag_arg "$FLAG_ARG" "flag_value"
+  shifu_assert_equal flag_def "$FLAG_DEF" "not_default_flag_value"
+  shifu_assert_equal option_bin "$OPTION_BIN" 1
+  shifu_assert_equal option_arg "$OPTION_ARG" "option_value"
+  shifu_assert_equal option_def "$OPTION_DEF" "not_default_option_value"
+  shifu_assert_equal flag_option_bin "$FLAG_OPTION_BIN" 1
+  shifu_assert_equal flag_option_arg "$FLAG_OPTION_ARG" "flag_option_value"
+  shifu_assert_equal flag_option_def "$FLAG_OPTION_DEF" "not_default_flag_option_value"
+  shifu_assert_equal positional_arg "$POSITIONAL_ARG" "positional_arg_value"
+  shifu_var_restore FLAG_BIN FLAG_ARG FLAG_DEF \
+                    OPTION_BIN OPTION_ARG OPTION_DEF \
+                    FLAG_OPTION_BIN FLAG_OPTION_ARG FLAG_OPTION_DEF \
+                    POSITIONAL_ARG
 }
 
 test_shifu_parse_args_all_unset() {
-  shifu_var_store flag_bin flag_arg flag_arg_d \
+  shifu_var_store FLAG_BIN FLAG_ARG FLAG_ARG_D \
                   option_bin option_arg option_arg_d \
                   flag_option_bin flag_option_arg flag_option_arg_d \
                   positional_arg
-  shifu_parse_args parse_args_test_cmd_all positional_arg_value
+  shifu_parse_args shifu_test_all_options_cmd positional_arg_value
   shifu_assert_zero status $?
   shifu_assert_equal args_parsed "$_shifu_args_parsed" "1"
-  shifu_assert_equal flag_bin "$flag_bin" 0
-  shifu_assert_empty flag_arg "$flag_arg"
-  shifu_assert_equal flag_def "$flag_def" "def_flag"
-  shifu_assert_equal option_bin "$option_bin" 0
-  shifu_assert_empty option_arg "$option_arg"
-  shifu_assert_equal option_def "$option_def" "def_opt"
-  shifu_assert_equal flag_option_bin "$flag_option_bin" 0
-  shifu_assert_empty flag_option_arg "$flag_option_arg"
-  shifu_assert_equal flag_option_def "$flag_option_def" "def_flag_opt"
-  shifu_assert_equal positional_arg "$positional_arg" "positional_arg_value"
+  shifu_assert_equal flag_bin "$FLAG_BIN" 0
+  shifu_assert_empty flag_arg "$FLAG_ARG"
+  shifu_assert_equal flag_def "$FLAG_DEF" "def_flag"
+  shifu_assert_equal option_bin "$OPTION_BIN" 0
+  shifu_assert_empty option_arg "$OPTION_ARG"
+  shifu_assert_equal option_def "$OPTION_DEF" "def_opt"
+  shifu_assert_equal flag_option_bin "$FLAG_OPTION_BIN" 0
+  shifu_assert_empty flag_option_arg "$FLAG_OPTION_ARG"
+  shifu_assert_equal flag_option_def "$FLAG_OPTION_DEF" "def_flag_opt"
+  shifu_assert_equal positional_arg "$POSITIONAL_ARG" "positional_arg_value"
   shifu_assert_equal array_length $# 0
-  shifu_var_restore flag_bin flag_arg flag_arg_d \
-                    option_bin option_arg option_arg_d \
-                    flag_option_bin flag_option_arg flag_option_arg_d \
-                    positional_arg
+  shifu_var_restore FLAG_BIN FLAG_ARG FLAG_DEF \
+                    OPTION_BIN OPTION_ARG OPTION_DEF \
+                    FLAG_OPTION_BIN FLAG_OPTION_ARG FLAG_OPTION_DEF \
+                    POSITIONAL_ARG
 }
 
 test_shifu_parse_args_invalid_option() {
@@ -269,9 +275,48 @@ Options
   -h, --help
     Show this help'
   )
-  actual=$(shifu_parse_args shifu_run_test_root_cmd --invalid other -t)
+  actual=$(shifu_parse_args shifu_test_root_cmd --invalid other -t)
   shifu_assert_strings_equal error_message "$expected" "$actual"
   shifu_var_restore expected actual
+}
+
+test_shifu_help() {
+  expected='Test cmd all help
+
+These are all the fancy things you can do with the all command
+
+Usage
+  all [OPTIONS] [POSITIONAL_ARG] ...[REMAINING]
+
+Arguments
+  POSITIONAL_ARG
+    positional argument help
+  REMAINING
+    remaining arguments help
+
+Options
+  -f
+    binary flag help. Set: 1, default: 0
+  -a [FLAG_ARG]
+    flag argument help
+  -d [FLAG_DEF]
+    default argument flag help. Default: def_flag
+  --option-bin
+    binary option help. Set: 1, default: 0
+  --option-arg [OPTION_ARG]
+    argument option help
+  --option-def [OPTION_DEF]
+    default argument option help. Default: def_opt
+  -F, --flag-option-bin
+    binary flag/option help. Set: 1, default: 0
+  -A, --flag-option-arg [FLAG_OPTION_ARG]
+    argument flag/option help
+  -D, --flag-option-def [FLAG_OPTION_DEF]
+    default argument flag/option help. Default: def_flag_opt
+  -h, --help
+    Show this help'
+  actual=$(shifu_help shifu_test_all_options_cmd)
+  shifu_assert_strings_equal help_message "$expected" "$actual"
 }
 
 # Testing utilities
