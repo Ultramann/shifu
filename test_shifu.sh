@@ -136,7 +136,7 @@ test_shifu_run_good_cmd_global_and_intermediate_arg() {
 test_shifu_run_bad_first_cmd() {
   shifu_var_store expected actual
   expected="$(
-    echo 'unknown command: bad'
+    echo 'Unknown command: bad'
     printf 'Test root cmd help
 
 Options
@@ -153,9 +153,8 @@ Options
 
 test_shifu_run_bad_sub_cmd() {
   shifu_var_store expected actual
-  expected="unknown command: sub-bad"
   expected="$(
-    echo 'unknown command: sub-bad'
+    echo 'Unknown command: sub-bad'
     printf 'Test sub one cmd help
 
 Options
@@ -171,7 +170,7 @@ Options
 test_shifu_run_bad_leaf_cmd() {
   shifu_var_store expected actual
   expected="$(
-    echo 'unknown command: leaf-bad'
+    echo 'Unknown command: leaf-bad'
     printf 'Test sub two cmd help
 
 Options
@@ -260,8 +259,17 @@ test_shifu_parse_args_all_unset() {
 
 test_shifu_parse_args_invalid_option() {
   shifu_var_store expected actual
-  expected=$(shifu_parse_args parse_args_test_cmd_all --invalid other -t)
-  actual="Invalid option: --invalid"
+  expected=$(
+    echo 'Invalid option: --invalid'
+    printf 'Test root cmd help
+
+Options
+  -t, --test
+    A test intermediate cmd arg. Set: true, default: false
+  -h, --help
+    Show this help'
+  )
+  actual=$(shifu_parse_args shifu_run_test_root_cmd --invalid other -t)
   shifu_assert_strings_equal error_message "$expected" "$actual"
   shifu_var_restore expected actual
 }

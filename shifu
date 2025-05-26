@@ -69,7 +69,7 @@ shifu_run_cmd() {
     done
     [ "$arg_matched" = true -a -n "$cmd_func" ] && break
     [ "$arg_matched" = true -a -n "$cmd_subs" ] && continue
-    [ "$arg" != "-h" -a "$arg" != "--help" ] && echo "unknown command: $arg"
+    [ "$arg" != "-h" -a "$arg" != "--help" ] && echo "Unknown command: $arg"
     shifu_help "$parent"
     exit 1
   done
@@ -116,7 +116,10 @@ _shifu_parse_args() {
   cmd="$1"; shift
   case_stmt="case \"\$1\" in $global_case -h|--help) _shifu_help \"$cmd\"; exit 0 ;; "
   "$cmd"
-  [ $parse_stage -eq 0 -a partial_parse != true ] && case_stmt="$case_stmt *) "
+  if [ $parse_stage -eq 0 -a partial_parse != true ]; then
+    case_stmt="$case_stmt -*|--*) echo \"Invalid option: \$1\"; _shifu_help \"$cmd\"; exit 1 ;; "
+    case_stmt="$case_stmt *) "
+  fi
   case_stmt="$case_stmt break ;; esac"
   _shifu_args_parsed=''
   while true; do
@@ -134,7 +137,7 @@ _shifu_parse_arg() {
   # remaining
   if [ $# -eq 1 -a partial_parse != true ]; then
     if [ $parse_stage -eq 0 ]; then
-      case_stmt="$case_stmt -*|--*) echo \"Invalid option: \$1\"; exit 1 ;; "
+      case_stmt="$case_stmt -*|--*) echo \"Invalid option: \$1\"; _shifu_help \"\$cmd\"; exit 1 ;; "
       case_stmt="$case_stmt *)"
     fi
     parse_stage=2
@@ -142,7 +145,7 @@ _shifu_parse_arg() {
   elif [ $has_options -eq 0 -a partial_parse != true ]; then
     if [ $parse_stage -eq 0 ]; then
       parse_stage=1
-      case_stmt="$case_stmt -*|--*) echo \"Invalid option: \$1\"; exit 1 ;; "
+      case_stmt="$case_stmt -*|--*) echo \"Invalid option: \$1\"; _shifu_help \"\$cmd\"; exit 1 ;; "
       case_stmt="$case_stmt *)"
     elif [ $parse_stage -gt 1 ]; then
       echo "No arguments after remaining are declared: $1"; exit 1;
