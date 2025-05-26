@@ -242,13 +242,13 @@ test_shifu_parse_args_all_unset() {
   shifu_assert_zero status $?
   shifu_assert_equal args_parsed "$_shifu_args_parsed" "1"
   shifu_assert_equal flag_bin "$flag_bin" 0
-  shifu_assert_zero_length flag_arg "$flag_arg"
+  shifu_assert_empty flag_arg "$flag_arg"
   shifu_assert_equal flag_def "$flag_def" "def_flag"
   shifu_assert_equal option_bin "$option_bin" 0
-  shifu_assert_zero_length option_arg "$option_arg"
+  shifu_assert_empty option_arg "$option_arg"
   shifu_assert_equal option_def "$option_def" "def_opt"
   shifu_assert_equal flag_option_bin "$flag_option_bin" 0
-  shifu_assert_zero_length flag_option_arg "$flag_option_arg"
+  shifu_assert_empty flag_option_arg "$flag_option_arg"
   shifu_assert_equal flag_option_def "$flag_option_def" "def_flag_opt"
   shifu_assert_equal positional_arg "$positional_arg" "positional_arg_value"
   shifu_assert_equal "array length" $# 0
@@ -258,15 +258,10 @@ test_shifu_parse_args_all_unset() {
                     positional_arg
 }
 
-shifu_assert_impossible() {
-  shifu_report_context "This code path should not be reached"
-  errors=$(($errors + 1))
-}
-
-shifu_assert_zero_length() {
+shifu_assert_empty() {
   # 1: identifier, 2: value
   [ -z "$2" ] && return
-  shifu_report_context "$1: expected length zero, got" "${#1}"
+  shifu_report_context "$1: expected empty, got ${#1}"
   errors=$(($errors + 1))
 }
 
