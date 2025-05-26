@@ -158,6 +158,12 @@ test_shifu_run_bad_first_cmd() {
     echo 'Unknown command: bad'
     printf 'Test root cmd help
 
+Subcommands
+  sub-one
+    Test sub one cmd help
+  sub-two
+    Test sub two cmd help
+
 Options
   -t, --test
     A test intermediate cmd arg. Set: true, default: false
@@ -176,6 +182,12 @@ test_shifu_run_bad_sub_cmd() {
     echo 'Unknown command: sub-bad'
     printf 'Test sub one cmd help
 
+Subcommands
+  leaf-one
+    Test leaf one cmd help
+  leaf-two
+    Test leaf two cmd help
+
 Options
   -h, --help
     Show this help'
@@ -191,6 +203,12 @@ test_shifu_run_bad_leaf_cmd() {
   expected="$(
     echo 'Unknown command: leaf-bad'
     printf 'Test sub two cmd help
+
+Subcommands
+  leaf-three
+    Test leaf three cmd help
+  leaf-four
+    Test leaf four cmd help
 
 Options
   -g, --global
@@ -268,6 +286,12 @@ test_shifu_parse_args_invalid_option() {
   expected=$(
     echo 'Invalid option: --invalid'
     printf 'Test root cmd help
+
+Subcommands
+  sub-one
+    Test sub one cmd help
+  sub-two
+    Test sub two cmd help
 
 Options
   -t, --test

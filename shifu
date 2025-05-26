@@ -89,9 +89,9 @@ shifu_parse_args() {
 shifu_shift_remaining="for shifu_counter in \$_shifu_args_parsed; do shift; done"
 
 shifu_help() {
-  shifu_var_store mode help_stage help_usage help_arguments help_options help_options_g help_string has_options
+  shifu_var_store mode help_stage help_usage help_arguments help_options help_options_g help_string has_options subcmd_help
   _shifu_help "$@"
-  shifu_var_restore mode help_stage help_usage help_arguments help_options help_options_g help_string has_options
+  shifu_var_restore mode help_stage help_usage help_arguments help_options help_options_g help_string has_options subcmd_help
 }
 
 shifu_var_store() {
@@ -289,12 +289,27 @@ _shifu_help() {
   [ -n "$cmd_long" ] && _shifu_add_to_help_string "$cmd_long"
   [ -n "$help_usage" ] && _shifu_add_to_help_string "Usage\n  $help_usage"
   [ -n "$help_arguments" ] && _shifu_add_to_help_string "Arguments$help_arguments"
+  _shifu_make_subcmd_help && _shifu_add_to_help_string "Subcommands$subcmd_help"
   [ -n "$help_options" ] && _shifu_add_to_help_string "Options$help_options"
   [ -n "$help_string" ] && printf "$help_string\n"
 }
 
 _shifu_add_to_help_string() {
   [ -z "$help_string" ] && help_string="$1" || help_string="$help_string\n\n$1"
+}
+
+_shifu_make_subcmd_help() {
+  [ -z "$cmd_subs" ] && return 1
+  shifu_var_store subcmd subcmds
+  subcmds=$cmd_subs
+  _shifu_clear_cmd_vars
+  for subcmd in $subcmds; do
+    "$subcmd"
+    subcmd_help="$subcmd_help\n  $cmd_name"
+    [ -n "$cmd_help" ] && subcmd_help="$subcmd_help\n    $cmd_help"
+  done
+  shifu_var_restore subcmd subcmds
+  return 0
 }
 
 shifu_trace() {
