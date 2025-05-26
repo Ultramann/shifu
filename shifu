@@ -134,7 +134,7 @@ _shifu_parse_arg() {
   # remaining
   if [ $# -eq 1 -a partial_parse != true ]; then
     if [ $parse_stage -eq 0 ]; then
-      case_stmt="$case_stmt -*|--*) echo \"Invalid option \$1\"; exit 1 ;; "
+      case_stmt="$case_stmt -*|--*) echo \"Invalid option: \$1\"; exit 1 ;; "
       case_stmt="$case_stmt *)"
     fi
     parse_stage=2
@@ -142,7 +142,7 @@ _shifu_parse_arg() {
   elif [ $has_options -eq 0 -a partial_parse != true ]; then
     if [ $parse_stage -eq 0 ]; then
       parse_stage=1
-      case_stmt="$case_stmt -*|--*) echo \"Invalid option \$1\"; exit 1 ;; "
+      case_stmt="$case_stmt -*|--*) echo \"Invalid option: \$1\"; exit 1 ;; "
       case_stmt="$case_stmt *)"
     elif [ $parse_stage -gt 1 ]; then
       echo "No arguments after remaining are declared: $1"; exit 1;

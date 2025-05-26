@@ -258,6 +258,15 @@ test_shifu_parse_args_all_unset() {
                     positional_arg
 }
 
+test_shifu_parse_args_invalid_option() {
+  shifu_var_store expected actual
+  expected=$(shifu_parse_args parse_args_test_cmd_all --invalid other -t)
+  actual="Invalid option: --invalid"
+  shifu_assert_strings_equal error_message "$expected" "$actual"
+  shifu_var_restore expected actual
+}
+
+# Testing utilities
 shifu_assert_empty() {
   # 1: identifier, 2: value
   [ -z "$2" ] && return
