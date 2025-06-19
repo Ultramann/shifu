@@ -37,7 +37,7 @@ shifu_test_root_cmd() {
   shifu_cmd_help "Test root cmd help"
   shifu_cmd_subs shifu_test_sub_one_cmd shifu_test_sub_two_cmd
 
-  shifu_arg -t --test -- intermediate_test false true "A test intermediate cmd arg"
+  shifu_arg_local -l --local_test -- local_test false true "A test local cmd arg"
 }
 
 shifu_test_sub_one_cmd() {
@@ -51,7 +51,7 @@ shifu_test_sub_two_cmd() {
   shifu_cmd_help "Test sub two cmd help"
   shifu_cmd_subs shifu_test_leaf_three_cmd shifu_test_leaf_four_cmd
 
-  shifu_arg_global -g --global -- global_test false true "A test global cmd arg"
+  shifu_arg -g --global -- global_test false true "A test global cmd arg"
 }
 
 shifu_test_leaf_one_cmd() {
@@ -69,7 +69,7 @@ shifu_test_leaf_two_cmd() {
 shifu_test_leaf_three_cmd() {
   shifu_cmd_name leaf-three
   shifu_cmd_help "Test leaf three cmd help"
-  shifu_cmd_func shifu_test_leaf_func_three
+  shifu_cmd_func shifu_test_leaf_three_func
 }
 
 shifu_test_leaf_four_cmd() {
@@ -86,8 +86,8 @@ shifu_test_leaf_func_two() {
   leaf_two_args="$@"
 }
 
-shifu_test_leaf_func_three() {
-  shifu_parse_args shifu_test_leaf_func_three_cmd "$@"
+shifu_test_leaf_three_func() {
+  shifu_parse_args shifu_test_leaf_three_cmd "$@"
   eval "$shifu_shift_remaining"
   leaf_three_args="$@"
 }
@@ -124,15 +124,6 @@ test_shifu_run_good() {
   shifu_var_restore expected actual
 }
 
-test_shifu_run_good_cmd_intermediate_arg() {
-  shifu_var_store intermediate_test leaf_two_args
-  shifu_run_cmd shifu_test_root_cmd -t sub-one leaf-two one two
-  shifu_assert_zero status $#
-  shifu_assert_equal intermediate_test "$intermediate_test" true
-  shifu_assert_equal leaf_two_args "$leaf_two_args" "one two"
-  shifu_var_restore intermediate_test leaf_two_args
-}
-
 test_shifu_run_good_cmd_global_arg() {
   shifu_var_store global_test leaf_three_args
   shifu_run_cmd shifu_test_root_cmd sub-two leaf-three -g one two
@@ -144,9 +135,9 @@ test_shifu_run_good_cmd_global_arg() {
 
 test_shifu_run_good_cmd_global_and_intermediate_arg() {
   shifu_var_store intermediate_test global_test leaf_three_args
-  shifu_run_cmd shifu_test_root_cmd -t sub-two leaf-three -g one two
+  shifu_run_cmd shifu_test_root_cmd -l sub-two leaf-three -g one two
   shifu_assert_zero status $#
-  shifu_assert_equal intermediate_test "$intermediate_test" true
+  shifu_assert_equal intermediate_test "$local_test" true
   shifu_assert_equal global_test "$global_test" true
   shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
   shifu_var_restore intermediate_test global_test leaf_three_args
@@ -165,8 +156,8 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -t, --test
-    A test intermediate cmd arg. Set: true, default: false
+  -l, --local_test
+    A test local cmd arg. Set: true, default: false
   -h, --help
     Show this help'
   )"
@@ -294,8 +285,8 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -t, --test
-    A test intermediate cmd arg. Set: true, default: false
+  -l, --local_test
+    A test local cmd arg. Set: true, default: false
   -h, --help
     Show this help'
   )
