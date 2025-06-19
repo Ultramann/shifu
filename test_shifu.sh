@@ -157,7 +157,8 @@ Subcommands
 
 Options
   -l, --local_test
-    A test local cmd arg. Set: true, default: false
+    A test local cmd arg
+    Default: false, set: true
   -h, --help
     Show this help'
   )"
@@ -203,7 +204,8 @@ Subcommands
 
 Options
   -g, --global
-    A test global cmd arg. Set: true, default: false
+    A test global cmd arg
+    Default: false, set: true
   -h, --help
     Show this help'
   )"
@@ -286,7 +288,8 @@ Subcommands
 
 Options
   -l, --local_test
-    A test local cmd arg. Set: true, default: false
+    A test local cmd arg
+    Default: false, set: true
   -h, --help
     Show this help'
   )
@@ -296,6 +299,51 @@ Options
 }
 
 test_shifu_help() {
+  expected='Test cmd all help
+
+These are all the fancy things you can do with the all command
+
+Usage
+  all [OPTIONS] [POSITIONAL_ARG] ...[REMAINING]
+
+Arguments
+  POSITIONAL_ARG
+    positional argument help
+  REMAINING
+    remaining arguments help
+
+Options
+  -f
+    binary flag help
+    Default: 0, set: 1
+  -a [FLAG_ARG]
+    flag argument help
+  -d [FLAG_DEF]
+    default argument flag help
+    Default: def_flag
+  --option-bin
+    binary option help
+    Default: 0, set: 1
+  --option-arg [OPTION_ARG]
+    argument option help
+  --option-def [OPTION_DEF]
+    default argument option help
+    Default: def_opt
+  -F, --flag-option-bin
+    binary flag/option help
+    Default: 0, set: 1
+  -A, --flag-option-arg [FLAG_OPTION_ARG]
+    argument flag/option help
+  -D, --flag-option-def [FLAG_OPTION_DEF]
+    default argument flag/option help
+    Default: def_flag_opt
+  -h, --help
+    Show this help'
+  actual=$(shifu_help shifu_test_all_options_cmd)
+  shifu_assert_strings_equal help_message "$expected" "$actual"
+}
+
+nope_test_shifu_help_global() {
   expected='Test cmd all help
 
 These are all the fancy things you can do with the all command
@@ -330,7 +378,7 @@ Options
     default argument flag/option help. Default: def_flag_opt
   -h, --help
     Show this help'
-  actual=$(shifu_help shifu_test_all_options_cmd)
+  actual=$(shifu_help shifu_test_leaf_four_cmd)
   shifu_assert_strings_equal help_message "$expected" "$actual"
 }
 

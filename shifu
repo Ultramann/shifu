@@ -47,8 +47,8 @@ shifu_arg_local() {
 }
 
 shifu_run_cmd() {
-  shifu_var_store mode parent parse_local arg arg_matched shifu_cmds cmd \
-                  cmd_name cmd_help cmd_long cmd_subs cmd_func
+  shifu_var_store mode parent parse_local arg arg_matched global_help \
+                  shifu_cmds cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
   mode=$shifu_mode_cmds
   parent="$1"; shift; "$parent"; shifu_cmds="$cmd_subs"
   while [ $# -ne 0 ]; do
@@ -75,8 +75,8 @@ shifu_run_cmd() {
   done
   [ -z "$cmd_func" ] && { echo "$cmd_name" requires arguments; shifu_help "$cmd"; exit 1; }
   [ "$1" = "-h" -o "$1" = "--help" ] && shifu_help "$cmd" || "$cmd_func" "$@"
-  shifu_var_restore mode parent parse_local arg arg_matched shifu_cmds cmd \
-                    cmd_name cmd_help cmd_long cmd_subs cmd_func
+  shifu_var_restore mode parent parse_local arg arg_matched global_help \
+                    shifu_cmds cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
 }
 
 shifu_parse_args() {
@@ -89,9 +89,9 @@ shifu_parse_args() {
 shifu_shift_remaining="for shifu_counter in \$_shifu_args_parsed; do shift; done"
 
 shifu_help() {
-  shifu_var_store mode help_stage help_usage help_arguments help_options help_options_g help_string has_options subcmd_help
+  shifu_var_store mode help_stage help_usage help_arguments help_options help_string has_options subcmd_help
   _shifu_help "$@"
-  shifu_var_restore mode help_stage help_usage help_arguments help_options help_options_g help_string has_options subcmd_help
+  shifu_var_restore mode help_stage help_usage help_arguments help_options help_string has_options subcmd_help
 }
 
 shifu_var_store() {
@@ -180,12 +180,12 @@ _shifu_handle_arg_global() {
   if [ $# -gt 1 -a "$1" != -- ]; then
     has_options=1
     global_case="$global_case $1"
-    help_options_g="$help_options_g\n  $1"
+    global_help="$global_help\n  $1"
     shift
   fi
   while [ $# -gt 1 -a "$1" != -- ]; do
     global_case="${global_case}|$1"
-    help_options_g="$help_options_g, $1"
+    global_help="$global_help, $1"
     shift
   done; shift
   # remaining
@@ -200,21 +200,21 @@ _shifu_handle_arg_global() {
     eval "$1=" > /dev/null 2>&1
     [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
     global_case="$global_case) $1=\$2; shift; shift; _shifu_ack_arg; _shifu_ack_arg ;; "
-    help_options_g="$help_options_g $1\n    $2"
+    global_help="$global_help $1\n    $2"
   # option + argument with default
   elif [ $# -eq 3 ]; then
     [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
     eval "$1=$2" > /dev/null 2>&1
     [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
     global_case="$global_case) $1=\$2; shift; shift; _shifu_ack_arg; _shifu_ack_arg ;; "
-    help_options_g="$help_options_g $1\n    $3. Default: $2"
+    global_help="$global_help $1\n    $3\n    Default: $2"
   # option no argument default set
   elif [ $# -eq 4 ]; then
     [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
     eval "$1=$2" > /dev/null 2>&1
     [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
     global_case="$global_case) $1=$3; shift; _shifu_ack_arg ;; "
-    help_options_g="$help_options_g\n    $4. Set: $3, default: $2"
+    global_help="$global_help\n    $4\n    Default: $2, set: $3"
   fi
 }
 
@@ -253,11 +253,11 @@ _shifu_arg_help() {
   # option + argument with default
   elif [ $# -eq 3 ]; then
     [ $help_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
-    help_options="$help_options [$1]\n    $3. Default: $2"
+    help_options="$help_options [$1]\n    $3\n    Default: $2"
   # option no argument default set
   elif [ $# -eq 4 ]; then
     [ $help_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
-    help_options="$help_options\n    $4. Set: $3, default: $2"
+    help_options="$help_options\n    $4\n    Default: $2, set: $3"
   fi
 }
 
@@ -266,7 +266,7 @@ _shifu_help() {
   _shifu_clear_cmd_vars
   help_stage=0 help_usage='' help_arguments='' help_options='' help_string=''
   "$1"
-  help_options="$help_options$help_options_g\n  -h, --help\n    Show this help"
+  help_options="$help_options$global_help\n  -h, --help\n    Show this help"
   [ -n "$help_usage" ] && help_usage="$cmd_name [OPTIONS]$help_usage"
   [ -n "$cmd_help" ] && _shifu_add_to_help_string "$cmd_help"
   [ -n "$cmd_long" ] && _shifu_add_to_help_string "$cmd_long"
