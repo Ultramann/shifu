@@ -4,10 +4,10 @@
 (____/(_)  (_)(_____)(_)    (______)
 ```
 
-SHell Interface Function Utiltities, or shifu, is a set of utility functions to make creating a cli from a shell script simple. Shell scripts make gluing together functionality very easy and fairly portable. However, if you want to extend the functionality to have a cli like interface: have related but distinct entry points, nested subcommands, parse many command line options, or write and maintain documentation, shell languages can quickly turn from helpful glue to a messy kindergarden project: cute, but mostly useless. Shifu aims to address that problem and make creating a cli interface from a shell script declarative and mainable.
+SHell Interface Function Utilities, or shifu, is a set of utility functions to make creating a cli from a shell script simple. Shell scripts make gluing together functionality from different cli's very easy and fairly portable. However, if you want to extend the capabilities to have cli like features: related but distinct entry points, nested subcommands, parse many command line options, or write and maintain documentation; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but mostly useless. Shifu aims to address that problem and make creating a cli from a shell script declarative and maintainable.
 
 Shifu has the following qualities:
-* POSIX compliance, aka compatibility many shells
+* POSIX compliance; aka, compatibility many shells
   * tested with: ksh, dash, bash, zsh
 * declarative argument parsing
 * subcommand dispatching
@@ -25,7 +25,7 @@ Shifu gives cli shell scripts the opportunity to be better than they are.
 
 Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ calls shifu functions. These functions provide a declarative way to tell shifu how to wire together your cli. Commands are passed to one of shifu's command runners: `shifu_parse_args` and `shifu_run_cmd`.
 
-Let's take a look at some toy scripts to get an introduction to writing shifu commands.
+Let's take a look at some toy scripts to get an introduction to writing and using shifu commands.
 
 1. [Argument parsing](#argument-parsing)
 2. [Subcommand dispatch](#subcommand-dispatch)
@@ -174,7 +174,7 @@ shifu_run_cmd kfp_dispatch_cmd "$@"
 Let's walk through the steps outlined in comments.
 1. Source the shifu...source
 2. Define a root shifu command, `kfp_dispatch_cmd`
-3. Declare a name for the root command with `shifu_cmd_name`. By convention, the root command name should match the script name
+3. Declare a name for the root command with `shifu_cmd_name`. This isn't technically required, but convention is to make it the name of the script
 4. Declare subcommands for dispatch with `shifu_cmd_subs`. This function takes > 0 arguments, the names of subcommand command functions
 5. Declare global arguments with `shifu_cmd_arg`. When `shifu_cmd_arg` is used in a dispatch function, all subcommands will inherit the argument parsing configuration. Here we declare two global arguments, `LOUD` and `QUIET`, so they can be reused in both subcommands
 6. Define subcommands, this looks just like defining a command, as in set 3. You'll notice that these are the commands we passed to `shifu_cmd_subs` in step 4. As with any command, we can declare arguments; here we declare a positional argument, `CHARACTER` (global positional arguments are not allowed so we repeat this argument declaration in both commands)
