@@ -295,15 +295,18 @@ Above we see that we asked for help on the quote subcommand and got back the ter
 
 ## Installation
 
-Since shifu is just a POSIX compatible script all you need to do is make a copy of it.
+Since shifu is just a POSIX compatible script all you need to do is get a copy of it.
+```sh
+curl -O https://raw.githubusercontent.com/ultramann/shifu/refs/heads/main/shifu
+```
 
 ## Import
-To "import" shifu you simply need to source its file path. If you've installed shifu to location on your path you can include the following at the top of your script
+To "import" shifu you simply need to source its file path. If you've installed shifu to location on your path you can include the following at the top of your script.
 ```sh
 . shifu
 ```
 
-For a more portable method you can make sure shifu is in the same directory as the calling script and use
+For a more portable method you can make sure shifu is in the same directory as the calling script and use the the following.
 ```sh
 . "$(dirname "$0")"/shifu || exit 1
 ```
