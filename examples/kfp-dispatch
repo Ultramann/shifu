@@ -6,22 +6,22 @@ kfp_dispatch_cmd() {
   shifu_cmd_name kfp-dispatch
   shifu_cmd_subs quote_cmd advice_cmd
 
-  shifu_arg -l --loud  -- LOUD  false true "Perform action loudly!"
-  shifu_arg -q --quiet -- QUIET false true "Try to perform action quietly."
+  shifu_cmd_arg -l --loud  -- LOUD  false true "Perform action loudly!"
+  shifu_cmd_arg -q --quiet -- QUIET false true "Try to perform action quietly."
 }
 
 quote_cmd() {
   shifu_cmd_name quote
   shifu_cmd_func kfp_quote
 
-  shifu_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
+  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
 }
 
 advice_cmd() {
   shifu_cmd_name advice
   shifu_cmd_func kfp_advice
 
-  shifu_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
+  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
 }
 
 kfp_quote() {

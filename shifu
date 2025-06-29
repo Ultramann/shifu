@@ -5,32 +5,27 @@ shifu_mode_args=1
 shifu_mode_help=2
 
 shifu_cmd_name() {
-  # 1: command name
   [ $# -ne 1 ] && { echo "Commands cannot contain spaces got: \"$@\""; exit 1; }
   [ $mode -ne $shifu_mode_args ] && cmd_name="$1"
 }
 
 shifu_cmd_help() {
-  # @: help string
   [ $mode -ne $shifu_mode_args ] && cmd_help="$@"
 }
 
 shifu_cmd_long() {
-  # @: long help string
   [ $mode -ne $shifu_mode_args ] && cmd_long="$@"
 }
 
 shifu_cmd_subs() {
-  # @: subcommand function names
   [ $mode -ne $shifu_mode_args ] && cmd_subs="$@"
 }
 
 shifu_cmd_func() {
-  # @: command function name
   [ $mode -ne $shifu_mode_args ] && cmd_func="$@"
 }
 
-shifu_arg() {
+shifu_cmd_arg() {
   case $mode in
     $shifu_mode_help)
       [ -z "$cmd_subs" ] && _shifu_arg_help "$@" ;;
@@ -39,7 +34,7 @@ shifu_arg() {
   esac
 }
 
-shifu_arg_local() {
+shifu_cmd_larg() {
   case $mode in
     $shifu_mode_help) _shifu_arg_help "$@" ;;
     $shifu_mode_args) _shifu_parse_arg "$@" ;;
@@ -54,7 +49,7 @@ shifu_run_cmd() {
   while [ $# -ne 0 ]; do
     parse_local=true
     shifu_parse_args "$parent" "$@"
-    eval "$shifu_shift_remaining"
+    eval "$shifu_align_args"
     arg="$1"; shift
     arg_matched=''
     for cmd in $shifu_cmds; do
@@ -80,13 +75,12 @@ shifu_run_cmd() {
 }
 
 shifu_parse_args() {
-  # 1: function, 2-: args to parse
   shifu_var_store mode parse_stage cmd case_stmt has_options
   _shifu_parse_args "$@"
   shifu_var_restore mode cmd parse_stage case_stmt has_options
 }
 
-shifu_shift_remaining="for shifu_counter in \$_shifu_args_parsed; do shift; done"
+shifu_align_args="for shifu_counter in \$_shifu_args_parsed; do shift; done"
 
 shifu_help() {
   shifu_var_store mode help_stage help_usage help_arguments help_options help_string has_options subcmd_help
@@ -166,7 +160,7 @@ _shifu_parse_arg() {
     eval "$1=$2" > /dev/null 2>&1
     [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
     case_stmt="$case_stmt) $1=\$2; shift; shift; _shifu_ack_arg; _shifu_ack_arg ;; "
-  # option no argument default set
+  # option no argument, default-set
   elif [ $# -eq 4 ]; then
     [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
     eval "$1=$2" > /dev/null 2>&1
@@ -208,7 +202,7 @@ _shifu_handle_arg_global() {
     [ $? -ne 0 ] && { echo "Invalid variable name: $1"; exit 1; }
     global_case="$global_case) $1=\$2; shift; shift; _shifu_ack_arg; _shifu_ack_arg ;; "
     global_help="$global_help $1\n    $3\n    Default: $2"
-  # option no argument default set
+  # option no argument, default-set
   elif [ $# -eq 4 ]; then
     [ $parse_stage -gt 0 ] && { echo "No options after positional/remaining arguments: $1"; exit 1; }
     eval "$1=$2" > /dev/null 2>&1

@@ -37,7 +37,7 @@ shifu_test_root_cmd() {
   shifu_cmd_help "Test root cmd help"
   shifu_cmd_subs shifu_test_sub_one_cmd shifu_test_sub_two_cmd
 
-  shifu_arg_local -l --local_test -- local_test false true "A test local cmd arg"
+  shifu_cmd_larg -l --local_test -- local_test false true "A test local cmd arg"
 }
 
 shifu_test_sub_one_cmd() {
@@ -51,7 +51,7 @@ shifu_test_sub_two_cmd() {
   shifu_cmd_help "Test sub two cmd help"
   shifu_cmd_subs shifu_test_leaf_three_cmd shifu_test_leaf_four_cmd
 
-  shifu_arg -g --global -- global_test false true "A test global cmd arg"
+  shifu_cmd_arg -g --global -- global_test false true "A test global cmd arg"
 }
 
 shifu_test_leaf_one_cmd() {
@@ -88,7 +88,7 @@ shifu_test_leaf_func_two() {
 
 shifu_test_leaf_three_func() {
   shifu_parse_args shifu_test_leaf_three_cmd "$@"
-  eval "$shifu_shift_remaining"
+  eval "$shifu_align_args"
   leaf_three_args="$@"
 }
 
@@ -101,18 +101,18 @@ shifu_test_all_options_cmd() {
   shifu_cmd_help "Test cmd all help"
   shifu_cmd_long "These are all the fancy things you can do with the all command"
 
-  shifu_arg -f -- FLAG_BIN 0 1      "binary flag help"
-  shifu_arg -a -- FLAG_ARG          "flag argument help"
-  shifu_arg -d -- FLAG_DEF def_flag "default argument flag help"
-  shifu_arg --option-bin -- OPTION_BIN 0 1     "binary option help"
-  shifu_arg --option-arg -- OPTION_ARG         "argument option help"
-  shifu_arg --option-def -- OPTION_DEF def_opt "default argument option help"
-  shifu_arg -F --flag-option-bin -- FLAG_OPTION_BIN 0 1 "binary flag/option help"
-  shifu_arg -A --flag-option-arg -- FLAG_OPTION_ARG     "argument flag/option help"
-  shifu_arg -D --flag-option-def -- FLAG_OPTION_DEF def_flag_opt \
+  shifu_cmd_arg -f -- FLAG_BIN 0 1      "binary flag help"
+  shifu_cmd_arg -a -- FLAG_ARG          "flag argument help"
+  shifu_cmd_arg -d -- FLAG_DEF def_flag "default argument flag help"
+  shifu_cmd_arg --option-bin -- OPTION_BIN 0 1     "binary option help"
+  shifu_cmd_arg --option-arg -- OPTION_ARG         "argument option help"
+  shifu_cmd_arg --option-def -- OPTION_DEF def_opt "default argument option help"
+  shifu_cmd_arg -F --flag-option-bin -- FLAG_OPTION_BIN 0 1 "binary flag/option help"
+  shifu_cmd_arg -A --flag-option-arg -- FLAG_OPTION_ARG     "argument flag/option help"
+  shifu_cmd_arg -D --flag-option-def -- FLAG_OPTION_DEF def_flag_opt \
                                     "default argument flag/option help"
-  shifu_arg                      -- POSITIONAL_ARG "positional argument help"
-  shifu_arg                      --                "remaining arguments help"
+  shifu_cmd_arg                      -- POSITIONAL_ARG "positional argument help"
+  shifu_cmd_arg                      --                "remaining arguments help"
 }
 
 test_shifu_run_good() {
@@ -133,14 +133,14 @@ test_shifu_run_good_cmd_global_arg() {
   shifu_var_restore global_test leaf_three_args
 }
 
-test_shifu_run_good_cmd_global_and_intermediate_arg() {
-  shifu_var_store intermediate_test global_test leaf_three_args
+test_shifu_run_good_cmd_global_and_local_arg() {
+  shifu_var_store local_test global_test leaf_three_args
   shifu_run_cmd shifu_test_root_cmd -l sub-two leaf-three -g one two
   shifu_assert_zero status $#
-  shifu_assert_equal intermediate_test "$local_test" true
+  shifu_assert_equal local_test "$local_test" true
   shifu_assert_equal global_test "$global_test" true
   shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
-  shifu_var_restore intermediate_test global_test leaf_three_args
+  shifu_var_restore local_test global_test leaf_three_args
 }
 
 test_shifu_run_bad_first_cmd() {

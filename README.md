@@ -33,11 +33,11 @@ Let's take a look at some toy scripts to get an introduction to writing shifu co
 
 ### Argument parsing
 
-With shifu, arguments to be parsed are declared with the function `shifu_arg`. The patterns to match against are provided before a `--`, followed by the variable which the argument will be parsed into and some information about defaults and help.
+With shifu, arguments to be parsed are declared with the function `shifu_cmd_arg`. The patterns to match against are provided before a `--`, followed by the variable which the argument will be parsed into and some information about defaults and help.
 
-The command containing `shifu_arg` declarations is passed to the `shifu_parse_args` command runner along with all the positional arguments, `$@`. After `shifu_parse_args` runs the variables declared after `--` in the `shifu_arg` declarations will be populated depending on the arguments.
+The command containing `shifu_cmd_arg` declarations is passed to the `shifu_parse_args` command runner along with all the positional arguments, `$@`. After `shifu_parse_args` runs the variables declared after `--` in the `shifu_cmd_arg` declarations will be populated depending on the arguments.
 
-The following example demonstrates how to use the `shifu_arg` and `shifu_parse_args`.
+The following example demonstrates how to use the `shifu_cmd_arg` and `shifu_parse_args`.
 
 [`examples/kfp-parse`](/examples/kfp-parse)
 
@@ -49,9 +49,9 @@ The following example demonstrates how to use the `shifu_arg` and `shifu_parse_a
 
 # 2. Define command
 kfp_parse_cmd() {
-  shifu_arg -l --loud  -- LOUD      false true "Perform action loudly!"
-  shifu_arg -q --quiet -- QUIET     false true "Try to perform action quietly."
-  shifu_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po."
+  shifu_cmd_arg -l --loud  -- LOUD      false true "Perform action loudly!"
+  shifu_cmd_arg -q --quiet -- QUIET     false true "Try to perform action quietly."
+  shifu_cmd_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po."
 }
 
 # 3. Parse arguments with command
@@ -72,8 +72,8 @@ echo "$string"
 
 Let's walk through the steps outlined in comments.
 1. Source the shifu...source
-2. Define a shifu command, `kfp_parse_cmd`. As you can see, the `shifu_arg` function enables declaration of argument for shifu to parse and store in variables, `LOUD`, `QUIET`, and `CHARACTER`. This example uses two of the ways arguments can be declared, binary options and positional arguments; there are a few more though, see the api section on [`shifu_arg`](#shifu_arg) for more information
-3. Parse arguments with `shifu_parse_args`. This command runner takes a command, here `kfp_parse_cmd`, and all the arguments, `"$@"` (it's good practice to include quotes). When `shifu_parse_args` runs, the `shifu_arg` usages in `kfp_parse_cmd` will parse the arguments in `$@` to values in the variables `LOUD`, `QUIET`, and `CHARACTER`
+2. Define a shifu command, `kfp_parse_cmd`. As you can see, the `shifu_cmd_arg` function enables declaration of argument for shifu to parse and store in variables, `LOUD`, `QUIET`, and `CHARACTER`. This example uses two of the ways arguments can be declared, binary options and positional arguments; there are a few more though, see the api section on [`shifu_cmd_arg`](#shifu_cmd_arg) for more information
+3. Parse arguments with `shifu_parse_args`. This command runner takes a command, here `kfp_parse_cmd`, and all the arguments, `"$@"` (it's good practice to include quotes). When `shifu_parse_args` runs, the `shifu_cmd_arg` usages in `kfp_parse_cmd` will parse the arguments in `$@` to values in the variables `LOUD`, `QUIET`, and `CHARACTER`
 4. Do useful script things
 
 Running this script with some different arguments will help clarify what's going on.
@@ -96,7 +96,7 @@ Shifu manages subcommand dispatch with a trio of functions:
 
 Invoking subcommand dispatch is done with the `shifu_run_cmd` function. As with all command runners, `shifu_run_cmd` is passed the name of a shifu command function and all of the arguments `$@`.
 
-The following example demonstrates how to use the shifu subcommand dispatch functions and `shifu_run_cmd`. This example builds on the previous as it also uses `shifu_parse_args` to parse the arguments passed to the functions that get dispatched to; it will also introduce another way `shifu_arg` behaves when used in a dispatching command. Much of the mian logic from the previous example is used again, but this time extra functionality is added via dispatching.
+The following example demonstrates how to use the shifu subcommand dispatch functions and `shifu_run_cmd`. This example builds on the previous as it also uses `shifu_parse_args` to parse the arguments passed to the functions that get dispatched to; it will also introduce another way `shifu_cmd_arg` behaves when used in a dispatching command. Much of the main logic from the previous example is used again, but this time extra functionality is added via dispatching.
 
 [`examples/kfp-dispatch`](/examples/kfp-dispatch)
 
@@ -114,8 +114,8 @@ kfp_dispatch_cmd() {
   shifu_cmd_subs quote_cmd advice_cmd
 
   # 5. Declare global arguments
-  shifu_arg -l --loud  -- LOUD  false true "Perform action loudly!"
-  shifu_arg -q --quiet -- QUIET false true "Try to perform action quietly."
+  shifu_cmd_arg -l --loud  -- LOUD  false true "Perform action loudly!"
+  shifu_cmd_arg -q --quiet -- QUIET false true "Try to perform action quietly."
 }
 
 # 6. Declare the shifu subcommand functions
@@ -125,14 +125,14 @@ quote_cmd() {
   # 7. Declare the function to dispatch to
   shifu_cmd_func kfp_quote
 
-  shifu_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
+  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
 }
 
 advice_cmd() {
   shifu_cmd_name advice
   shifu_cmd_func kfp_advice
 
-  shifu_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
+  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
 }
 
 # 8. Declare the function called by the shifu subcommand
@@ -176,7 +176,7 @@ Let's walk through the steps outlined in comments.
 2. Define a root shifu command, `kfp_dispatch_cmd`
 3. Declare a name for the root command with `shifu_cmd_name`. By convention, the root command name should match the script name
 4. Declare subcommands for dispatch with `shifu_cmd_subs`. This function takes > 0 arguments, the names of subcommand command functions
-5. Declare global arguments with `shifu_arg`. When `shifu_arg` is used in a dispatch function, all subcommands will inherit the argument parsing configuration. Here we declare two global arguments, `LOUD` and `QUIET`, so they can be reused in both subcommands
+5. Declare global arguments with `shifu_cmd_arg`. When `shifu_cmd_arg` is used in a dispatch function, all subcommands will inherit the argument parsing configuration. Here we declare two global arguments, `LOUD` and `QUIET`, so they can be reused in both subcommands
 6. Define subcommands, this looks just like defining a command, as in set 3. You'll notice that these are the commands we passed to `shifu_cmd_subs` in step 4. As with any command, we can declare arguments; here we declare a positional argument, `CHARACTER` (global positional arguments are not allowed so we repeat this argument declaration in both commands)
 7.  Instead of dispatching to subcommands with `shifu_cmd_subs`, these subcommands use `shifu_cmd_func` to dispatch to a function.
 8. Write the functions dispatched to by the subcommands, aka referenced by `shifu_cmd_func` in step 7
