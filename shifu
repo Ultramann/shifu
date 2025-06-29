@@ -45,8 +45,8 @@ shifu_run_cmd() {
   shifu_var_store mode parent parse_local arg arg_matched global_help \
                   shifu_cmds cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
   mode=$shifu_mode_cmds
-  parent="$1"; shift; "$parent"; shifu_cmds="$cmd_subs"
-  while [ $# -ne 0 ]; do
+  parent="$1"; cmd="$1"; shift; "$parent"; shifu_cmds="$cmd_subs"
+  while [ $# -ne 0 -a "${#cmd_subs}" -gt 0 ]; do
     parse_local=true
     shifu_parse_args "$parent" "$@"
     eval "$shifu_align_args"
