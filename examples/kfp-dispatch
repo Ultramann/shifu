@@ -14,14 +14,14 @@ quote_cmd() {
   shifu_cmd_name quote
   shifu_cmd_func kfp_quote
 
-  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
+  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po"
 }
 
 advice_cmd() {
   shifu_cmd_name advice
   shifu_cmd_func kfp_advice
 
-  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
+  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po"
 }
 
 kfp_quote() {

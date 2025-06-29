@@ -5,7 +5,7 @@
 kfp_parse_cmd() {
   shifu_cmd_arg -l --loud  -- LOUD  false true "Display text loudly!"
   shifu_cmd_arg -q --quiet -- QUIET false true 'Display text "quietly"'
-  shifu_cmd_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po."
+  shifu_cmd_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po"
 }
 
 shifu_parse_args kfp_parse_cmd "$@"

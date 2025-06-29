@@ -27,7 +27,7 @@ advice_cmd() {
   shifu_cmd_long "Gosh, this movie has lots of amazing quotes"
   shifu_cmd_func kfp_advice
 
-  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
+  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po"
 }
 
 kfp_quote() {

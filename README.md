@@ -4,14 +4,14 @@
 (____/(_)  (_)(_____)(_)    (______)
 ```
 
-SHell Interface Function Utilities, or shifu, is a set of utility functions to make creating a cli from a shell script simple. Shell scripts make gluing together functionality from different cli's easy and fairly portable. However, if you want to extend the capabilities to have cli like features: related but distinct entry points, nested subcommands, parse many command line options, or write and maintain documentation; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but mostly useless. Shifu aims to address that problem and make creating a cli from a shell script declarative and maintainable.
+SHell Interface Function Utilities, or shifu, is a set of utility functions to make creating a cli from a shell script simple. Shell scripts make gluing together functionality from different cli's easy and fairly portable. However, if you want to extend the capabilities to have cli like features: related but distinct entry points, nested subcommands, parse many command line options, or write and maintain documentation; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address that problem and make creating a cli from a shell script declarative and maintainable.
 
 Shifu has the following qualities:
 * POSIX compliance; aka, compatibility many shells
   * tested with: ksh, dash, bash, zsh
 * declarative argument parsing
 * subcommand dispatching
-* scoped help string generation
+* scoped help generation
 
 Some people may say that this is not what shells are for; and perhaps they're right. However, sometimes a shell is all you want to require your users to need while still enabling a sophisticated cli ux; shifu can help deal with the cli boilerplate in those situations and let you focus on the real functionality. Plus, consider the following quote.
 
@@ -51,7 +51,7 @@ The following example demonstrates how to use the `shifu_cmd_arg` and `shifu_par
 kfp_parse_cmd() {
   shifu_cmd_arg -l --loud  -- LOUD  false true "Display text loudly!"
   shifu_cmd_arg -q --quiet -- QUIET false true 'Display text "quietly"'
-  shifu_cmd_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po."
+  shifu_cmd_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po"
 }
 
 # 3. Parse arguments with command
@@ -125,14 +125,14 @@ quote_cmd() {
   # 7. Declare the function to dispatch to
   shifu_cmd_func kfp_quote
 
-  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
+  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po"
 }
 
 advice_cmd() {
   shifu_cmd_name advice
   shifu_cmd_func kfp_advice
 
-  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
+  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po"
 }
 
 # 8. Declare the function called by the shifu subcommand
@@ -227,7 +227,7 @@ quote_cmd() {
   shifu_cmd_long "This long help will be shown when getting help for this specific subcommand, but not shown when getting help for the parent command"
   shifu_cmd_func kfp_quote
 
-  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
+  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po"
 }
 
 advice_cmd() {
@@ -236,7 +236,7 @@ advice_cmd() {
   shifu_cmd_long "Gosh, this movie has lots of amazing quotes"
   shifu_cmd_func kfp_advice
 
-  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
+  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po"
 }
 
 # the rest is the same as in examples/kfp-dispatch until
@@ -262,7 +262,7 @@ Options
     Show this help
 ```
 
-Above we see that we asked for help on the root command and got back the terse and long help we included in our changes to `kfp_help_cmd`. We also see a subcommand section that includes the names of subcommands and their terse help. Note, even though we declared arguments in `kfp_help_cmd` -- for `LOUD` and `QUIET` -- we don't see help for them here because `kfp_help_cmd` has no call to `shifu_cmd_func`.
+Above we see that we asked for help on the root command and got back the terse and long help we included in our changes to `kfp_help_cmd`. We also see a subcommand section that includes the names of subcommands and their terse help. Note, even though we declared arguments in `kfp_help_cmd` -- for loud and quiet -- we don't see help for them here because `kfp_help_cmd` has no call to `shifu_cmd_func`; aka they can't be used here.
 
 ```txt
 $ examples/kfp-help quote -h
@@ -275,7 +275,7 @@ Usage
 
 Arguments
   CHARACTER
-    Select character to see quote: oogway, shifu, po.
+    Select character to see quote: oogway, shifu, po
 
 Options
   -l, --loud
@@ -291,7 +291,7 @@ Options
 Above we see that we asked for help on the quote subcommand and got back the terse and long help we included in our changes to `kfp_help_cmd`. Since `kfp_quote_cmd` has no subcommands, and instead has positional arguments we see some differences between it's help and the base help
 * there's no subcommand section
 * there are usage and arguments sections
-* inherited options, `LOUD` and `QUIET`, are included
+* inherited options, for loud and quiet, are included
 
 ## Installation
 
