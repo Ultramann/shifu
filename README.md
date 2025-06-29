@@ -4,7 +4,7 @@
 (____/(_)  (_)(_____)(_)    (______)
 ```
 
-SHell Interface Function Utilities, or shifu, is a set of utility functions to make creating a cli from a shell script simple. Shell scripts make gluing together functionality from different cli's very easy and fairly portable. However, if you want to extend the capabilities to have cli like features: related but distinct entry points, nested subcommands, parse many command line options, or write and maintain documentation; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but mostly useless. Shifu aims to address that problem and make creating a cli from a shell script declarative and maintainable.
+SHell Interface Function Utilities, or shifu, is a set of utility functions to make creating a cli from a shell script simple. Shell scripts make gluing together functionality from different cli's easy and fairly portable. However, if you want to extend the capabilities to have cli like features: related but distinct entry points, nested subcommands, parse many command line options, or write and maintain documentation; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but mostly useless. Shifu aims to address that problem and make creating a cli from a shell script declarative and maintainable.
 
 Shifu has the following qualities:
 * POSIX compliance; aka, compatibility many shells
@@ -35,16 +35,16 @@ Let's take a look at some toy scripts to get an introduction to writing and usin
 
 With shifu, arguments to be parsed are declared with the function `shifu_cmd_arg`. The patterns to match against are provided before a `--`, followed by the variable which the argument will be parsed into and some information about defaults and help.
 
-The command containing `shifu_cmd_arg` declarations is passed to the `shifu_parse_args` command runner along with all the positional arguments, `$@`. After `shifu_parse_args` runs the variables declared after `--` in the `shifu_cmd_arg` declarations will be populated depending on the arguments.
+The command containing `shifu_cmd_arg` declarations is passed to the `shifu_parse_args` command runner along with all the positional arguments, `$@`. After `shifu_parse_args` runs the variables declared after `--` in the `shifu_cmd_arg` will be populated depending on the arguments.
 
-The following example demonstrates how to use the `shifu_cmd_arg` and `shifu_parse_args`.
+The following example demonstrates how to use the `shifu_cmd_arg` and `shifu_parse_args` functions.
 
 [`examples/kfp-parse`](/examples/kfp-parse)
 
 ```sh
 #! /bin/sh
 
-# 1. Source shifu
+# 1. Source, import, shifu
 . "$(dirname "$0")"/shifu || exit 1
 
 # 2. Define command
@@ -71,7 +71,7 @@ echo "$string"
 ```
 
 Let's walk through the steps outlined in comments.
-1. Source the shifu...source
+1. Import shifu by sourcing its...source
 2. Define a shifu command, `kfp_parse_cmd`. As you can see, the `shifu_cmd_arg` function enables declaration of argument for shifu to parse and store in variables, `LOUD`, `QUIET`, and `CHARACTER`. This example uses two of the ways arguments can be declared, binary options and positional arguments; there are a few more though, see the api section on [`shifu_cmd_arg`](#shifu_cmd_arg) for more information
 3. Parse arguments with `shifu_parse_args`. This command runner takes a command, here `kfp_parse_cmd`, and all the arguments, `"$@"` (it's good practice to include quotes). When `shifu_parse_args` runs, the `shifu_cmd_arg` usages in `kfp_parse_cmd` will parse the arguments in `$@` to values in the variables `LOUD`, `QUIET`, and `CHARACTER`
 4. Do useful script things
@@ -103,7 +103,7 @@ The following example demonstrates how to use the shifu subcommand dispatch func
 ```sh
 # /bin/sh
 
-# 1. Source shifu
+# 1. Source, import, shifu
 . "$(dirname "$0")"/shifu || exit 1
 
 # 2. Declare a root command
@@ -172,7 +172,7 @@ shifu_run_cmd kfp_dispatch_cmd "$@"
 ```
 
 Let's walk through the steps outlined in comments.
-1. Source the shifu...source
+1. Import shifu by sourcing its...source
 2. Define a root shifu command, `kfp_dispatch_cmd`
 3. Declare a name for the root command with `shifu_cmd_name`. This isn't technically required, but convention is to make it the name of the script
 4. Declare subcommands for dispatch with `shifu_cmd_subs`. This function takes > 0 arguments, the names of subcommand command functions
@@ -290,15 +290,131 @@ Options
 
 Above we see that we asked for help on the quote subcommand and got back the terse and long help we included in our changes to `kfp_help_cmd`. Since `kfp_quote_cmd` has no subcommands, and instead has positional arguments we see some differences between it's help and the base help
 * there's no subcommand section
-* there's a usage and arguments section
-* inherited option, `LOUD` and `QUIET`, are included
+* there are usage and arguments sections
+* inherited options, `LOUD` and `QUIET`, are included
 
 ## Installation
+
+Since shifu is just a POSIX compatible script all you need to do is make a copy of it.
+
+## Import
+To "import" shifu you simply need to source its file path. If you've installed shifu to location on your path you can include the following at the top of your script
+```sh
+. shifu
+```
+
+For a more portable method you can make sure shifu is in the same directory as the calling script and use
+```sh
+. "$(dirname "$0")"/shifu || exit 1
+```
+
+## FAQ
+* What if I don't like to type/dislike seeing `shifu_` at the beginning of all the function calls?
+  * No problem! You can just include `&& shifu_less` after you source shifu. This will define a version the API all without the `shifu_` prefix
+  * You can see an example of this being used in [`examples/sgh`](/examples/sgh)
 
 ## API
 
 ### Command runners
 
+#### `shifu_run_cmd`
+* Takes the name of a command function, those ones that end in `_cmd` by convention, and all the arguments in the current scope, `$@`
+* Dispatches call by parsing arguments in `$@` based on information in command function
+* Will pass all unparsed arguments to function specified in in (sub)command's call to `shifu_cmd_func`
+* Typical use, aka only use it was designed for, is as the last line of a script passing the root command function and all the arguments
+* Example
+  ```sh
+  shifu_run_cmd root_cmd "$@"
+  ```
+
+#### `shifu_parse_args`
+* Takes the name of a command function, those ones that end in `_cmd` by convention, and all the arguments in the current scope, `$@`
+* Parses arguments to variables according to configuration declared in the command function
+* Typical use is as the first line in the user function
+* Example
+  ```sh
+  shifu_parse_args subcommand_one_cmd "$@"
+  ```
+
 ### Command functions
 
-#### `shifu_arg`
+#### `shifu_cmd_name`
+* Name used to reference command from command line arguments
+* When the command is the root command, this name should match the name of the program
+* When the command is a subcommand, the name is used to parse command line arguments
+* Example
+  ```sh
+  shifu_cmd_name shifu
+  ```
+
+#### `shifu_cmd_subs`
+* List of subcommand function names that can be routed to from command
+* Example
+  ```sh
+  shifu_cmd_subs subcommand_one_cmd subcommand_two_cmd
+  ```
+
+#### `shifu_cmd_func`
+* Name of function to run when command is invoked
+* The function will be passed all command line arguments that weren't parsed while identifying the command
+* Example
+  ```sh
+  shifu_cmd_func function_to_run
+  ```
+
+#### `shifu_cmd_help`
+* Brief help string for the command
+* Added in help above the auto-generated help for the command arguments
+* Added to help when listing a command's subcommands
+* Example
+  ```sh
+  shifu_cmd_help "Terse string to help users"
+  ```
+
+#### `shifu_cmd_long`
+* Long help string for the command
+* Added in help after brief help string
+* Example
+  ```sh
+  shifu_cmd_long "Verbose string to really help users"
+  ```
+
+#### `shifu_cmd_arg`
+* Configuration to parse command line arguments to variable values
+* If used in a command with subcommands, all descendent subcommands will inherit the configuration
+* Arguments are passed in two parts separated by a required double dash, `--`:
+  ```sh
+  shifu_cmd_arg [matching patterns] -- [parsing configuration]
+  ```
+* Matching patterns are literal flag/option strings, e.g. `-v`, `--verbose`
+  * Any number can be provided before the double dash
+  ```sh
+  shifu_cmd_arg -v --verbose -- ...
+  ```
+* Parsing configuration defines what values are stored when a pattern is matched or not
+  * The first argument is the variable to store parsed value in
+  * The last argument is always a help string
+  * Different argument counts enable different parsing instructions
+
+  | Kind               | Matching patterns | Variable | Default | Other        | Example                                            |
+  |--------------------|-------------------|----------|---------|--------------|----------------------------------------------------|
+  | Option: binary     | > 0               | Yes      | Yes     | Value if set | `-v -- VERBOSE     false true "Binary option"`     |
+  | Option: w/ default | > 0               | Yes      | Yes     |              | `-o -- OUTPUT_DIR  out        "Option w/ default"` |
+  | Option: no default | > 0               | Yes      | No      |              | `-l -- LOG_DIR                "Option no default"` |
+  | Positional         | 0                 | Yes      | No      |              | `   -- CONFIG_FILE            "Positional"`        |
+  | Remaining          | 0                 | No       | No      |              | `   --                        "Remaining"`         |
+
+* The order that multiple calls to `shifu_cmd_args` occurs in a command function matters in a few ways
+  1. The help string generated from the arguments will match the order of the calls
+  1. No options can be declared after any positional or remaining argument declaration
+* Using `shifu_cmd_args` with the remaining argument combination does not actually parse command line arguments
+  * The call only serves as a way to include help for remaining arguments
+  * Remaining arguments are retrieved by calling `eval "$shifu_align_args"` after `shifu_parse_args`
+
+#### `shifu_cmd_larg`
+* Local argument configuration
+* Same purpose and usage as `shifu_cmd_larg` except subcommands do not inherit configuration
+* Instead option arguments will be parsed greedily when parsing subcommand names allowing usage like
+  ```sh
+  cli root --local sub --args
+  ```
