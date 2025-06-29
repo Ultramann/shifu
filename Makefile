@@ -1,9 +1,3 @@
-run-fake:
-	./fake-cli test sub func "sh*" arg1 arg2
-
-run-fake-log:
-	./fake-cli --shifu-log test sub func "sh*" arg1 arg2
-
 test-all:
 	@if [ -n "$$(which ash)" ]; then \
 	echo "\n===========================  ash   ============================"; \
