@@ -21,6 +21,16 @@ Some people may say that this is not what shells are for; and perhaps they're ri
 
 Shifu gives cli shell scripts the opportunity to be better than they are.
 
+## Table of contents
+* [Quickstart](#quickstart)
+   * [Argument parsing](#argument-parsing)
+   * [Subcommand dispatch](#subcommand-dispatch)
+   * [Help generation](#help-generation)
+* [Installation](#installation)
+* [Import](#import)
+* [FAQ](#faq)
+* [API](#api)
+
 ## Quickstart
 
 Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ calls shifu functions. These functions provide a declarative way to tell shifu how to wire together your cli. Commands are passed to one of shifu's command runners: `shifu_parse_args` and `shifu_run_cmd`.
