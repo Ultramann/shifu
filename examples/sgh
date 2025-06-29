@@ -3,39 +3,39 @@
 # Wrapper around curl commands to the github rest api. Documentation:
 # https://docs.github.com/en/rest?apiVersion=2022-11-28
 
-. "$(dirname "$0")"/shifu || exit 1
+. "$(dirname "$0")"/shifu && shifu_less || exit 1
 
 auth_file="$HOME/.sgh"
 
 sgh_cmd() {
-  shifu_cmd_name sgh
-  shifu_cmd_help "Example github cli implemented with shifu"
-  shifu_cmd_subs auth_cmd issue_cmd pr_cmd
+  cmd_name sgh
+  cmd_help "Example github cli implemented with shifu"
+  cmd_subs auth_cmd issue_cmd pr_cmd
 }
 
 auth_cmd() {
-  shifu_cmd_name auth
-  shifu_cmd_help "Commands for interacting authentication tokens"
-  shifu_cmd_subs auth_clear_cmd auth_set_cmd
+  cmd_name auth
+  cmd_help "Commands for interacting authentication tokens"
+  cmd_subs auth_clear_cmd auth_set_cmd
 }
 
 auth_set_cmd() {
-  shifu_cmd_name set
-  shifu_cmd_help "Set token for authentication"
-  shifu_cmd_func auth_set
+  cmd_name set
+  cmd_help "Set token for authentication"
+  cmd_func auth_set
 
-  shifu_cmd_arg -- PAT "Personal access token, documentation:\nhttps://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens"
+  cmd_arg -- PAT "Personal access token, documentation:\nhttps://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens"
 }
 
 auth_set() {
-  shifu_parse_args auth_set_cmd "$@"
+  parse_args auth_set_cmd "$@"
   printf "$PAT" > "$auth_file"
 }
 
 auth_clear_cmd() {
-  shifu_cmd_name clear
-  shifu_cmd_help "Clear token for authentication"
-  shifu_cmd_func auth_clear
+  cmd_name clear
+  cmd_help "Clear token for authentication"
+  cmd_func auth_clear
 }
 
 auth_clear() {
@@ -47,23 +47,23 @@ _auth_get() {
 }
 
 issue_cmd() {
-  shifu_cmd_name issue
-  shifu_cmd_help "Commands for interacting with github repository issues"
-  shifu_cmd_subs issue_list_cmd issue_get_cmd
+  cmd_name issue
+  cmd_help "Commands for interacting with github repository issues"
+  cmd_subs issue_list_cmd issue_get_cmd
 
-  shifu_cmd_arg -R --repo -- REPO "Github repository in OWNER/REPO format"
+  cmd_arg -R --repo -- REPO "Github repository in OWNER/REPO format"
 }
 
 issue_list_cmd() {
-  shifu_cmd_name list
-  shifu_cmd_help "List issues in a GitHub repository"
-  shifu_cmd_func issue_list
+  cmd_name list
+  cmd_help "List issues in a GitHub repository"
+  cmd_func issue_list
 
-  shifu_cmd_arg -n --number -- NUMBER 10 "Max number of results"
+  cmd_arg -n --number -- NUMBER 10 "Max number of results"
 }
 
 issue_list() {
-  shifu_parse_args issue_list_cmd "$@"
+  parse_args issue_list_cmd "$@"
   update_query per_page "100"
   _gh_api "repos/$REPO/issues$query" | \
     jq -M "map(select(has(\"pull_request\")|not) |
@@ -73,15 +73,15 @@ issue_list() {
 }
 
 issue_get_cmd() {
-  shifu_cmd_name get
-  shifu_cmd_help "Get issue in a GitHub repository"
-  shifu_cmd_func issue_get
+  cmd_name get
+  cmd_help "Get issue in a GitHub repository"
+  cmd_func issue_get
 
-  shifu_cmd_arg -- ISSUE_NUMBER "Issue number to get"
+  cmd_arg -- ISSUE_NUMBER "Issue number to get"
 }
 
 issue_get() {
-  shifu_parse_args issue_get_cmd "$@"
+  parse_args issue_get_cmd "$@"
   _gh_api "repos/$REPO/issues/$ISSUE_NUMBER" | \
     jq -M '
       "\(.title)
@@ -93,38 +93,38 @@ Body: \(.body)
 }
 
 pr_cmd() {
-  shifu_cmd_name pr
-  shifu_cmd_help "Commands for interacting with github repository pull requests"
-  shifu_cmd_subs pr_list_cmd pr_get_cmd
+  cmd_name pr
+  cmd_help "Commands for interacting with github repository pull requests"
+  cmd_subs pr_list_cmd pr_get_cmd
 
-  shifu_cmd_arg -R --repo -- REPO "Github repository in OWNER/REPO format"
+  cmd_arg -R --repo -- REPO "Github repository in OWNER/REPO format"
 }
 
 pr_list_cmd() {
-  shifu_cmd_name list
-  shifu_cmd_help "List pull requests in a GitHub repository"
-  shifu_cmd_func pr_list
+  cmd_name list
+  cmd_help "List pull requests in a GitHub repository"
+  cmd_func pr_list
 
-  shifu_cmd_arg -n --number -- NUMBER 10 "Max number of results"
+  cmd_arg -n --number -- NUMBER 10 "Max number of results"
 }
 
 pr_list() {
-  shifu_parse_args pr_list_cmd "$@"
+  parse_args pr_list_cmd "$@"
   update_query per_page "$NUMBER"
   _gh_api "repos/$REPO/pulls$query" | \
     jq -M '.[] | "\(.number): \(.title)"' | xargs -I{} echo {}
 }
 
 pr_get_cmd() {
-  shifu_cmd_name get
-  shifu_cmd_help "Get pr in a GitHub repository"
-  shifu_cmd_func pr_get
+  cmd_name get
+  cmd_help "Get pr in a GitHub repository"
+  cmd_func pr_get
 
-  shifu_cmd_arg -- PR_NUMBER "Pull request number to get"
+  cmd_arg -- PR_NUMBER "Pull request number to get"
 }
 
 pr_get() {
-  shifu_parse_args pr_get_cmd "$@"
+  parse_args pr_get_cmd "$@"
   _gh_api "repos/$REPO/pulls/$PR_NUMBER" | \
     jq -M '
       "\(.title)
@@ -149,4 +149,4 @@ _gh_api() {
     "https://api.github.com/$1"
 }
 
-shifu_run_cmd sgh_cmd "$@"
+run_cmd sgh_cmd "$@"

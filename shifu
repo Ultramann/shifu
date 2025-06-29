@@ -82,6 +82,19 @@ shifu_parse_args() {
 
 shifu_align_args="for shifu_counter in \$_shifu_args_parsed; do shift; done"
 
+shifu_less() {
+  cmd_name()   { shifu_cmd_name "$@"; }
+  cmd_help()   { shifu_cmd_help "$@"; }
+  cmd_long()   { shifu_cmd_long "$@"; }
+  cmd_subs()   { shifu_cmd_subs "$@"; }
+  cmd_func()   { shifu_cmd_func "$@"; }
+  cmd_larg()   { shifu_cmd_larg "$@"; }
+  cmd_arg()    { shifu_cmd_arg "$@"; }
+  run_cmd()    { shifu_run_cmd "$@"; }
+  parse_args() { shifu_parse_args "$@"; }
+  align_args="for shifu_counter in \$_shifu_args_parsed; do shift; done"
+}
+
 shifu_help() {
   shifu_var_store mode help_stage help_usage help_arguments help_options help_string has_options subcmd_help
   _shifu_help "$@"
