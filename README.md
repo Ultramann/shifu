@@ -49,8 +49,8 @@ The following example demonstrates how to use the `shifu_cmd_arg` and `shifu_par
 
 # 2. Define command
 kfp_parse_cmd() {
-  shifu_cmd_arg -l --loud  -- LOUD      false true "Perform action loudly!"
-  shifu_cmd_arg -q --quiet -- QUIET     false true "Try to perform action quietly."
+  shifu_cmd_arg -l --loud  -- LOUD  false true "Display text loudly!"
+  shifu_cmd_arg -q --quiet -- QUIET false true 'Display text "quietly"'
   shifu_cmd_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po."
 }
 
@@ -114,8 +114,8 @@ kfp_dispatch_cmd() {
   shifu_cmd_subs quote_cmd advice_cmd
 
   # 5. Declare global arguments
-  shifu_cmd_arg -l --loud  -- LOUD  false true "Perform action loudly!"
-  shifu_cmd_arg -q --quiet -- QUIET false true "Try to perform action quietly."
+  shifu_cmd_arg -l --loud  -- LOUD  false true "Display text loudly!"
+  shifu_cmd_arg -q --quiet -- QUIET false true 'Display text "quietly"'
 }
 
 # 6. Declare the shifu subcommand functions
@@ -217,8 +217,8 @@ kfp_help_cmd() {
   shifu_cmd_long "An example shifu cli that provides toy functionality to see different Kung Fu Panda quotes"
   shifu_cmd_subs quote_cmd advice_cmd
 
-  shifu_cmd_arg -l --loud  -- LOUD  false true "Perform action loudly!"
-  shifu_cmd_arg -q --quiet -- QUIET false true "Try to perform action quietly."
+  shifu_cmd_arg -l --loud  -- LOUD  false true "Display text loudly!"
+  shifu_cmd_arg -q --quiet -- QUIET false true 'Display text "quietly"'
 }
 
 quote_cmd() {
@@ -279,10 +279,10 @@ Arguments
 
 Options
   -l, --loud
-    Perform action loudly!
+    Display text loudly!
     Default: false, set: true
   -q, --quiet
-    Try to perform action quietly.
+    Display text "quietly"
     Default: false, set: true
   -h, --help
     Show this help
