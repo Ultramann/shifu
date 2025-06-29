@@ -396,13 +396,13 @@ For a more portable method you can make sure shifu is in the same directory as t
   * The last argument is always a help string
   * Different argument counts enable different parsing instructions
 
-  | Kind               | Matching patterns | Variable | Default | Other        | Example                                            |
-  |--------------------|-------------------|----------|---------|--------------|----------------------------------------------------|
-  | Option: binary     | > 0               | Yes      | Yes     | Value if set | `-v -- VERBOSE     false true "Binary option"`     |
-  | Option: w/ default | > 0               | Yes      | Yes     |              | `-o -- OUTPUT_DIR  out        "Option w/ default"` |
-  | Option: no default | > 0               | Yes      | No      |              | `-l -- LOG_DIR                "Option no default"` |
-  | Positional         | 0                 | Yes      | No      |              | `   -- CONFIG_FILE            "Positional"`        |
-  | Remaining          | 0                 | No       | No      |              | `   --                        "Remaining"`         |
+  | Kind               | Patterns | Variable | Default | Other     | Example                                    |
+  |--------------------|----------|----------|---------|-----------|--------------------------------------------|
+  | Option: binary     | > 0      | Yes      | Yes     | Set value | `-v -- VERBOSE false true "Binary option"` |
+  | Option: w/ default | > 0      | Yes      | Yes     |           | `-o -- OUTPUT_DIR out "Option w/ default"` |
+  | Option: no default | > 0      | Yes      | No      |           | `-l -- LOG_DIR "Option no default"`        |
+  | Positional         | 0        | Yes      | No      |           | `-- CONFIG_FILE "Positional"`              |
+  | Remaining          | 0        | No       | No      |           | `-- "Remaining"`                           |
 
 * The order that multiple calls to `shifu_cmd_args` occurs in a command function matters in a few ways
   1. The help string generated from the arguments will match the order of the calls
