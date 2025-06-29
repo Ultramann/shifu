@@ -203,9 +203,6 @@ Subcommands
     Test leaf four cmd help
 
 Options
-  -g, --global
-    A test global cmd arg
-    Default: false, set: true
   -h, --help
     Show this help'
   )"
@@ -232,6 +229,7 @@ test_shifu_parse_args_all_set() {
                    -D not_default_flag_option_value \
                    positional_arg_value remaining arguments
   shifu_assert_zero status $?
+  # this acts as a proxy test for shifu_align_args, since we don't have $@ here
   shifu_assert_equal args_parsed "$_shifu_args_parsed" "1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"
   shifu_assert_equal flag_bin "$FLAG_BIN" 1
   shifu_assert_equal flag_arg "$FLAG_ARG" "flag_value"
