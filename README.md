@@ -196,6 +196,103 @@ I LOVE KUNG FUUUUUU!!!
 
 ### Help generation
 
+Since shifu knows everything about the structure of your cli it also provides functions to enable generation of scoped help strings. We've already seen some cases where help information has been provided to shifu functions, the last argument to `shifu_cmd_arg` is always a help string. Two more functions enable adding terse and long help information to shifu's auto-generated help strings:
+* `shifu_cmd_help`: string to add at top of help string for command, and in subcommand section of parent command
+* `shifu_cmd_long`: string to add after `shifu_cmd_help` string, only in command help
+
+Shifu automatically parses the arguments `-h` and `--help` and uses all the information in help strings passed to the command functions to generate a comprehensive help string.
+
+The follow code shows modified command functions from the subcommand dispatch example above, this time including more help information.
+
+[`examples/kfp-help`](/examples/kfp-help)
+
+```sh
+# /bin/sh
+
+. "$(dirname "$0")"/shifu || exit 1
+
+kfp_help_cmd() {
+  shifu_cmd_name kfp-help
+  shifu_cmd_help "The kfp-dispatch example with help information included"
+  shifu_cmd_long "An example shifu cli that provides toy functionality to see different Kung Fu Panda quotes"
+  shifu_cmd_subs quote_cmd advice_cmd
+
+  shifu_cmd_arg -l --loud  -- LOUD  false true "Perform action loudly!"
+  shifu_cmd_arg -q --quiet -- QUIET false true "Try to perform action quietly."
+}
+
+quote_cmd() {
+  shifu_cmd_name quote
+  shifu_cmd_help "Show quote from different Kung Fu Panda characters"
+  shifu_cmd_long "This long help will be shown when getting help for this specific subcommand, but not shown when getting help for the parent command"
+  shifu_cmd_func kfp_quote
+
+  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
+}
+
+advice_cmd() {
+  shifu_cmd_name advice
+  shifu_cmd_help "Show advice from different Kung Fu Panda characters"
+  shifu_cmd_long "Gosh, this movie has lots of amazing quotes"
+  shifu_cmd_func kfp_advice
+
+  shifu_cmd_arg -- CHARACTER "Select character to see quote: oogway, shifu, po."
+}
+
+# the rest is the same as in examples/kfp-dispatch until
+shifu_run_cmd kfp_help_cmd "$@"
+```
+
+With these changes we'll get great help from our cli with `-h` or `--help`.
+
+```txt
+$ examples/kfp-help -h
+The kfp-dispatch example with added help information
+
+An example shifu cli that provides toy functionality to see different Kung Fu Panda quotes
+
+Subcommands
+  quote
+    Show quote from different Kung Fu Panda characters
+  advice
+    Show advice from different Kung Fu Panda characters
+
+Options
+  -h, --help
+    Show this help
+```
+
+Above we see that we asked for help on the root command and got back the terse and long help we included in our changes to `kfp_help_cmd`. We also see a subcommand section that includes the names of subcommands and their terse help. Note, even though we declared arguments in `kfp_help_cmd` -- for `LOUD` and `QUIET` -- we don't see help for them here because `kfp_help_cmd` has no call to `shifu_cmd_func`.
+
+```txt
+$ examples/kfp-help quote -h
+Show quote from different Kung Fu Panda characters
+
+This long help will be shown when getting help for this specific subcommand, but not shown when getting help for the parent command
+
+Usage
+  quote [OPTIONS] [CHARACTER]
+
+Arguments
+  CHARACTER
+    Select character to see quote: oogway, shifu, po.
+
+Options
+  -l, --loud
+    Perform action loudly!
+    Default: false, set: true
+  -q, --quiet
+    Try to perform action quietly.
+    Default: false, set: true
+  -h, --help
+    Show this help
+```
+
+Above we see that we asked for help on the quote subcommand and got back the terse and long help we included in our changes to `kfp_help_cmd`. Since `kfp_quote_cmd` has no subcommands, and instead has positional arguments we see some differences between it's help and the base help
+* there's no subcommand section
+* there's a usage and arguments section
+* inherited option, `LOUD` and `QUIET`, are included
+
 ## Installation
 
 ## API
