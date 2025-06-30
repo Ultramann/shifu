@@ -23,6 +23,7 @@ Shifu gives cli shell scripts the opportunity to be better than they are.
 
 ## Table of contents
 * [Quickstart](#quickstart)
+* [Deep dive](#deep-dive)
    * [Argument parsing](#argument-parsing)
    * [Subcommand dispatch](#subcommand-dispatch)
    * [Help generation](#help-generation)
@@ -33,9 +34,88 @@ Shifu gives cli shell scripts the opportunity to be better than they are.
 
 ## Quickstart
 
-Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ calls shifu functions. These functions provide a declarative way to tell shifu how to wire together your cli. Commands are passed to one of shifu's command runners: `shifu_parse_args` and `shifu_run_cmd`.
+Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ calls shifu `cmd` functions. These functions provide a declarative way to tell shifu how to wire together your cli. Commands are passed to one of shifu's command runners: `shifu_parse_args` and `shifu_run_cmd`. Note, this example calls `shifu_less` to provide a version of the shifu API without all the `shifu_` prefixes.
 
-Let's take a look at some toy scripts to get an introduction to writing and using shifu commands.
+[`examples/kfp-quick`](/examples/kfp-quick)
+
+```sh
+#! /bin/sh
+
+# 1. Source, import, shifu
+. "$(dirname "$0")"/shifu && shifu_less || exit 1
+
+kfp_quick_cmd() {
+  # 2. Name the command
+  cmd_name kfp-quick
+  # 3. Add help for the command
+  cmd_help "A quickstart example to shifu"
+  # 4. Add long help for the command
+  cmd_long "An example shifu cli that provides toy functionality to see different Kung Fu Panda quotes"
+  # 5. Tell shifu what function to dispatch to
+  cmd_func kfp_quick
+
+  # 6. Declare arguments for parsing
+  cmd_arg -l --loud  -- LOUD  false true "Display text loudly!"
+  cmd_arg -q --quiet -- QUIET false true 'Display text "quietly"'
+  cmd_arg            -- CHARACTER "Select character to see quote: oogway, shifu, po"
+}
+
+# 7. Write funtion that will be dispatched to, references in #5
+kfp_quick() {
+  # 8. Parse arguments with command above
+  parse_args kfp_quick_cmd "$@"
+
+  case "$CHARACTER" in
+    oogway) string="One often meets his destiny on the road he takes to avoid it." ;;
+    shifu) string="There is now a level zero." ;;
+    po) string="I love kung fuuuuuu!!!" ;;
+    *) echo "Unknown option $1"; exit 1 ;;
+  esac
+
+  [ "$LOUD" = true ] && string=$(echo "$string" | awk '{ print toupper($0) }')
+  [ "$QUIET" = true ] && string="$string shhhh!!"
+  echo "$string"
+}
+
+# 9. Run command with entry point
+run_cmd kfp_quick_cmd "$@"
+```
+
+Running this script with some different arguments will help clarify what's going on.
+
+```txt
+$ examples/kfp-quick shifu
+There is now a level zero.
+$ examples/kfp-quick -q oogway
+One often meets his destiny on the road he takes to avoid it. shhhh!!
+$ examples/kfp-quick --loud po
+I LOVE KUNG FUUUUUU!!!
+$ examples/kfp-quick --help
+An example quickstart to shifu
+
+An example shifu cli that provides toy functionality to see different Kung Fu Panda quotes
+
+Usage
+  kfp-quick [OPTIONS] [CHARACTER]
+
+Arguments
+  CHARACTER
+    Select character to see quote: oogway, shifu, po
+
+Options
+  -l, --loud
+    Display text loudly!
+    Default: false, set: true
+  -q, --quiet
+    Display text "quietly"
+    Default: false, set: true
+  -h, --help
+    Show this help
+```
+
+## Deep dive
+
+Let's take a look at some toy scripts to dive deeper into writing and using shifu commands; we'll build up all the functionality seen in the quickstart example and much more.
 
 1. [Argument parsing](#argument-parsing)
 2. [Subcommand dispatch](#subcommand-dispatch)
@@ -177,7 +257,7 @@ kfp_advice() {
   echo "$string"
 }
 
-# 10. Parse arguments with command
+# 10. Start command dispatch
 shifu_run_cmd kfp_dispatch_cmd "$@"
 ```
 
@@ -316,7 +396,7 @@ To "import" shifu you simply need to source its file path. If you've installed s
 . shifu
 ```
 
-For a more portable method you can make sure shifu is in the same directory as the calling script and use the the following.
+For a more portable method you can make sure shifu is in the same directory as the calling script and use the following.
 ```sh
 . "$(dirname "$0")"/shifu || exit 1
 ```
