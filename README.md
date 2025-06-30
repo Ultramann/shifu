@@ -113,6 +113,8 @@ Options
     Show this help
 ```
 
+If this piqued your interest and you want to start trying things out, please refer to the [API](#api) section for complete documentation.
+
 ## Deep dive
 
 Let's take a look at some toy scripts to dive deeper into writing and using shifu commands; we'll build up all the functionality seen in the quickstart example and much more.
