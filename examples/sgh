@@ -28,7 +28,6 @@ auth_set_cmd() {
 }
 
 auth_set() {
-  parse_args auth_set_cmd "$@"
   printf "$PAT" > "$auth_file"
 }
 
@@ -63,7 +62,6 @@ issue_list_cmd() {
 }
 
 issue_list() {
-  parse_args issue_list_cmd "$@"
   update_query per_page "100"
   _gh_api "repos/$REPO/issues$query" | \
     jq -M "map(select(has(\"pull_request\")|not) |
@@ -81,7 +79,6 @@ issue_get_cmd() {
 }
 
 issue_get() {
-  parse_args issue_get_cmd "$@"
   _gh_api "repos/$REPO/issues/$ISSUE_NUMBER" | \
     jq -M '
       "\(.title)
@@ -109,7 +106,6 @@ pr_list_cmd() {
 }
 
 pr_list() {
-  parse_args pr_list_cmd "$@"
   update_query per_page "$NUMBER"
   _gh_api "repos/$REPO/pulls$query" | \
     jq -M '.[] | "\(.number): \(.title)"' | xargs -I{} echo {}
@@ -124,7 +120,6 @@ pr_get_cmd() {
 }
 
 pr_get() {
-  parse_args pr_get_cmd "$@"
   _gh_api "repos/$REPO/pulls/$PR_NUMBER" | \
     jq -M '
       "\(.title)

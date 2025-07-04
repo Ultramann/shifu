@@ -87,8 +87,6 @@ shifu_test_leaf_func_two() {
 }
 
 shifu_test_leaf_three_func() {
-  shifu_parse_args shifu_test_leaf_three_cmd "$@"
-  eval "$shifu_align_args"
   leaf_three_args="$@"
 }
 
@@ -100,6 +98,7 @@ shifu_test_all_options_cmd() {
   shifu_cmd_name all
   shifu_cmd_help "Test cmd all help"
   shifu_cmd_long "These are all the fancy things you can do with the all command"
+  shifu_cmd_func no_op
 
   shifu_cmd_arg -f -- FLAG_BIN 0 1      "binary flag help"
   shifu_cmd_arg -a -- FLAG_ARG          "flag argument help"
@@ -113,6 +112,10 @@ shifu_test_all_options_cmd() {
                                     "default argument flag/option help"
   shifu_cmd_arg                      -- POSITIONAL_ARG "positional argument help"
   shifu_cmd_arg                      --                "remaining arguments help"
+}
+
+no_op() {
+  echo "" > /dev/null
 }
 
 test_shifu_run_good() {
@@ -217,7 +220,7 @@ test_shifu_parse_args_all_set() {
                     OPTION_BIN OPTION_ARG OPTION_DEF \
                     FLAG_OPTION_BIN FLAG_OPTION_ARG FLAG_OPTION_DEF \
                     POSITIONAL_ARG
-  shifu_parse_args shifu_test_all_options_cmd \
+  shifu_run_cmd shifu_test_all_options_cmd \
                    -f \
                    -a flag_value \
                    -d not_default_flag_value \
@@ -291,7 +294,7 @@ Options
   -h, --help
     Show this help'
   )
-  actual=$(shifu_parse_args shifu_test_root_cmd --invalid other -t)
+  actual=$(shifu_run_cmd shifu_test_root_cmd --invalid other -t)
   shifu_assert_strings_equal error_message "$expected" "$actual"
   shifu_var_restore expected actual
 }
