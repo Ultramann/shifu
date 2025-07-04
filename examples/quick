@@ -1,0 +1,47 @@
+#! /bin/sh
+
+. "$(dirname "$0")"/shifu && shifu_less || exit 1
+
+quick_cmd() {
+  cmd_name quick
+  cmd_help "A quick shifu example"
+  cmd_long "An example shifu cli that prints results of parsed arguments for demonstration purposes"
+  cmd_subs start_cmd hello_cmd
+
+  cmd_arg -g --global -- GLOBAL false true "Global binary option"
+}
+
+start_cmd() {
+  cmd_name start
+  cmd_help "A quick subcommand"
+  cmd_long "A subcommand that prints results of parsed arguments"
+  cmd_func start
+
+  cmd_arg -b --binary   -- BINARY false true "Example binary option"
+  cmd_arg -d --default  -- W_DEFAULT "default" "Example option w/ argument"
+  cmd_arg -n --nullable -- WO_DEFAULT "Example option argument w/o default"
+  cmd_arg               -- POSITIONAL    "Example positional argument"
+}
+
+start() {
+  echo "Binary option:        $BINARY"
+  echo "Option w/ default:    $W_DEFAULT"
+  echo "Option w/o default:   $WO_DEFAULT"
+  echo "Postitional argument: $POSITIONAL"
+  echo "Global option:        $GLOBAL"
+}
+
+hello_cmd() {
+  cmd_name hello
+  cmd_help "A hello world subcommand"
+  cmd_long "A subcommand that prints greeting with arguments"
+  cmd_func hello
+
+  cmd_arg -n --name -- NAME "mysterious user" "Name to greet"
+}
+
+hello() {
+  echo "Hello, $NAME!"
+}
+
+run_cmd quick_cmd "$@"
