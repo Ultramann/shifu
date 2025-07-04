@@ -344,42 +344,36 @@ Options
   shifu_assert_strings_equal help_message "$expected" "$actual"
 }
 
-nope_test_shifu_help_global() {
-  expected='Test cmd all help
+test_shifu_help_subcommands() {
+  expected='Test root cmd help
 
-These are all the fancy things you can do with the all command
-
-Usage
-  all [OPTIONS] [POSITIONAL_ARG] ...[REMAINING]
-
-Arguments
-  POSITIONAL_ARG
-    positional argument help
-  REMAINING
-    remaining arguments help
+Subcommands
+  sub-one
+    Test sub one cmd help
+  sub-two
+    Test sub two cmd help
 
 Options
-  -f
-    binary flag help. Set: 1, default: 0
-  -a [FLAG_ARG]
-    flag argument help
-  -d [FLAG_DEF]
-    default argument flag help. Default: def_flag
-  --option-bin
-    binary option help. Set: 1, default: 0
-  --option-arg [OPTION_ARG]
-    argument option help
-  --option-def [OPTION_DEF]
-    default argument option help. Default: def_opt
-  -F, --flag-option-bin
-    binary flag/option help. Set: 1, default: 0
-  -A, --flag-option-arg [FLAG_OPTION_ARG]
-    argument flag/option help
-  -D, --flag-option-def [FLAG_OPTION_DEF]
-    default argument flag/option help. Default: def_flag_opt
+  -l, --local_test
+    A test local cmd arg
+    Default: false, set: true
   -h, --help
     Show this help'
-  actual=$(shifu_help shifu_test_leaf_four_cmd)
+  actual=$(shifu_run_cmd shifu_test_root_cmd -h)
+  shifu_assert_strings_equal help_message "$expected" "$actual"
+}
+
+
+test_shifu_help_global() {
+  expected='Test leaf four cmd help
+
+Options
+  -g, --global
+    A test global cmd arg
+    Default: false, set: true
+  -h, --help
+    Show this help'
+  actual=$(shifu_run_cmd shifu_test_root_cmd sub-two leaf-four -h)
   shifu_assert_strings_equal help_message "$expected" "$actual"
 }
 
