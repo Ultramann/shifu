@@ -144,4 +144,4 @@ _gh_api() {
     "https://api.github.com/$1"
 }
 
-run_cmd sgh_cmd "$@"
+shifu_run sgh_cmd "$@"

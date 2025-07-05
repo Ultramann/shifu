@@ -121,7 +121,7 @@ no_op() {
 test_shifu_run_good() {
   shifu_var_store expected actual
   expected="test leaf func one 2 one two"
-  actual=$(shifu_run_cmd shifu_test_root_cmd sub-one leaf-one one two)
+  actual=$(shifu_run shifu_test_root_cmd sub-one leaf-one one two)
   shifu_assert_zero status $#
   shifu_assert_equal output "$expected" "$actual"
   shifu_var_restore expected actual
@@ -129,7 +129,7 @@ test_shifu_run_good() {
 
 test_shifu_run_good_cmd_global_arg() {
   shifu_var_store global_test leaf_three_args
-  shifu_run_cmd shifu_test_root_cmd sub-two leaf-three -g one two
+  shifu_run shifu_test_root_cmd sub-two leaf-three -g one two
   shifu_assert_zero status $#
   shifu_assert_equal global_test "$global_test" true
   shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
@@ -138,7 +138,7 @@ test_shifu_run_good_cmd_global_arg() {
 
 test_shifu_run_good_cmd_global_and_local_arg() {
   shifu_var_store local_test global_test leaf_three_args
-  shifu_run_cmd shifu_test_root_cmd -l sub-two leaf-three -g one two
+  shifu_run shifu_test_root_cmd -l sub-two leaf-three -g one two
   shifu_assert_zero status $#
   shifu_assert_equal local_test "$local_test" true
   shifu_assert_equal global_test "$global_test" true
@@ -165,7 +165,7 @@ Options
   -h, --help
     Show this help'
   )"
-  actual=$(shifu_run_cmd shifu_test_root_cmd bad sub-one leaf-two one two)
+  actual=$(shifu_run shifu_test_root_cmd bad sub-one leaf-two one two)
   shifu_assert_non_zero status $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
   shifu_var_restore expected actual
@@ -187,7 +187,7 @@ Options
   -h, --help
     Show this help'
   )"
-  actual=$(shifu_run_cmd shifu_test_root_cmd sub-one sub-bad one two)
+  actual=$(shifu_run shifu_test_root_cmd sub-one sub-bad one two)
   shifu_assert_non_zero status $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
   shifu_var_restore expected actual
@@ -209,18 +209,18 @@ Options
   -h, --help
     Show this help'
   )"
-  actual=$(shifu_run_cmd shifu_test_root_cmd sub-two leaf-bad one two)
+  actual=$(shifu_run shifu_test_root_cmd sub-two leaf-bad one two)
   shifu_assert_non_zero status $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
   shifu_var_restore expected actual
 }
 
-test_shifu_parse_args_all_set() {
+test_shifu_run_args_all_set() {
   shifu_var_store FLAG_BIN FLAG_ARG FLAG_DEF \
                     OPTION_BIN OPTION_ARG OPTION_DEF \
                     FLAG_OPTION_BIN FLAG_OPTION_ARG FLAG_OPTION_DEF \
                     POSITIONAL_ARG
-  shifu_run_cmd shifu_test_all_options_cmd \
+  shifu_run shifu_test_all_options_cmd \
                    -f \
                    -a flag_value \
                    -d not_default_flag_value \
@@ -250,12 +250,12 @@ test_shifu_parse_args_all_set() {
                     POSITIONAL_ARG
 }
 
-test_shifu_parse_args_all_unset() {
+test_shifu_run_args_all_unset() {
   shifu_var_store FLAG_BIN FLAG_ARG FLAG_ARG_D \
                   option_bin option_arg option_arg_d \
                   flag_option_bin flag_option_arg flag_option_arg_d \
                   positional_arg
-  shifu_parse_args shifu_test_all_options_cmd positional_arg_value
+  shifu_run shifu_test_all_options_cmd positional_arg_value
   shifu_assert_zero status $?
   shifu_assert_equal args_parsed "$_shifu_args_parsed" "1"
   shifu_assert_equal flag_bin "$FLAG_BIN" 0
@@ -275,7 +275,7 @@ test_shifu_parse_args_all_unset() {
                     POSITIONAL_ARG
 }
 
-test_shifu_parse_args_invalid_option() {
+test_shifu_run_args_invalid_option() {
   shifu_var_store expected actual
   expected=$(
     echo 'Invalid option: --invalid'
@@ -294,7 +294,7 @@ Options
   -h, --help
     Show this help'
   )
-  actual=$(shifu_run_cmd shifu_test_root_cmd --invalid other -t)
+  actual=$(shifu_run shifu_test_root_cmd --invalid other -t)
   shifu_assert_strings_equal error_message "$expected" "$actual"
   shifu_var_restore expected actual
 }
@@ -359,7 +359,7 @@ Options
     Default: false, set: true
   -h, --help
     Show this help'
-  actual=$(shifu_run_cmd shifu_test_root_cmd -h)
+  actual=$(shifu_run shifu_test_root_cmd -h)
   shifu_assert_strings_equal help_message "$expected" "$actual"
 }
 
@@ -373,7 +373,7 @@ Options
     Default: false, set: true
   -h, --help
     Show this help'
-  actual=$(shifu_run_cmd shifu_test_root_cmd sub-two leaf-four -h)
+  actual=$(shifu_run shifu_test_root_cmd sub-two leaf-four -h)
   shifu_assert_strings_equal help_message "$expected" "$actual"
 }
 

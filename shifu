@@ -41,7 +41,7 @@ shifu_cmd_larg() {
   esac
 }
 
-shifu_run_cmd() {
+shifu_run() {
   shifu_var_store mode parent parse_local parse_stage arg arg_matched global_help \
                   shifu_cmds cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
   mode=$shifu_mode_cmds
@@ -85,7 +85,6 @@ shifu_less() {
   cmd_func() { shifu_cmd_func "$@"; }
   cmd_larg() { shifu_cmd_larg "$@"; }
   cmd_arg()  { shifu_cmd_arg "$@"; }
-  run_cmd()  { shifu_run_cmd "$@"; }
 }
 
 shifu_parse_args() {

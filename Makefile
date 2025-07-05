@@ -1,8 +1,7 @@
+demo:
+	vhs assets/demo.tape
+
 test-all:
-	@if [ -n "$$(which ash)" ]; then \
-	echo "\n===========================  ash   ============================"; \
-	ash test_shifu.sh ${VERBOSE}; \
-	fi
 	@if [ -n "$$(which ksh)" ]; then \
 	echo "\n===========================  ksh   ============================"; \
 	ksh test_shifu.sh ${VERBOSE}; \

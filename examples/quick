@@ -5,30 +5,13 @@
 quick_cmd() {
   cmd_name quick
   cmd_help "A quick shifu example"
-  cmd_long "An example shifu cli that prints results of parsed arguments for demonstration purposes"
-  cmd_subs start_cmd hello_cmd
+  cmd_long "An example shifu cli demonstrating
+  * subcommand dispatch
+  * argument parsing
+  * scoped help generation"
+  cmd_subs hello_cmd start_cmd
 
   cmd_arg -g --global -- GLOBAL false true "Global binary option"
-}
-
-start_cmd() {
-  cmd_name start
-  cmd_help "A quick subcommand"
-  cmd_long "A subcommand that prints results of parsed arguments"
-  cmd_func start
-
-  cmd_arg -b --binary   -- BINARY false true "Example binary option"
-  cmd_arg -d --default  -- W_DEFAULT "default" "Example option w/ argument"
-  cmd_arg -n --nullable -- WO_DEFAULT "Example option argument w/o default"
-  cmd_arg               -- POSITIONAL    "Example positional argument"
-}
-
-start() {
-  echo "Binary option:        $BINARY"
-  echo "Option w/ default:    $W_DEFAULT"
-  echo "Option w/o default:   $WO_DEFAULT"
-  echo "Postitional argument: $POSITIONAL"
-  echo "Global option:        $GLOBAL"
 }
 
 hello_cmd() {
@@ -44,4 +27,22 @@ hello() {
   echo "Hello, $NAME!"
 }
 
-run_cmd quick_cmd "$@"
+start_cmd() {
+  cmd_name start
+  cmd_help "A quick subcommand"
+  cmd_long "A subcommand that prints results of parsed arguments"
+  cmd_func start
+
+  cmd_arg -d --default  -- W_DEFAULT  "default" "Example option w/ argument"
+  cmd_arg -n --nullable -- WO_DEFAULT "Example option argument w/o default"
+  cmd_arg               -- POSITIONAL "Example positional argument"
+}
+
+start() {
+  echo "Global binary option: $GLOBAL"
+  echo "Option w/ default:    $W_DEFAULT"
+  echo "Option w/o default:   $WO_DEFAULT"
+  echo "Postitional argument: $POSITIONAL"
+}
+
+shifu_run quick_cmd "$@"
