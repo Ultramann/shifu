@@ -44,13 +44,9 @@ Sleep 200ms
 Enter
 Sleep 500ms
 
-Type "examples/quick start -g \"
+Type "examples/quick start -g -d 'not default' \"
 Enter
-Type "-d 'not default' \"
-Enter
-Type "--nullable 'not null' \"
-Enter
-Type "example"
+Type "--nullable 'not null' "example"
 Sleep 200ms
 Enter
 Sleep 3000ms
