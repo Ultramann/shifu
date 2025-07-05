@@ -1,9 +1,9 @@
 Output assets/demo.gif
 
 Set Shell "bash"
-Set FontSize 32
+Set FontSize 20
 Set Width 1200
-Set Height 1500
+Set Height 1000
 Set CursorBlink false
 Set Framerate 40
 Set TypingSpeed 50ms

@@ -30,7 +30,9 @@ Shifu gives cli shell scripts the opportunity to be better than they are.
 
 ## Quickstart
 
-Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ calls shifu `cmd` functions. These functions provide a declarative way to tell shifu how to wire together your cli. Commands are passed to one of shifu's command runner `shifu_run`, or referenced as subcommands. Note, this example calls `shifu_less` to provide a version of the shifu API without all the `shifu_` prefixes.
+Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ calls shifu `cmd` functions. These functions provide a declarative way to tell shifu how to wire together your cli. Commands are passed to one of shifu's command runner `shifu_run`, or referenced as subcommands.
+
+Let's take a look at a simple demo cli built with Shifu. This cli has two named subcommands, each with their own arguments. Note, this example calls `shifu_less` to provide a version of the shifu API without all the `shifu_` prefixes.
 
 ![Quickstart](/assets/demo.gif)
 
