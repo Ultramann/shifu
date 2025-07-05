@@ -1,6 +1,8 @@
 #! /bin/sh
 
-# Wrapper around curl commands to the github rest api. Documentation:
+# Example shifu cli to partially reproduce similar functionality that
+# the github cli, gh, provides. Wrapper around curl commands to the
+# github rest api. Documentation:
 # https://docs.github.com/en/rest?apiVersion=2022-11-28
 
 . "$(dirname "$0")"/shifu && shifu_less || exit 1
@@ -24,7 +26,8 @@ auth_set_cmd() {
   cmd_help "Set token for authentication"
   cmd_func auth_set
 
-  cmd_arg -- PAT "Personal access token, documentation:\nhttps://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens"
+  cmd_arg -- PAT "Personal access token, documentation:
+      https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens"
 }
 
 auth_set() {
@@ -62,7 +65,8 @@ issue_list_cmd() {
 }
 
 issue_list() {
-  update_query per_page "100"
+  _resolve_repo
+  _update_query per_page "100"
   _gh_api "repos/$REPO/issues$query" | \
     jq -M "map(select(has(\"pull_request\")|not) |
            \"\(.number): \(.title)\") |
@@ -79,6 +83,7 @@ issue_get_cmd() {
 }
 
 issue_get() {
+  _resolve_repo
   _gh_api "repos/$REPO/issues/$ISSUE_NUMBER" | \
     jq -M '
       "\(.title)
@@ -106,7 +111,8 @@ pr_list_cmd() {
 }
 
 pr_list() {
-  update_query per_page "$NUMBER"
+  _resolve_repo
+  _update_query per_page "$NUMBER"
   _gh_api "repos/$REPO/pulls$query" | \
     jq -M '.[] | "\(.number): \(.title)"' | xargs -I{} echo {}
 }
@@ -120,6 +126,7 @@ pr_get_cmd() {
 }
 
 pr_get() {
+  _resolve_repo
   _gh_api "repos/$REPO/pulls/$PR_NUMBER" | \
     jq -M '
       "\(.title)
@@ -130,7 +137,21 @@ Body: \(.body)
 "' | xargs printf
 }
 
-update_query() {
+_resolve_repo() {
+  [ -n "$REPO" ] && return
+  origin_url=$(git config --get remote.origin.url)
+  if [ "${origin_url}" != "${origin_url#https}" ]; then
+    REPO="${origin_url#https://github.com/}"
+  elif [ "${origin_url}" != "${origin_url#git}" ]; then
+    REPO="${origin_url#git@github.com:}"
+  else
+    echo "Unknown repo url format: $origin_url"
+    exit 1
+  fi
+  REPO="${REPO%.git}"
+}
+
+_update_query() {
   [ -z "$2" ] && return
   [ -z "$query" ] && query="?" || query="$query&"
   query="$query$1=$2"
