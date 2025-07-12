@@ -41,14 +41,25 @@ shifu_cmd_larg() {
   esac
 }
 
+shifu_less() {
+  cmd_name() { shifu_cmd_name "$@"; }
+  cmd_help() { shifu_cmd_help "$@"; }
+  cmd_long() { shifu_cmd_long "$@"; }
+  cmd_subs() { shifu_cmd_subs "$@"; }
+  cmd_func() { shifu_cmd_func "$@"; }
+  cmd_larg() { shifu_cmd_larg "$@"; }
+  cmd_arg()  { shifu_cmd_arg "$@"; }
+}
+
 shifu_run() {
   shifu_var_store mode parent parse_local parse_stage arg arg_matched global_help \
                   shifu_cmds cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
   mode=$shifu_mode_cmds
   parent="$1"; cmd="$1"; shift; "$parent"; shifu_cmds="$cmd_subs"
-  while [ $# -ne 0 -a "${#cmd_subs}" -gt 0 ]; do
+  while [ $# -ne 0 -a -n "$cmd_subs" ]; do
     parse_local=true
-    shifu_parse_args "$parent" "$@"
+    _shifu_parse_args "$parent" "$@"
+    mode=$shifu_mode_cmds
     eval "$_shifu_align_args"
     arg="$1"; shift
     arg_matched=''
@@ -70,27 +81,11 @@ shifu_run() {
   done
   [ -z "$cmd_func" ] && { echo "$cmd_name" requires arguments; shifu_help "$cmd"; exit 1; }
   [ "$1" = "-h" -o "$1" = "--help" ] && { shifu_help "$cmd"; exit 0; }
-  shifu_parse_args "$cmd" "$@"
+  _shifu_parse_args "$cmd" "$@"
   eval "$_shifu_align_args"
   "$cmd_func" "$@"
   shifu_var_restore mode parent parse_local parse_stage arg arg_matched global_help \
                     shifu_cmds cmd cmd_name cmd_help cmd_long cmd_subs cmd_func
-}
-
-shifu_less() {
-  cmd_name() { shifu_cmd_name "$@"; }
-  cmd_help() { shifu_cmd_help "$@"; }
-  cmd_long() { shifu_cmd_long "$@"; }
-  cmd_subs() { shifu_cmd_subs "$@"; }
-  cmd_func() { shifu_cmd_func "$@"; }
-  cmd_larg() { shifu_cmd_larg "$@"; }
-  cmd_arg()  { shifu_cmd_arg "$@"; }
-}
-
-shifu_parse_args() {
-  shifu_var_store mode parse_stage cmd case_stmt has_options
-  _shifu_parse_args "$@"
-  shifu_var_restore mode cmd parse_stage case_stmt has_options
 }
 
 _shifu_align_args="for shifu_counter in \$_shifu_args_parsed; do shift; done"
@@ -119,6 +114,7 @@ shifu_var_restore() {
 }
 
 _shifu_parse_args() {
+  shifu_var_store parse_stage case_stmt has_options
   mode=$shifu_mode_args
   parse_stage=0
   cmd="$1"; shift
@@ -134,6 +130,7 @@ _shifu_parse_args() {
     eval "$case_stmt"
   done
   _shifu_args_parsed="${_shifu_args_parsed# }"
+  shifu_var_restore parse_stage case_stmt has_options
 }
 
 _shifu_parse_arg() {
