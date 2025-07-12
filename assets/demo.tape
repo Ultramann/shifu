@@ -1,7 +1,7 @@
 Output assets/demo.gif
 
 Set Shell "bash"
-Set FontSize 20
+Set FontSize 22
 Set Width 1200
 Set Height 1000
 Set CursorBlink false

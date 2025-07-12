@@ -4,7 +4,7 @@
 (____/(_)  (_)(_____)(_)    (______)
 ```
 
-**SH**ell **I**nterface **F**unction **U**tilities, or shifu, is a set of utility functions to make creating a cli from a shell script simple. Shell scripts make gluing together functionality from different cli's pretty easy. However, if you want to extend the a script's capabilities to have cli like features: related but distinct entry points, nested subcommands, parse many command line options, or write and maintain help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address that problem and make creating a cli from a shell script declarative and maintainable.
+**SH**ell **I**nterface **F**unction **U**tilities, or shifu, is a set of utility functions to make creating a cli from a shell script simple. Shell scripts make gluing together functionality from different cli's pretty easy. However, if you want to extend the script's capabilities to have cli like features: related but distinct entry points, nested subcommands, parse many command line options, or write and maintain help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address that problem and make creating a cli from a shell script declarative and maintainable.
 
 Shifu has the following qualities:
 * POSIX compliance; aka, compatibility many shells
@@ -30,11 +30,89 @@ Shifu gives cli shell scripts the opportunity to be better than they are.
 
 ## Quickstart
 
-Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ calls shifu `cmd` functions. These functions provide a declarative way to tell shifu how to wire together your cli. Commands are passed to one of shifu's command runner `shifu_run`, or referenced as subcommands.
+Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ calls shifu `cmd` functions. These functions provide a declarative way to tell shifu how to wire together your cli. Commands are passed to shifu's command runner `shifu_run`, or referenced as subcommands.
 
-Let's take a look at a simple demo cli built with Shifu. This cli has two named subcommands, each with their own arguments. Note, this example calls `shifu_less` to provide a version of the shifu API without all the `shifu_` prefixes.
+Let's take a look at a simple demo cli built with Shifu. This demo cli has two named subcommands, each with their own arguments. Note, this example calls `shifu_less` to provide a version of the shifu API without all the `shifu_` prefixes.
 
 ![Quickstart](/assets/demo.gif)
+
+<details>
+
+<summary>Static Output</summary>
+
+```txt
+$ examples/quick -h
+A quick shifu example
+
+An example shifu cli demonstrating
+  * subcommand dispatch
+  * argument parsing
+  * scoped help generation
+
+Subcommands
+  hello
+    A hello world subcommand
+  start
+    A quick subcommand
+
+Options
+  -h, --help
+    Show this help
+$ examples/quick hello
+Hello, mysterious user!
+$ examples/quick hello -h
+A hello world subcommand
+
+A subcommand that prints greeting with arguments
+
+Options
+  -n, --name [NAME]
+    Name to greet
+    Default: mysterious user
+  -g, --global
+    Global binary option
+    Default: false, set: true
+  -h, --help
+    Show this help
+$ examples/quick hello -n World
+Hello, World!
+$ examples/quick start -h
+A quick subcommand
+
+A subcommand that prints results of parsed arguments
+
+Usage
+  start [OPTIONS] [POSITIONAL]
+
+Arguments
+  POSITIONAL
+    Example positional argument
+
+Options
+  -d, --default [W_DEFAULT]
+    Example option w/ argument
+    Default: default
+  -n, --nullable [WO_DEFAULT]
+    Example option argument w/o default
+  -g, --global
+    Global binary option
+    Default: false, set: true
+  -h, --help
+    Show this help
+$ examples/quick start example
+Global binary option: false
+Option w/ default:    default
+Option w/o default:   
+Postitional argument: example
+$ examples/quick start -g -d 'not default' \
+> --nullable 'not null' "example"
+Global binary option: true
+Option w/ default:    not default
+Option w/o default:   not null
+Postitional argument: example
+```
+
+</details>
 
 [`examples/quick`](/examples/quick)
 
@@ -100,7 +178,7 @@ start() {
   echo "Postitional argument: $POSITIONAL"
 }
 
-# 9. Start root command passing all script arguments
+# Run root command passing all script arguments
 shifu_run quick_cmd "$@"
 ```
 
@@ -114,7 +192,7 @@ curl -O https://raw.githubusercontent.com/ultramann/shifu/refs/heads/main/shifu
 ## Import
 To "import" shifu you simply need to source its file path. If you've installed shifu to location on your path you can include the following at the top of your script.
 ```sh
-. shifu
+. shifu || exit 1
 ```
 
 For a more portable method you can make sure shifu is in the same directory as the calling script and use the following.
@@ -123,8 +201,8 @@ For a more portable method you can make sure shifu is in the same directory as t
 ```
 
 ## FAQ
-* How does shifu name it's variables/functions, will they collide with those in my script?
-  * Shifu takes special care to prefix any global variable/function with `shifu_` or `_shifu`
+* How does shifu name its variables/functions, will they collide with those in my script?
+  * Shifu takes special care to prefix any global variable/function with `shifu_` or `_shifu_`
   * Calling `shifu_less` will create versions of all the [`cmd` functions](#cmd-functions) without the `shifu_` prefix. This makes command code more terse, but adds function names that are more likely to be collided with
   * All local varibles have any existing value saved and restored at the boundaries of the function using the variable
 
