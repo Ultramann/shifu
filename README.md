@@ -122,7 +122,7 @@ Note, this example calls `shifu_less` to provide a version of the `shifu_cmd` fu
 #! /bin/sh
 
 # Source, "import", shifu
-. "$(dirname "$0")"/shifu && shifu_less || exit 1
+. "${0%/*}"/shifu && shifu_less || exit 1
 
 # Write root command
 quick_cmd() {
@@ -200,7 +200,7 @@ To "import" shifu you simply need to source its file path. If you've installed s
 
 If you'd like not to assume that shifu is on the path, you can instead make sure shifu is in the same directory as the calling script and use the following.
 ```sh
-. "$(dirname "$0")"/shifu || exit 1
+. "${0%/*}"/shifu || exit 1
 ```
 
 ## FAQ

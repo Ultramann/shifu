@@ -497,5 +497,5 @@ shifu_read_test_functions() {
   )
 }
 
-this_script=$(realpath $(basename "$0"))  # at global for zsh compatibility
+this_script="$0"  # at global for zsh compatibility
 shifu_run_test_suite "$@"
