@@ -5,7 +5,7 @@ shifu_mode_args=1
 shifu_mode_help=2
 
 shifu_cmd_name() {
-  [ $# -ne 1 ] && { echo "Commands cannot contain spaces got: \"$@\""; exit 1; }
+  [ $# -ne 1 ] && _shifu_error "Commands cannot contain spaces got: \"$@\""
   [ $mode -ne $shifu_mode_args ] && cmd_name="$1"
 }
 
@@ -94,7 +94,7 @@ shifu_var_store() {
   while [ $# -ne 0 ]; do
     eval "[ -z "\$$1" ] && { shift; continue; }
           [ -z \$shifu_${1}_shifu ] && shifu_${1}_shifu=\$$1 ||
-          { echo \"Cannot use variable 'shifu_${1}_shifu'\"; exit 1; }"
+          _shifu_error \"Cannot use variable 'shifu_${1}_shifu'\""
     shift
   done
 }
@@ -140,10 +140,10 @@ _shifu_parse_arg() {
       parse_stage=1
       _shifu_update_case_stmt_invalid_option
     elif [ $parse_stage -gt 1 ]; then
-      echo "No arguments after remaining are declared: $1"; exit 1;
+      _shifu_error "No arguments after remaining are declared: $1"
     fi
     _shifu_set_variable "$1" ""
-    case_stmt="$case_stmt [ \$# -eq 0 ] && { echo 'Missing positional argument $1'; exit 1; }; "
+    case_stmt="$case_stmt [ \$# -eq 0 ] && _shifu_error 'Missing positional argument $1'; "
     case_stmt="$case_stmt $1=\$1; shift; _shifu_ack_arg; "
   # option + argument without default
   elif [ $# -eq 2 ]; then
@@ -178,10 +178,10 @@ _shifu_handle_arg_global() {
   done; shift
   # remaining
   if [ $# -eq 1 ]; then
-    echo "Remaining arguments cannot be global"; exit 1
+    _shifu_error "Remaining arguments cannot be global"
   # positional
   elif [ $has_options -eq 0 ]; then
-    echo "Positional arguments cannot be global"; exit 1
+    _shifu_error "Positional arguments cannot be global"
   # option + argument without default
   elif [ $# -eq 2 ]; then
     _shifu_set_variable "$1" ""
@@ -224,7 +224,7 @@ _shifu_arg_help() {
     if [ $help_stage -lt 1 ]; then
       help_stage=1
     elif [ $help_stage -gt 1 ]; then
-      echo "No arguments after remaining are declared: $1"; exit 1;
+      _shifu_error "No arguments after remaining are declared: $1"
     fi
     help_usage="$help_usage [$1]"
     help_arguments="$help_arguments\n  $1\n    $2"
@@ -252,13 +252,16 @@ _shifu_update_case_stmt_invalid_option() {
 _shifu_set_variable() {
   eval "$1=\"$2\"" > /dev/null 2>&1
   [ $? -eq 0 ] && return 0
-  echo "Invalid variable name: $1"
-  exit 1
+  _shifu_error "Invalid variable name: $1"
 }
 
 _shifu_error_if_invalid_arg_order() {
   [ $2 -eq 0 ] && return
-  echo "No options after positional/remaining arguments: $1"
+  _shifu_error "No options after positional/remaining arguments: $1"
+}
+
+_shifu_error() {
+  echo "$1"
   exit 1
 }
 
