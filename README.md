@@ -4,7 +4,7 @@
 (____/(_)  (_)(_____)(_)    (______)
 ```
 
-**SH**ell **I**nterface **F**unction **U**tilities, or shifu, is a set of utility functions to make creating a cli from a shell script simple. Shell scripts make gluing together functionality from different cli's pretty easy. However, if you want to extend the script's capabilities to have cli like features: related but distinct entry points, nested subcommands, parse many command line options, or write and maintain help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address that problem and make creating a cli from a shell script declarative and maintainable.
+**SH**ell **I**nterface **FU**nctions, or shifu, is a set of utility functions to make creating a cli from a shell script simple. Shell scripts make gluing together functionality from different cli's pretty easy. However, if you want to extend the script's capabilities to have cli like features: related but distinct entry points, nested subcommands, parse many command line options, or write and maintain help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address that problem and make creating a cli from a shell script declarative and maintainable.
 
 Shifu has the following qualities:
 * POSIX compliance; aka, compatibility many shells

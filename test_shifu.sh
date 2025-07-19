@@ -233,7 +233,7 @@ test_shifu_run_args_all_set() {
                    positional_arg_value remaining arguments
   shifu_assert_zero status $?
   # this acts as a proxy test for shifu_align_args, since we don't have $@ here
-  shifu_assert_equal args_parsed "$_shifu_args_parsed" "1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"
+  shifu_assert_equal args_parsed $_shifu_args_parsed 16
   shifu_assert_equal flag_bin "$FLAG_BIN" 1
   shifu_assert_equal flag_arg "$FLAG_ARG" "flag_value"
   shifu_assert_equal flag_def "$FLAG_DEF" "not_default_flag_value"
