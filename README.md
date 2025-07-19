@@ -216,7 +216,7 @@ For a more portable method you can make sure shifu is in the same directory as t
 * Will pass all unparsed arguments to function specified in in (sub)command's call to `shifu_cmd_func`
 * Typical use, aka only use it was designed for, is as the last line of a script passing the root command function and all the arguments
 * Example
-  ```sh
+  ```apache
   shifu_run root_cmd "$@"
   ```
 
@@ -227,14 +227,14 @@ For a more portable method you can make sure shifu is in the same directory as t
 * When the command is the root command, this name should match the name of the program
 * When the command is a subcommand, the name is used to parse command line arguments
 * Example
-  ```sh
+  ```apache
   shifu_cmd_name shifu
   ```
 
 #### `shifu_cmd_subs`
 * List of subcommand function names that can be routed to from command
 * Example
-  ```sh
+  ```apache
   shifu_cmd_subs subcommand_one_cmd subcommand_two_cmd
   ```
 
@@ -242,7 +242,7 @@ For a more portable method you can make sure shifu is in the same directory as t
 * Name of function to run when command is invoked
 * The function will be passed all command line arguments that weren't parsed while identifying the command
 * Example
-  ```sh
+  ```apache
   shifu_cmd_func function_to_run
   ```
 
@@ -251,7 +251,7 @@ For a more portable method you can make sure shifu is in the same directory as t
 * Added in help above the auto-generated help for the command arguments
 * Added to help when listing a command's subcommands
 * Example
-  ```sh
+  ```apache
   shifu_cmd_help "Terse string to help users"
   ```
 
@@ -259,7 +259,7 @@ For a more portable method you can make sure shifu is in the same directory as t
 * Long help string for the command
 * Added in help after brief help string
 * Example
-  ```sh
+  ```apache
   shifu_cmd_long "Verbose string to really help users"
   ```
 
@@ -267,12 +267,12 @@ For a more portable method you can make sure shifu is in the same directory as t
 * Configuration to parse command line arguments to variable values
 * If used in a command with subcommands, all descendent subcommands will inherit the configuration
 * Arguments are passed in two parts separated by a required double dash, `--`:
-  ```sh
-  shifu_cmd_arg [matching patterns] -- [parsing configuration]
+  ```apache
+  shifu_cmd_arg <matching patterns> -- <parsing configuration>
   ```
 * Matching patterns are literal flag/option strings, e.g. `-v`, `--verbose`
   * Any number can be provided before the double dash
-  ```sh
+  ```apache
   shifu_cmd_arg -v --verbose -- ...
   ```
 * Parsing configuration defines what values are stored when a pattern is matched or not
