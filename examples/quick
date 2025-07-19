@@ -42,7 +42,7 @@ start() {
   echo "Global binary option: $GLOBAL"
   echo "Option w/ default:    $W_DEFAULT"
   echo "Option w/o default:   $WO_DEFAULT"
-  echo "Postitional argument: $POSITIONAL"
+  echo "Positional argument:  $POSITIONAL"
 }
 
 shifu_run quick_cmd "$@"

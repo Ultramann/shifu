@@ -4,7 +4,7 @@
 (____/(_)  (_)(_____)(_)    (______)
 ```
 
-**SH**ell **I**nterface **FU**nctions, or shifu, is a set of utility functions to make creating a cli from a shell script simple. Shell scripts make gluing together functionality from different cli's pretty easy. However, if you want to extend the script's capabilities to have cli like features: related but distinct entry points, nested subcommands, parse many command line options, or write and maintain help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address that problem and make creating a cli from a shell script declarative and maintainable.
+**SH**ell **I**nterface **FU**nctions, or shifu, is a set of utility functions to make creating a cli from a shell script simple. Shell scripts make gluing together functionality from different cli's pretty easy. However, if you want to extend the script's capabilities to have advanced cli features: related but distinct entry points, aka subcommands, nested subcommands, distinct command line options for those subcommands, subcommand specific help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address that problem and make creating a cli from a shell script declarative and maintainable.
 
 Shifu has the following qualities:
 * POSIX compliance; aka, compatibility many shells
@@ -32,7 +32,7 @@ Shifu gives cli shell scripts the opportunity to be better than they are.
 
 Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ calls shifu `cmd` functions. These functions provide a declarative way to tell shifu how to wire together your cli. Commands are passed to shifu's command runner `shifu_run`, or referenced as subcommands.
 
-Let's take a look at a simple demo cli built with Shifu. This demo cli has two named subcommands, each with their own arguments. Note, this example calls `shifu_less` to provide a version of the shifu API without all the `shifu_` prefixes.
+Let's take a look at a simple demo cli built with shifu. This demo cli has two named subcommands, each with their own arguments.
 
 ![Quickstart](/assets/demo.gif)
 
@@ -103,16 +103,18 @@ $ examples/quick start example
 Global binary option: false
 Option w/ default:    default
 Option w/o default:   
-Postitional argument: example
+Positional argument:  example
 $ examples/quick start -g -d 'not default' \
 > --nullable 'not null' "example"
 Global binary option: true
 Option w/ default:    not default
 Option w/o default:   not null
-Postitional argument: example
+Positional argument:  example
 ```
 
 </details>
+
+Note, this example calls `shifu_less` to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
 
 [`examples/quick`](/examples/quick)
 
@@ -175,7 +177,7 @@ start() {
   echo "Global binary option: $GLOBAL"
   echo "Option w/ default:    $W_DEFAULT"
   echo "Option w/o default:   $WO_DEFAULT"
-  echo "Postitional argument: $POSITIONAL"
+  echo "Positional argument:  $POSITIONAL"
 }
 
 # Run root command passing all script arguments
@@ -184,39 +186,43 @@ shifu_run quick_cmd "$@"
 
 ## Installation
 
-Since shifu is just a POSIX compatible script, all you need to do is get a copy of it.
+Since shifu is just a single POSIX compatible script, all you need to do is get a copy of it and either put it in a location on your path or in the same directory as your cli script.
 ```sh
-curl -O https://raw.githubusercontent.com/ultramann/shifu/refs/heads/main/shifu
+curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
 ```
 
 ## Import
+
 To "import" shifu you simply need to source its file path. If you've installed shifu to location on your path you can include the following at the top of your script.
 ```sh
 . shifu || exit 1
 ```
 
-For a more portable method you can make sure shifu is in the same directory as the calling script and use the following.
+If you'd like not to assume that shifu is on the path, you can instead make sure shifu is in the same directory as the calling script and use the following.
 ```sh
 . "$(dirname "$0")"/shifu || exit 1
 ```
 
 ## FAQ
+
 * How does shifu name its variables/functions, will they collide with those in my script?
   * Shifu takes special care to prefix any global variable/function with `shifu_` or `_shifu_`
   * Calling `shifu_less` will create versions of all the [`cmd` functions](#cmd-functions) without the `shifu_` prefix. This makes command code more terse, but adds function names that are more likely to be collided with
-  * All local varibles have any existing value saved and restored at the boundaries of the function using the variable
+  * All local variables have any existing value saved and restored at the boundaries of the function using the variable
 
 ## API
 
 ### Command runner
 
 #### `shifu_run`
-* Takes the name of a command function, those ones that end in `_cmd` by convention, and all the arguments in the current scope, `$@`
+* Called at end of a cli script
+* Takes the name of a command function, those ones that end in `_cmd` by convention, and all script arguments, `$@`
 * Dispatches call by parsing arguments in `$@` based on information in command function
-* Will pass all unparsed arguments to function specified in in (sub)command's call to `shifu_cmd_func`
-* Typical use, aka only use it was designed for, is as the last line of a script passing the root command function and all the arguments
+* Parses arguments that match subcommand names until the subcommand specifies a function to call with `shifu_cmd_func`
+* Parses all unparsed arguments into variables declared in `shifu_cmd_arg` calls
+* Calls the function in `shifu_cmd_func` passing any still unparsed 
 * Example
-  ```apache
+  ```sh
   shifu_run root_cmd "$@"
   ```
 
@@ -227,14 +233,14 @@ For a more portable method you can make sure shifu is in the same directory as t
 * When the command is the root command, this name should match the name of the program
 * When the command is a subcommand, the name is used to parse command line arguments
 * Example
-  ```apache
+  ```sh
   shifu_cmd_name shifu
   ```
 
 #### `shifu_cmd_subs`
 * List of subcommand function names that can be routed to from command
 * Example
-  ```apache
+  ```sh
   shifu_cmd_subs subcommand_one_cmd subcommand_two_cmd
   ```
 
@@ -242,7 +248,7 @@ For a more portable method you can make sure shifu is in the same directory as t
 * Name of function to run when command is invoked
 * The function will be passed all command line arguments that weren't parsed while identifying the command
 * Example
-  ```apache
+  ```sh
   shifu_cmd_func function_to_run
   ```
 
@@ -251,7 +257,7 @@ For a more portable method you can make sure shifu is in the same directory as t
 * Added in help above the auto-generated help for the command arguments
 * Added to help when listing a command's subcommands
 * Example
-  ```apache
+  ```sh
   shifu_cmd_help "Terse string to help users"
   ```
 
@@ -259,7 +265,7 @@ For a more portable method you can make sure shifu is in the same directory as t
 * Long help string for the command
 * Added in help after brief help string
 * Example
-  ```apache
+  ```sh
   shifu_cmd_long "Verbose string to really help users"
   ```
 
@@ -267,12 +273,12 @@ For a more portable method you can make sure shifu is in the same directory as t
 * Configuration to parse command line arguments to variable values
 * If used in a command with subcommands, all descendent subcommands will inherit the configuration
 * Arguments are passed in two parts separated by a required double dash, `--`:
-  ```apache
-  shifu_cmd_arg <matching patterns> -- <parsing configuration>
+  ```sh
+  shifu_cmd_arg [matching patterns] -- [parsing configuration]
   ```
 * Matching patterns are literal flag/option strings, e.g. `-v`, `--verbose`
   * Any number can be provided before the double dash
-  ```apache
+  ```sh
   shifu_cmd_arg -v --verbose -- ...
   ```
 * Parsing configuration defines what values are stored when a pattern is matched or not
