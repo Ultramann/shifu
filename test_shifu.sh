@@ -340,7 +340,8 @@ Options
     Default: def_flag_opt
   -h, --help
     Show this help'
-  actual=$(shifu_help shifu_test_all_options_cmd)
+  actual=$(_shifu_help shifu_test_all_options_cmd 1)
+  shifu_assert_non_zero status $?
   shifu_assert_strings_equal help_message "$expected" "$actual"
 }
 
