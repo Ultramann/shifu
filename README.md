@@ -300,9 +300,9 @@ If you'd like not to assume that shifu is on the path, you can instead make sure
 * Using `shifu_cmd_args` with the remaining argument combination does not actually parse command line arguments
   * The call only serves as a way to include help for remaining arguments
 
-#### `shifu_cmd_larg`
+#### `shifu_cmd_arg_loc`
 * Local argument configuration
-* Same purpose and usage as `shifu_cmd_larg` except subcommands do not inherit configuration
+* Same purpose and usage as `shifu_cmd_arg_loc` except subcommands do not inherit configuration
 * Instead option arguments will be parsed greedily when parsing subcommand names allowing usage like
   ```sh
   cli root --local sub --args

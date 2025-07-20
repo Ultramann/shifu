@@ -37,7 +37,7 @@ shifu_test_root_cmd() {
   shifu_cmd_help "Test root cmd help"
   shifu_cmd_subs shifu_test_sub_one_cmd shifu_test_sub_two_cmd
 
-  shifu_cmd_larg -l --local_test -- local_test false true "A test local cmd arg"
+  shifu_cmd_arg_loc -l --local-test -- local_test false true "A test local cmd arg"
 }
 
 shifu_test_sub_one_cmd() {
@@ -159,7 +159,7 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -l, --local_test
+  -l, --local-test
     A test local cmd arg
     Default: false, set: true
   -h, --help
@@ -288,13 +288,45 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -l, --local_test
+  -l, --local-test
     A test local cmd arg
     Default: false, set: true
   -h, --help
     Show this help'
   )
   actual=$(shifu_run shifu_test_root_cmd --invalid other -t)
+  shifu_assert_strings_equal error_message "$expected" "$actual"
+  shifu_var_restore expected actual
+}
+
+shifu_test_bad_positional_global_arg_cmd() {
+  shifu_cmd_name bad-global
+  shifu_cmd_subs does not matter
+
+  shifu_cmd_arg -- bad_positional "Bad help"
+}
+
+test_shifu_bad_positional_global_arg_cmd() {
+  shifu_var_store expected actual
+  expected="Positional arguments cannot be global: bad_positional"
+  actual=$(shifu_run shifu_test_bad_positional_global_arg_cmd does not matter)
+  shifu_assert_non_zero status $?
+  shifu_assert_strings_equal error_message "$expected" "$actual"
+  shifu_var_restore expected actual
+}
+
+shifu_test_bad_positional_local_arg_cmd() {
+  shifu_cmd_name bad-local
+  shifu_cmd_subs does not matter
+
+  shifu_cmd_arg_loc -- bad_positional "Bad help"
+}
+
+test_shifu_bad_positional_local_arg_cmd() {
+  shifu_var_store expected actual
+  expected="Positional arguments cannot be local: bad_positional"
+  actual=$(shifu_run shifu_test_bad_positional_local_arg_cmd does not matter)
+  shifu_assert_non_zero status $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
   shifu_var_restore expected actual
 }
@@ -355,7 +387,7 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -l, --local_test
+  -l, --local-test
     A test local cmd arg
     Default: false, set: true
   -h, --help
