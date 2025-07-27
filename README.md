@@ -4,10 +4,12 @@
 (____/(_)  (_)(_____)(_)    (______)
 ```
 
-**SH**ell **I**nterface **FU**nctions, or shifu, is a set of utility functions to make creating a cli from a shell script simple. Shell scripts make gluing together functionality from different cli's pretty easy. However, if you want to extend the script's capabilities to have advanced cli features: related but distinct entry points, aka subcommands, nested subcommands, distinct command line options for those subcommands, subcommand specific help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address that problem and make creating a cli from a shell script declarative and maintainable.
+**SH**ell **I**nterface **FU**nctions, or shifu, is a set of utility functions to make creating a cli from a shell script simple.
+
+Shell scripts make gluing together functionality from different cli's pretty easy. However, if you want to extend the script's capabilities to have advanced cli features: related but distinct entry points, aka subcommands, nested subcommands, distinct command line options for those subcommands, subcommand specific help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address that problem and make creating a powerful cli from a shell script declarative and maintainable.
 
 Shifu has the following qualities:
-* POSIX compliance; aka, compatibility many shells
+* compatibility many shells
   * tested with: ksh, dash, bash, zsh
 * declarative argument parsing
 * subcommand dispatching
@@ -32,7 +34,7 @@ Shifu gives cli shell scripts the opportunity to be better than they are.
 
 Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ calls shifu `cmd` functions. These functions provide a declarative way to tell shifu how to wire together your cli. Commands are passed to shifu's command runner `shifu_run`, or referenced as subcommands.
 
-Let's take a look at a simple demo cli built with shifu. This demo cli has two named subcommands, each with their own arguments.
+Let's take a look at a simple demo cli, [`examples/quick`](/examples/quick), built with shifu. This demo cli has two named subcommands, `hello` and `start`, each with their own arguments.
 
 ![Quickstart](/assets/demo.gif)
 
@@ -128,6 +130,8 @@ Note, this example calls `shifu_less` to provide a version of the `shifu_cmd` fu
 quick_cmd() {
   # Name the command
   cmd_name quick
+  # Add subcommands
+  cmd_subs hello_cmd start_cmd
   # Add help for the command
   cmd_help "A quick shifu example"
   # Add long help for the command
@@ -135,8 +139,6 @@ quick_cmd() {
   * subcommand dispatch
   * argument parsing
   * scoped help generation"
-  # Add subcommands
-  cmd_subs hello_cmd start_cmd
   # Add global argument
   cmd_arg -g --global -- GLOBAL false true "Global binary option"
 }
@@ -144,16 +146,16 @@ quick_cmd() {
 # Write first subcommand, referenced in `cmd_subs` above
 hello_cmd() {
   cmd_name hello
+  cmd_func quick_hello
   cmd_help "A hello world subcommand"
   cmd_long "A subcommand that prints greeting with arguments"
   # Add command target function
-  cmd_func hello
   # Add argument, will populate variable `NAME` when parsing cli args
   cmd_arg -n --name -- NAME "mysterious user" "Name to greet"
 }
 
 # Write first subcommand target function
-hello() {
+quick_hello() {
   # Use variable, `NAME`, populated by `cmd_arg` in `hello_cmd`
   echo "Hello, $NAME!"
 }
@@ -161,9 +163,9 @@ hello() {
 # Write second subcommand, referenced in `cmd_subs` above
 start_cmd() {
   cmd_name start
+  cmd_func quick_start
   cmd_help "A quick subcommand"
   cmd_long "A subcommand that prints results of parsed arguments"
-  cmd_func start
 
   # Add argument, will populate variables when parsing cli args
   cmd_arg -d --default  -- W_DEFAULT  "default" "Example option w/ argument"
@@ -172,7 +174,7 @@ start_cmd() {
 }
 
 # Write second subcommand target function
-start() {
+quick_start() {
   # Use variables populated by `cmd_arg` in `start_cmd` and `quick_cmd`
   echo "Global binary option: $GLOBAL"
   echo "Option w/ default:    $W_DEFAULT"
@@ -238,7 +240,7 @@ If you'd like not to assume that shifu is on the path, you can instead make sure
   ```
 
 #### `shifu_cmd_subs`
-* List of subcommand function names that can be routed to from command
+* Subcommand function names to which the current command can route
 * Example
   ```sh
   shifu_cmd_subs subcommand_one_cmd subcommand_two_cmd

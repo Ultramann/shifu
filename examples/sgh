@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # Example shifu cli to partially reproduce similar functionality that
 # the github cli, gh, provides. Wrapper around curl commands to the
@@ -11,20 +11,20 @@ auth_file="$HOME/.sgh"
 
 sgh_cmd() {
   cmd_name sgh
-  cmd_help "Example github cli implemented with shifu"
   cmd_subs auth_cmd issue_cmd pr_cmd
+  cmd_help "Example github cli implemented with shifu"
 }
 
 auth_cmd() {
   cmd_name auth
-  cmd_help "Commands for interacting authentication tokens"
   cmd_subs auth_clear_cmd auth_set_cmd
+  cmd_help "Commands for interacting authentication tokens"
 }
 
 auth_set_cmd() {
   cmd_name set
-  cmd_help "Set token for authentication"
   cmd_func auth_set
+  cmd_help "Set token for authentication"
 
   cmd_arg -- PAT "Personal access token, documentation:
       https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens"
@@ -36,38 +36,35 @@ auth_set() {
 
 auth_clear_cmd() {
   cmd_name clear
-  cmd_help "Clear token for authentication"
   cmd_func auth_clear
+  cmd_help "Clear token for authentication"
 }
 
 auth_clear() {
   [ -f "$HOME/.sgh" ] && rm "$HOME/.sgh"
 }
 
-_auth_get() {
-  cat "$auth_file"
-}
-
 issue_cmd() {
   cmd_name issue
-  cmd_help "Commands for interacting with github repository issues"
   cmd_subs issue_list_cmd issue_get_cmd
+  cmd_help "Commands for interacting with github repository issues"
 
   cmd_arg -R --repo -- REPO "Github repository in OWNER/REPO format"
 }
 
 issue_list_cmd() {
   cmd_name list
-  cmd_help "List issues in a GitHub repository"
   cmd_func issue_list
+  cmd_help "List issues in a GitHub repository"
 
   cmd_arg -n --number -- NUMBER 10 "Max number of results"
 }
 
 issue_list() {
   _resolve_repo
+  _get_auth_token
   _update_query per_page "100"
-  _gh_api "repos/$REPO/issues$query" | \
+  _gh_api_query "repos/$REPO/issues" | \
     jq -M "map(select(has(\"pull_request\")|not) |
            \"\(.number): \(.title)\") |
            .[:$NUMBER] | .[]" \
@@ -76,15 +73,16 @@ issue_list() {
 
 issue_get_cmd() {
   cmd_name get
-  cmd_help "Get issue in a GitHub repository"
   cmd_func issue_get
+  cmd_help "Get issue in a GitHub repository"
 
   cmd_arg -- ISSUE_NUMBER "Issue number to get"
 }
 
 issue_get() {
   _resolve_repo
-  _gh_api "repos/$REPO/issues/$ISSUE_NUMBER" | \
+  _get_auth_token
+  _gh_api_query "repos/$REPO/issues/$ISSUE_NUMBER" | \
     jq -M '
       "\(.title)
 URL: \(.url)
@@ -96,38 +94,40 @@ Body: \(.body)
 
 pr_cmd() {
   cmd_name pr
-  cmd_help "Commands for interacting with github repository pull requests"
   cmd_subs pr_list_cmd pr_get_cmd
+  cmd_help "Commands for interacting with github repository pull requests"
 
   cmd_arg -R --repo -- REPO "Github repository in OWNER/REPO format"
 }
 
 pr_list_cmd() {
   cmd_name list
-  cmd_help "List pull requests in a GitHub repository"
   cmd_func pr_list
+  cmd_help "List pull requests in a GitHub repository"
 
   cmd_arg -n --number -- NUMBER 10 "Max number of results"
 }
 
 pr_list() {
   _resolve_repo
+  _get_auth_token
   _update_query per_page "$NUMBER"
-  _gh_api "repos/$REPO/pulls$query" | \
+  _gh_api_query "repos/$REPO/pulls" | \
     jq -M '.[] | "\(.number): \(.title)"' | xargs -I{} echo {}
 }
 
 pr_get_cmd() {
   cmd_name get
-  cmd_help "Get pr in a GitHub repository"
   cmd_func pr_get
+  cmd_help "Get pr in a GitHub repository"
 
   cmd_arg -- PR_NUMBER "Pull request number to get"
 }
 
 pr_get() {
   _resolve_repo
-  _gh_api "repos/$REPO/pulls/$PR_NUMBER" | \
+  _get_auth_token
+  _gh_api_query "repos/$REPO/pulls/$PR_NUMBER" | \
     jq -M '
       "\(.title)
 URL: \(.issue_url)
@@ -157,12 +157,28 @@ _update_query() {
   query="$query$1=$2"
 }
 
+_gh_api_query() {
+  _gh_api "$1$query"
+}
+
 _gh_api() {
-  curl -sL \
-    -H "Accept: application/vnd.github+json" \
-    -H "Authorization: Bearer $(_auth_get)" \
-    -H "X-GitHub-Api-Version: 2022-11-28" \
-    "https://api.github.com/$1"
+  curl_call="curl -sL \\
+    -H \"Accept: application/vnd.github+json\" \\
+    -H \"X-GitHub-Api-Version: 2022-11-28\""
+  [ -n "$auth_token" ] && curl_call="$curl_call \\
+    -H \"Authorization: Bearer $auth_token\""
+  curl_call="$curl_call https://api.github.com/$1"
+  eval "$curl_call"
+}
+
+_get_auth_token() {
+  [ -f "$auth_file" ] && auth_token=$(cat "$auth_file")
+  result=$(_gh_api)
+  jq -e 'has("status") and .status != "200"' <<< "$result" > /dev/null
+  if [ $? -eq 0 ]; then
+    echo "$result" | jq -rM '.message'
+    exit 1
+  fi
 }
 
 shifu_run sgh_cmd "$@"
