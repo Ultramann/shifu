@@ -57,7 +57,9 @@ shifu_run() {
                   help_stage help_usage help_arguments help_options help_string \
                   subcmd_help no_options case_stmt global_case subcmd subcmds
   mode=$shifu_mode_cmds
-  parent="$1"; cmd="$1"; shift; "$parent"; shifu_cmds="$cmd_subs"
+  parent="$1"; cmd="$1"; shift
+  "$parent"
+  _shifu_set_for_looping shifu_cmds cmd_subs
   while [ $# -ne 0 -a -n "$cmd_subs" ]; do
     _shifu_parse_args true "$parent" "$@"
     mode=$shifu_mode_cmds
@@ -70,7 +72,7 @@ shifu_run() {
       arg_matched=true; shift
       [ -n "$cmd_func" ] && break
       parent="$cmd"
-      shifu_cmds="$cmd_subs"
+      _shifu_set_for_looping shifu_cmds cmd_subs
       break
     done
     [ "$arg_matched" = true -a -n "$cmd_func" ] && break
@@ -78,7 +80,7 @@ shifu_run() {
     [ "$1" != "-h" -a "$1" != "--help" ] && echo "Unknown command: $1"
     _shifu_help "$parent" 1
   done
-  [ -z "$cmd_func" ] && { echo "$cmd_name" requires arguments; _shifu_help "$cmd" 1; }
+  [ -z "$cmd_func" ] && { echo "$cmd_name requires arguments"; _shifu_help "$cmd" 1; }
   [ "$1" = "-h" -o "$1" = "--help" ] && _shifu_help "$cmd" 0
   _shifu_parse_args false "$cmd" "$@"
   shift $_shifu_args_parsed
@@ -122,7 +124,11 @@ _shifu_parse_args() {
 
 _shifu_parse_arg() {
   no_options=true
-  [ "$1" != -- ] && { no_options=''; case_stmt="$case_stmt $1"; shift; }
+  if [ "$1" != -- ]; then
+    no_options=''
+    case_stmt="$case_stmt $1"
+    shift
+  fi
   while [ $# -gt 1 -a "$1" != -- ]; do
     case_stmt="${case_stmt}|$1"; shift
   done; shift
@@ -163,7 +169,7 @@ _shifu_parse_arg() {
 
 _shifu_handle_arg_global() {
   no_options=true
-  if [ $# -gt 1 -a "$1" != -- ]; then
+  if [ "$1" != -- ]; then
     no_options=''
     global_case="$global_case $1"
     global_help="$global_help\n  $1"
@@ -206,9 +212,49 @@ _shifu_clear_cmd_vars() {
     cmd_name='' cmd_help='' cmd_long='' cmd_subs='' cmd_func=''
 }
 
+_shifu_help() {
+  "$1"
+  mode=$shifu_mode_help
+  _shifu_make_subcmd_help
+  _shifu_clear_cmd_vars
+  help_stage=0 help_usage='' help_arguments='' help_options='' help_string=''
+  "$1"
+  [ -n "$cmd_func" ] && help_options="$help_options$global_help"
+  help_options="$help_options\n  -h, --help\n    Show this help"
+  [ -n "$help_usage" ] && help_usage="$cmd_name [OPTIONS]$help_usage"
+  [ -n "$cmd_help" ] && _shifu_add_to_help_string "$cmd_help"
+  [ -n "$cmd_long" ] && _shifu_add_to_help_string "$cmd_long"
+  [ -n "$help_usage" ] && _shifu_add_to_help_string "Usage\n  $help_usage"
+  [ -n "$help_arguments" ] && _shifu_add_to_help_string "Arguments$help_arguments"
+  [ -n "$subcmd_help" ] && _shifu_add_to_help_string "Subcommands$subcmd_help"
+  [ -n "$help_options" ] && _shifu_add_to_help_string "Options$help_options"
+  [ -n "$help_string" ] && printf "$help_string\n"
+  exit $2
+}
+
+_shifu_add_to_help_string() {
+  [ -z "$help_string" ] && help_string="$1" || help_string="$help_string\n\n$1"
+}
+
+_shifu_make_subcmd_help() {
+  [ -z "$cmd_subs" ] && return
+  _shifu_set_for_looping subcmds cmd_subs
+  _shifu_clear_cmd_vars
+  for subcmd in $subcmds; do
+    help_stage=0
+    "$subcmd"
+    subcmd_help="$subcmd_help\n  $cmd_name"
+    [ -n "$cmd_help" ] && subcmd_help="$subcmd_help\n    $cmd_help"
+  done
+}
+
 _shifu_arg_help() {
   no_options=true
-  [ "$1" != -- ] && { no_options=''; help_options="$help_options\n  $1"; shift; }
+  if [ "$1" != -- ]; then
+    no_options=''
+    help_options="$help_options\n  $1"
+    shift
+  fi
   while [ $# -gt 1 -a "$1" != -- ]; do
     help_options="$help_options, $1"; shift
   done; shift
@@ -237,7 +283,7 @@ _shifu_arg_help() {
   # option no argument default set
   elif [ $# -eq 4 ]; then
     _shifu_error_if_invalid_arg_order "$1" $help_stage
-    help_options="$help_options\n    $4\n    Default: $2, set: $3"
+    help_options="$help_options\n    $4\n    Default: ${2:-empty}, set: $3"
   fi
 }
 
@@ -245,6 +291,14 @@ _shifu_update_case_stmt_invalid_option() {
   case_stmt="$case_stmt
     -*|--*) echo \"Invalid option: \$1\"; _shifu_help \"\$cmd\" 1 ;;
     *)"
+}
+
+_shifu_set_for_looping() {
+  if [ -n "$ZSH_VERSION" ]; then
+    eval "$1=( \${=$2} )"
+  else
+    eval "$1=\$$2"
+  fi
 }
 
 _shifu_set_variable() {
@@ -261,42 +315,6 @@ _shifu_error_if_invalid_arg_order() {
 _shifu_error() {
   echo "$1"
   exit 1
-}
-
-_shifu_help() {
-  "$1"
-  mode=$shifu_mode_help
-  _shifu_make_subcmd_help
-  _shifu_clear_cmd_vars
-  help_stage=0 help_usage='' help_arguments='' help_options='' help_string=''
-  "$1"
-  [ -n "$cmd_func" ] && help_options="$help_options$global_help"
-  help_options="$help_options\n  -h, --help\n    Show this help"
-  [ -n "$help_usage" ] && help_usage="$cmd_name [OPTIONS]$help_usage"
-  [ -n "$cmd_help" ] && _shifu_add_to_help_string "$cmd_help"
-  [ -n "$cmd_long" ] && _shifu_add_to_help_string "$cmd_long"
-  [ -n "$help_usage" ] && _shifu_add_to_help_string "Usage\n  $help_usage"
-  [ -n "$help_arguments" ] && _shifu_add_to_help_string "Arguments$help_arguments"
-  [ -n "$subcmd_help" ] && _shifu_add_to_help_string "Subcommands$subcmd_help"
-  [ -n "$help_options" ] && _shifu_add_to_help_string "Options$help_options"
-  [ -n "$help_string" ] && printf "$help_string\n"
-  exit $2
-}
-
-_shifu_add_to_help_string() {
-  [ -z "$help_string" ] && help_string="$1" || help_string="$help_string\n\n$1"
-}
-
-_shifu_make_subcmd_help() {
-  [ -z "$cmd_subs" ] && return
-  subcmds=$cmd_subs
-  _shifu_clear_cmd_vars
-  for subcmd in $subcmds; do
-    help_stage=0
-    "$subcmd"
-    subcmd_help="$subcmd_help\n  $cmd_name"
-    [ -n "$cmd_help" ] && subcmd_help="$subcmd_help\n    $cmd_help"
-  done
 }
 
 shifu_trace() {

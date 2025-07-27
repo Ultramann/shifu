@@ -470,6 +470,7 @@ shifu_run_test() {
   # 1: test function
   errors=0  # doesn't need to be stored/restored because always run in subshell
   $1 2> /dev/null
+  errors=$(($errors + $?))
   return $errors
 }
 
@@ -493,13 +494,8 @@ shifu_run_test_and_report() {
 shifu_run_test_suite() {
   # global variables only in this function because it is "main"
 
-  [ $# -gt 0 ] && [ "$1" = "-v" ] && { shifu_verbose_tests=true; shift; }
-
-  if [ $# -gt 0 ]; then
-    test_functions="$@"
-  else
-    shifu_read_test_functions
-  fi
+  [ $# -gt 0 -a "$1" = "-v" ] && { shifu_verbose_tests=true; shift; }
+  shifu_set_test_functions "$@"
   n_tests=0
   n_passed=0
   n_failed=0
@@ -527,6 +523,15 @@ shifu_read_test_functions() {
     sed -rn "/^(test_.*) ?\(\) {/!d;
             s/^(test_.*) ?\(\) {/\1/p"
   )
+}
+
+shifu_set_test_functions() {
+  if [ $# -gt 0 ]; then
+    test_functions="$@"
+  else
+    shifu_read_test_functions
+  fi
+  [ -n "$ZSH_VERSION" ] && eval "test_functions=( \${=test_functions} )"
 }
 
 this_script="$0"  # at global for zsh compatibility
