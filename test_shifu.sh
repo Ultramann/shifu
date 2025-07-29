@@ -1,36 +1,13 @@
 . ./shifu
 
+set -u
+
 # to see more color options run:
 #   for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
 shifu_grey="$(tput setaf 0)"
 shifu_red="$(tput setaf 1)"
 shifu_green="$(tput setaf 2)"
 shifu_reset="$(tput sgr0)"
-
-test_shifu_var_store_restore() {
-  shifu_test_var_1="value"
-  shifu_test_var_2="other"
-  shifu_var_store shifu_test_var_1 shifu_test_var_2
-  shifu_test_var_1="new"
-  shifu_test_var_2="newer"
-  shifu_var_restore shifu_test_var_1 shifu_test_var_2
-  shifu_assert_zero status $?
-  shifu_assert_strings_equal shifu_test_var_1 "$shifu_test_var_1" "value"
-  shifu_assert_strings_equal shifu_test_var_2 "$shifu_test_var_2" "other"
-  unset -v shifu_test_var_1
-  unset -v shifu_test_var_2
-}
-
-test_shifu_var_store_shifu_var_fails() {
-  bad_var=5
-  shifu_bad_var_shifu="Shouldn't use this"
-  error_message=$(shifu_var_store bad_var shifu_bad_var_shifu)
-  shifu_assert_non_zero status $?
-  shifu_assert_strings_equal error_message "$error_message" "Cannot use variable 'shifu_bad_var_shifu'"
-  unset -v bad_var
-  unset -v shifu_bad_var_shifu
-  unset -v error_message
-}
 
 shifu_test_root_cmd() {
   shifu_cmd_name root
@@ -119,35 +96,28 @@ no_op() {
 }
 
 test_shifu_run_good() {
-  shifu_var_store expected actual
   expected="test leaf func one 2 one two"
-  actual=$(shifu_run shifu_test_root_cmd sub-one leaf-one one two)
-  shifu_assert_zero status $#
-  shifu_assert_equal output "$expected" "$actual"
-  shifu_var_restore expected actual
+  actual=$(shifu_run shifu_test_root_cmd sub-one leaf-one one two 2>&1)
+  shifu_assert_zero status $?
+  shifu_assert_strings_equal output "$expected" "$actual"
 }
 
 test_shifu_run_good_cmd_global_arg() {
-  shifu_var_store global_test leaf_three_args
   shifu_run shifu_test_root_cmd sub-two leaf-three -g one two
-  shifu_assert_zero status $#
+  shifu_assert_zero status $?
   shifu_assert_equal global_test "$global_test" true
   shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
-  shifu_var_restore global_test leaf_three_args
 }
 
 test_shifu_run_good_cmd_global_and_local_arg() {
-  shifu_var_store local_test global_test leaf_three_args
   shifu_run shifu_test_root_cmd -l sub-two leaf-three -g one two
-  shifu_assert_zero status $#
+  shifu_assert_zero status $?
   shifu_assert_equal local_test "$local_test" true
   shifu_assert_equal global_test "$global_test" true
   shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
-  shifu_var_restore local_test global_test leaf_three_args
 }
 
 test_shifu_run_bad_first_cmd() {
-  shifu_var_store expected actual
   expected="$(
     echo 'Unknown command: bad'
     printf 'Test root cmd help
@@ -165,14 +135,12 @@ Options
   -h, --help
     Show this help'
   )"
-  actual=$(shifu_run shifu_test_root_cmd bad sub-one leaf-two one two)
+  actual=$(shifu_run shifu_test_root_cmd bad sub-one leaf-two one two 2>&1)
   shifu_assert_non_zero status $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
-  shifu_var_restore expected actual
 }
 
 test_shifu_run_bad_sub_cmd() {
-  shifu_var_store expected actual
   expected="$(
     echo 'Unknown command: sub-bad'
     printf 'Test sub one cmd help
@@ -187,14 +155,12 @@ Options
   -h, --help
     Show this help'
   )"
-  actual=$(shifu_run shifu_test_root_cmd sub-one sub-bad one two)
+  actual=$(shifu_run shifu_test_root_cmd sub-one sub-bad one two 2>&1)
   shifu_assert_non_zero status $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
-  shifu_var_restore expected actual
 }
 
 test_shifu_run_bad_leaf_cmd() {
-  shifu_var_store expected actual
   expected="$(
     echo 'Unknown command: leaf-bad'
     printf 'Test sub two cmd help
@@ -209,17 +175,12 @@ Options
   -h, --help
     Show this help'
   )"
-  actual=$(shifu_run shifu_test_root_cmd sub-two leaf-bad one two)
+  actual=$(shifu_run shifu_test_root_cmd sub-two leaf-bad one two 2>&1)
   shifu_assert_non_zero status $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
-  shifu_var_restore expected actual
 }
 
 test_shifu_run_args_all_set() {
-  shifu_var_store FLAG_BIN FLAG_ARG FLAG_DEF \
-                    OPTION_BIN OPTION_ARG OPTION_DEF \
-                    FLAG_OPTION_BIN FLAG_OPTION_ARG FLAG_OPTION_DEF \
-                    POSITIONAL_ARG
   shifu_run shifu_test_all_options_cmd \
                    -f \
                    -a flag_value \
@@ -244,17 +205,9 @@ test_shifu_run_args_all_set() {
   shifu_assert_equal flag_option_arg "$FLAG_OPTION_ARG" "flag_option_value"
   shifu_assert_equal flag_option_def "$FLAG_OPTION_DEF" "not_default_flag_option_value"
   shifu_assert_equal positional_arg "$POSITIONAL_ARG" "positional_arg_value"
-  shifu_var_restore FLAG_BIN FLAG_ARG FLAG_DEF \
-                    OPTION_BIN OPTION_ARG OPTION_DEF \
-                    FLAG_OPTION_BIN FLAG_OPTION_ARG FLAG_OPTION_DEF \
-                    POSITIONAL_ARG
 }
 
 test_shifu_run_args_all_unset() {
-  shifu_var_store FLAG_BIN FLAG_ARG FLAG_ARG_D \
-                  option_bin option_arg option_arg_d \
-                  flag_option_bin flag_option_arg flag_option_arg_d \
-                  positional_arg
   shifu_run shifu_test_all_options_cmd positional_arg_value
   shifu_assert_zero status $?
   shifu_assert_equal args_parsed "$_shifu_args_parsed" "1"
@@ -269,14 +222,9 @@ test_shifu_run_args_all_unset() {
   shifu_assert_equal flag_option_def "$FLAG_OPTION_DEF" "def_flag_opt"
   shifu_assert_equal positional_arg "$POSITIONAL_ARG" "positional_arg_value"
   shifu_assert_equal array_length $# 0
-  shifu_var_restore FLAG_BIN FLAG_ARG FLAG_DEF \
-                    OPTION_BIN OPTION_ARG OPTION_DEF \
-                    FLAG_OPTION_BIN FLAG_OPTION_ARG FLAG_OPTION_DEF \
-                    POSITIONAL_ARG
 }
 
 test_shifu_run_args_invalid_option() {
-  shifu_var_store expected actual
   expected=$(
     echo 'Invalid option: --invalid'
     printf 'Test root cmd help
@@ -294,9 +242,8 @@ Options
   -h, --help
     Show this help'
   )
-  actual=$(shifu_run shifu_test_root_cmd --invalid other -t)
+  actual=$(shifu_run shifu_test_root_cmd --invalid other -t 2>&1)
   shifu_assert_strings_equal error_message "$expected" "$actual"
-  shifu_var_restore expected actual
 }
 
 shifu_test_bad_positional_global_arg_cmd() {
@@ -307,12 +254,10 @@ shifu_test_bad_positional_global_arg_cmd() {
 }
 
 test_shifu_bad_positional_global_arg_cmd() {
-  shifu_var_store expected actual
   expected="Positional arguments cannot be global: bad_positional"
-  actual=$(shifu_run shifu_test_bad_positional_global_arg_cmd does not matter)
+  actual=$(shifu_run shifu_test_bad_positional_global_arg_cmd does not matter 2>&1)
   shifu_assert_non_zero status $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
-  shifu_var_restore expected actual
 }
 
 shifu_test_bad_positional_local_arg_cmd() {
@@ -323,12 +268,10 @@ shifu_test_bad_positional_local_arg_cmd() {
 }
 
 test_shifu_bad_positional_local_arg_cmd() {
-  shifu_var_store expected actual
   expected="Positional arguments cannot be local: bad_positional"
-  actual=$(shifu_run shifu_test_bad_positional_local_arg_cmd does not matter)
+  actual=$(shifu_run shifu_test_bad_positional_local_arg_cmd does not matter 2>&1)
   shifu_assert_non_zero status $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
-  shifu_var_restore expected actual
 }
 
 test_shifu_help() {
@@ -372,7 +315,7 @@ Options
     Default: def_flag_opt
   -h, --help
     Show this help'
-  actual=$(_shifu_help shifu_test_all_options_cmd 1)
+  actual=$(_shifu_help shifu_test_all_options_cmd 1 2>&1)
   shifu_assert_non_zero status $?
   shifu_assert_strings_equal help_message "$expected" "$actual"
 }
@@ -406,7 +349,7 @@ Options
     Default: false, set: true
   -h, --help
     Show this help'
-  actual=$(shifu_run shifu_test_root_cmd sub-two leaf-four -h)
+  actual=$(shifu_run shifu_test_root_cmd sub-two leaf-four -h 2>&1)
   shifu_assert_strings_equal help_message "$expected" "$actual"
 }
 
@@ -421,14 +364,14 @@ shifu_assert_empty() {
 shifu_assert_zero() {
   # 1: identifier, 2: value
   [ $2 = 0 ] && return
-  shifu_report_context "$1, expected zero value, got" $1
+  shifu_report_context "$1: expected zero value, got" $2
   errors=$(($errors + 1))
 }
 
 shifu_assert_non_zero() {
   # 1: identifier, 2: value
   [ $2 != 0 ] && return
-  shifu_report_context "$1: expected non-zero value, got" $1
+  shifu_report_context "$1: expected non-zero value, got" $2
   errors=$(($errors + 1))
 }
 
@@ -446,7 +389,7 @@ shifu_assert_strings_equal() {
 
 shifu_report_success() {
   # 1: function name
-  if [ "$shifu_verbose_tests" = true ]; then
+  if [ "${shifu_verbose_tests:-}" = true ]; then
     printf "$shifu_green%-7s$shifu_reset%s\n" pass "$1"
   fi
 }
@@ -459,27 +402,23 @@ shifu_report_failure() {
 shifu_report_context() {
   # 1: header
   printf "$shifu_grey%7s%s$shifu_reset\n" "" "$1"; shift
-  shifu_var_store argument
   for argument in "$@"; do
     printf "$shifu_grey%10s%s$shifu_reset\n" "" "$argument"
   done
-  shifu_var_restore argument
 }
 
 shifu_run_test() {
   # 1: test function
-  errors=0  # doesn't need to be stored/restored because always run in subshell
-  $1 2> /dev/null
+  errors=0
+  $1 #2> /dev/null
   errors=$(($errors + $?))
   return $errors
 }
 
 shifu_run_test_and_report() {
   # 1: test function
-  shifu_var_store test_message test_result
   test_message=$(shifu_run_test "$1")
-  test_result=$?
-  if [ "$test_result" -eq 0 ]; then
+  if [ $? -eq 0 ]; then
     n_passed=$(($n_passed + 1))
     shifu_report_success "$1"
   else
@@ -488,13 +427,12 @@ shifu_run_test_and_report() {
     echo "$test_message"
   fi
   n_tests=$(($n_tests + 1))
-  shifu_var_restore test_message test_result
 }
 
 shifu_run_test_suite() {
   # global variables only in this function because it is "main"
 
-  [ $# -gt 0 -a "$1" = "-v" ] && { shifu_verbose_tests=true; shift; }
+  [ $# -gt 0 -a "${1:-}" = "-v" ] && { shifu_verbose_tests=true; shift; }
   shifu_set_test_functions "$@"
   n_tests=0
   n_passed=0
@@ -531,7 +469,7 @@ shifu_set_test_functions() {
   else
     shifu_read_test_functions
   fi
-  [ -n "$ZSH_VERSION" ] && eval "test_functions=( \${=test_functions} )"
+  [ -n "${ZSH_VERSION:-}" ] && eval "test_functions=( \${=test_functions} )"
 }
 
 this_script="$0"  # at global for zsh compatibility
