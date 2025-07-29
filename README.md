@@ -208,9 +208,8 @@ If you'd like not to assume that shifu is on the path, you can instead make sure
 ## FAQ
 
 * How does shifu name its variables/functions, will they collide with those in my script?
-  * Shifu takes special care to prefix any global variable/function with `shifu_` or `_shifu_`
+  * Shifu takes special care to prefix all variables/functions with `shifu_` or `_shifu_`
   * Calling `shifu_less` will create versions of all the [`cmd` functions](#cmd-functions) without the `shifu_` prefix. This makes command code more terse, but adds function names that are more likely to be collided with
-  * All local variables have any existing value saved and restored at the boundaries of the function using the variable
 
 ## API
 
