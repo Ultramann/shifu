@@ -3,6 +3,7 @@
 shifu_mode_cmds=1
 shifu_mode_args=2
 shifu_mode_help=3
+shifu_mode_cmds_comp=4
 
 shifu_cmd_name() {
   [ $# -ne 1 ] && _shifu_error "Commands cannot contain spaces got: \"$@\""
@@ -52,6 +53,14 @@ shifu_less() {
 }
 
 shifu_run() {
+  case "$2" in
+    --tab-completion) _shifu_generate_tab_completion "$@" ;;
+    --shifu-complete) _shifu_complete "$@" ;;
+    *) _shifu_run "$@" ;;
+  esac
+}
+
+_shifu_run() {
   shifu_mode=$shifu_mode_cmds
   shifu_parent="$1"; shifu_cmd="$1"; shift
   "$shifu_parent"
@@ -263,6 +272,96 @@ _shifu_arg_help() {
   fi
 }
 
+_shifu_generate_tab_completion() {
+  shifu_mode=$shifu_mode_cmds
+  "$1"
+  case "$3" in
+    zsh) _shifu_generate_zsh_tab_completion "$@";;
+    bash) _shifu_generate_bash_tab_completion "$@";;
+    help) _shifu_tab_completion_help ;;
+    *) echo "Unknown shell, $3, cannot perform tab completion"; exit 1 ;;
+  esac
+}
+
+_shifu_tab_completion_help() {
+  echo "Generate tab completion code for specified shell
+
+Instructions
+1. Ensure $shifu_cmd_name is on your PATH
+2. Add the following to your shell's rc file
+     eval \"\$($shifu_cmd_name --tab-completion <shell>)\"
+   replacing <shell> with your shell. Supported shells:
+     zsh, bash
+3. If you're using zsh, ensure that you've loaded and run
+   compinit before the eval call in your zshrc file"
+}
+
+_shifu_generate_zsh_tab_completion() {
+  echo "_${shifu_cmd_name}_completion() {
+  current=\"\${words[\$CURRENT]}\"
+  full_words=( \"\${words[@]:1:\${#words[@]}-2}\" )
+  compadd -q -- \$($shifu_cmd_name --shifu-complete \"\$current\" \"\${full_words[@]}\")
+}
+compdef _${shifu_cmd_name}_completion $shifu_cmd_name"
+}
+
+_shifu_generate_bash_tab_completion() {
+  echo "_${shifu_cmd_name}_completion() {
+  current=\"\${COMP_WORDS[\${#COMP_WORDS[@]}-1]}\"
+  full_words=( \"\${COMP_WORDS[@]:1:\${#COMP_WORDS[@]}-2}\" )
+  completions=\$($shifu_cmd_name --shifu-complete \"\$current\" \"\${full_words[@]}\")
+  COMPREPLY=( \$(compgen -W \"\$completions\" -- \"\$current\") )
+}
+complete -F _${shifu_cmd_name}_completion $shifu_cmd_name"
+}
+
+_shifu_complete() {
+  shifu_mode=$shifu_mode_cmds_comp
+  shifu_parent="$1"; shifu_cmd="$1"; shifu_current_word="$3"; shift 3
+  "$shifu_parent"
+  _shifu_set_for_looping shifu_cmds shifu_cmd_subs
+  while [ $# -ne 0 -a -n "${shifu_cmd_subs:-}" ]; do
+    shifu_parse_local=true
+    shifu_mode=$shifu_mode_cmds_comp
+    shifu_arg_matched=''
+    for shifu_cmd in $shifu_cmds; do
+      _shifu_clear_cmd_vars
+      "$shifu_cmd"
+      [ "$1" != "$shifu_cmd_name" ] && continue
+      shifu_arg_matched=true; shift
+      [ -n "$shifu_cmd_func" ] && break
+      shifu_parent="$shifu_cmd"
+      _shifu_set_for_looping shifu_cmds shifu_cmd_subs
+      break
+    done
+  done
+  [ -n "${shifu_cmd_func:-}" ] && _shifu_complete_func_args
+  [ $# -eq 0 ] && _shifu_complete_subcmd_names
+}
+
+_shifu_complete_func_args() {
+  exit
+}
+
+_shifu_complete_subcmd_names() {
+  "$shifu_parent"
+  _shifu_set_for_looping shifu_cmds shifu_cmd_subs
+  for shifu_cmd in $shifu_cmds; do
+    "$shifu_cmd"
+    _shifu_add_completion "$shifu_cmd_name"
+  done
+  echo "$shifu_completions"
+  exit
+}
+
+_shifu_add_completion() {
+    if [ -z "${shifu_completions:-}" ]; then
+      shifu_completions="$1"
+    else
+      shifu_completions="$shifu_completions $1"
+    fi
+}
+
 _shifu_update_case_stmt_invalid_option() {
   shifu_case_stmt="$shifu_case_stmt
     -*|--*) echo \"Invalid option: \$1\"; _shifu_help \"\$shifu_cmd\" 1 ;;
@@ -294,6 +393,11 @@ _shifu_error() {
   exit 1
 }
 
-shifu_trace() {
-  eval "echo $1: \${$1:-}"
+_shifu_trace() {
+  if [ $# -eq 1 ]; then
+    eval "echo $1: \${$1:-}"
+  else
+    shifu_trace_name="$1"; shift
+    eval "echo $shifu_trace_name: $@"
+  fi
 }

@@ -339,7 +339,6 @@ Options
   shifu_assert_strings_equal help_message "$expected" "$actual"
 }
 
-
 test_shifu_help_global() {
   expected='Test leaf four cmd help
 
@@ -351,6 +350,18 @@ Options
     Show this help'
   actual=$(shifu_run shifu_test_root_cmd sub-two leaf-four -h 2>&1)
   shifu_assert_strings_equal help_message "$expected" "$actual"
+}
+
+test_shifu_complete_subcommands() {
+  expected="sub-one sub-two"
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "")
+  shifu_assert_strings_equal output "$expected" "$actual"
+}
+
+test_shifu_complete_nested_subcommands() {
+  expected="leaf-one leaf-two"
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" "sub-one")
+  shifu_assert_strings_equal output "$expected" "$actual"
 }
 
 # Testing utilities
