@@ -82,14 +82,15 @@ issue_get_cmd() {
 issue_get() {
   _resolve_repo
   _get_auth_token
-  _gh_api_query "repos/$REPO/issues/$ISSUE_NUMBER" | \
+  result=$(_gh_api_query "repos/$REPO/issues/$ISSUE_NUMBER" | \
     jq -M '
       "\(.title)
 URL: \(.url)
 State: \(.state)
 Author: \(.user.login)
 Body: \(.body)
-"' | xargs printf
+"')
+  printf "$result"
 }
 
 pr_cmd() {
