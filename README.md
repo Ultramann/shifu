@@ -12,6 +12,7 @@ Shifu has the following qualities:
 * declarative argument parsing
 * subcommand dispatching
 * scoped help generation
+* tab completion code generation for interactive shells
 * compatibility with POSIX based shells; tested with: 
   * bash, dash, ksh, zsh
 
@@ -28,6 +29,7 @@ Shifu gives cli shell scripts the opportunity to be better than they are.
 * [Quickstart](#quickstart)
 * [Installation](#installation)
 * [Import](#import)
+* [Tab Completion](#tab-completion)
 * [FAQ](#faq)
 * [API](#api)
 
@@ -233,6 +235,7 @@ shifu_run quick_cmd "$@"
 ## Installation
 
 Since shifu is just a single POSIX compatible script, all you need to do is get a copy of it and either put it in a location on your path or in the same directory as your cli script.
+
 ```sh
 curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
 ```
@@ -240,14 +243,28 @@ curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
 ## Import
 
 To "import" shifu you simply need to source its file path. If you've installed shifu to location on your path you can include the following at the top of your script.
+
 ```sh
 . shifu || exit 1
 ```
 
 If you'd like not to assume that shifu is on the path, you can instead make sure shifu is in the same directory as the calling script and use the following.
+
 ```sh
 . "${0%/*}"/shifu || exit 1
 ```
+
+## Tab Completion
+
+Since shifu knows all about a cli's subcommand names it can generate tab completion code for interactive shell's that support it, bash and zsh. 
+
+1. Ensure your cli is in a directory on your shell's `PATH`
+1. Ensure your cli has access to shifu; either by putting shifu in the same `PATH ` directory as your cli or adding shifu to another `PATH` directory
+1. If you're using zsh, ensure that you've loaded and run `compinit` before the eval call in your zshrc file
+1. Add the following line the your shell's rc file, replacing `<shell>` with a supported shell: bash or zsh
+   ```sh
+   eval "$($shifu_cmd_name --tab-completion <shell>)"
+   ```
 
 ## FAQ
 
@@ -275,8 +292,8 @@ If you'd like not to assume that shifu is on the path, you can instead make sure
 
 #### `shifu_cmd_name`
 * Name used to reference command from command line arguments
-* When the command is the root command, this name should match the name of the program
-* When the command is a subcommand, the name is used to parse command line arguments
+* When the command is passed to `shifu_run` this name must match the name of the program for tab completion to work
+* When the command is a subcommand the name is used to parse command line arguments
 * Example
   ```sh
   shifu_cmd_name shifu

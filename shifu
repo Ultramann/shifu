@@ -287,13 +287,16 @@ _shifu_tab_completion_help() {
   echo "Generate tab completion code for specified shell
 
 Instructions
-1. Ensure $shifu_cmd_name is on your PATH
-2. Add the following to your shell's rc file
+1. Ensure $shifu_cmd_name is in a directory on your shell's PATH
+2. Ensure $shifu_cmd_name has access to shifu; either by putting
+   shifu in the same PATH directory as $shifu_cmd_name or adding
+   shifu to another PATH directory
+3. If you're using zsh, ensure that you've loaded and run
+   compinit before the eval call in your zshrc file
+4. Add the following to your shell's rc file
      eval \"\$($shifu_cmd_name --tab-completion <shell>)\"
    replacing <shell> with your shell. Supported shells:
-     zsh, bash
-3. If you're using zsh, ensure that you've loaded and run
-   compinit before the eval call in your zshrc file"
+     zsh, bash"
 }
 
 _shifu_generate_zsh_tab_completion() {
