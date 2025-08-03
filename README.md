@@ -24,6 +24,7 @@ Some people may say that this is not what shell scripts are for; and perhaps the
 Shifu gives cli shell scripts the opportunity to be better than they are.
 
 ## Table of contents
+
 * [Quickstart](#quickstart)
 * [Installation](#installation)
 * [Import](#import)
@@ -34,7 +35,49 @@ Shifu gives cli shell scripts the opportunity to be better than they are.
 
 Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ calls shifu `cmd` functions. These functions provide a declarative way to tell shifu how to wire together your cli. Commands are passed to shifu's command runner `shifu_run`, or referenced as subcommands.
 
-Let's take a look at a simple demo cli, [`examples/quick`](/examples/quick), built with shifu. This demo cli has two named subcommands, `hello` and `start`, each with their own arguments.
+Below is a very minimal, introduction shifu cli script.
+
+[`examples/intro`](/examples/intro)
+
+```sh
+. "${0%/*}"/shifu || exit 1
+
+intro_cmd() {
+  shifu_cmd_name intro
+  shifu_cmd_func intro_function
+  shifu_cmd_help "An introduction shifu cli"
+  shifu_cmd_long "This command function will invoke intro_function which prints an argument provided by '-a' or '--arg' or none if no argument is provided"
+  shifu_cmd_arg -a --arg -- ARG none "Example argument to echo"
+}
+
+intro_function() {
+  echo "$ARG"
+}
+
+shifu_run intro_cmd "$@"
+```
+
+Calling this cli, we can see how it parses the argument we declare, and also automatically generates help.
+
+```txt
+$ examples/intro
+none
+$ examples/intro -a shifu
+shifu
+$ examples/intro -h
+An introduction example shifu cli
+
+This command function will invoke introduction_function which prints an argument provided by '-a' or '--arg' or none if no argument is provided
+
+Options
+  -a, --arg [ARG]
+    Example argument to echo
+    Default: none
+  -h, --help
+    Show this help
+```
+
+Let's take a look at a more complicated example cli, [`examples/quick`](/examples/quick). This demo cli has two named subcommands, `hello` and `start`, each with their own arguments. First we'll see a gif interaction with the cli followed by the cli's annotated source.
 
 ![Quickstart](/assets/demo.gif)
 
@@ -146,11 +189,12 @@ quick_cmd() {
 # Write first subcommand, referenced in `cmd_subs` above
 hello_cmd() {
   cmd_name hello
+ # Add target function
   cmd_func quick_hello
   cmd_help "A hello world subcommand"
   cmd_long "A subcommand that prints greeting with arguments"
-  # Add command target function
   # Add argument, will populate variable `NAME` when parsing cli args
+  # NAME defaults to 'mysterious user' if -n/--name aren't provided
   cmd_arg -n --name -- NAME "mysterious user" "Name to greet"
 }
 
@@ -217,8 +261,8 @@ If you'd like not to assume that shifu is on the path, you can instead make sure
 
 #### `shifu_run`
 * Called at end of a cli script
-* Takes the name of a command function, those ones that end in `_cmd` by convention, and all script arguments, `$@`
-* Dispatches call by parsing arguments in `$@` based on information in command function
+* Takes the name of a command function, those ones that end in `_cmd` by convention, and all script arguments, `"$@"`
+* Dispatches call by parsing arguments in `"$@"` based on information in command function
 * Parses arguments that match subcommand names until the subcommand specifies a function to call with `shifu_cmd_func`
 * Parses all unparsed arguments into variables declared in `shifu_cmd_arg` calls
 * Calls the function in `shifu_cmd_func` passing any still unparsed 

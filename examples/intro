@@ -1,0 +1,17 @@
+#! /bin/sh
+
+. "${0%/*}"/shifu || exit 1
+
+intro_cmd() {
+  shifu_cmd_name intro
+  shifu_cmd_func intro_function
+  shifu_cmd_help "An introduction shifu cli"
+  shifu_cmd_long "This command function will invoke intro_function which prints an argument provided by '-a' or '--arg' or none if no argument is provided"
+  shifu_cmd_arg -a --arg -- ARG none "Example argument to echo"
+}
+
+intro_function() {
+  echo "$ARG"
+}
+
+shifu_run intro_cmd "$@"
