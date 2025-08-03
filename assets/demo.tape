@@ -1,3 +1,6 @@
+# VHS tape file for generating demo gif. Run from repo root with
+#    vhs assets/demo.tape
+
 Output assets/demo.gif
 
 Set Shell "bash"

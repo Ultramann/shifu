@@ -9,11 +9,11 @@
 Shell scripts make gluing together functionality from different cli's pretty easy. However, if you want to extend the script's capabilities to have advanced cli features: related but distinct entry points, aka subcommands, nested subcommands, distinct command line options for those subcommands, subcommand specific help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address that problem and make creating a powerful cli from a shell script declarative and maintainable.
 
 Shifu has the following qualities:
-* compatibility with many shells
-  * tested with: ksh, dash, bash, zsh
 * declarative argument parsing
 * subcommand dispatching
 * scoped help generation
+* compatibility with POSIX based shells; tested with: 
+  * bash, dash, ksh, zsh
 
 Some people may say that this is not what shell scripts are for; and perhaps they're right. However, sometimes a shell is all you want to require your users to need while still enabling a sophisticated cli ux; shifu can help deal with the cli boilerplate in those situations and let you focus on the real functionality. Plus, consider the following quote.
 

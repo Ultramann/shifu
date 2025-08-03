@@ -1,0 +1,36 @@
+# /bin/sh
+
+# Must be run from repo root with
+#    tests/run <args>
+# If shifu has a bug that causes this script to not start correctly
+# tests can be run manually with
+#    <shell> tests/test_shifu.sh
+
+. shifu && shifu_less || exit 1
+
+run_cmd() {
+  cmd_name run
+  cmd_func run_tests
+  cmd_help "Run shifu tests"
+
+  cmd_arg -v --verbose -- verbose "" -v "Show status for every test, pass or fail"
+  cmd_arg              -- shell   "Shell to run tests in. Options: all, bash, dash, ksh, zsh"
+  cmd_arg              --         "Specific tests to run"
+}
+
+run_tests() {
+  shells="bash dash ksh zsh"
+  case "$shell" in
+    all) for s in $shells; do run_tests_in_shell "$s" "$@"; done; echo ;;
+    bash|dash|ksh|zsh) run_tests_in_shell "$shell" "$@"; echo ;;
+    *) echo "Unknown shell: $shell"; return ;;
+  esac
+}
+
+run_tests_in_shell() {
+  test_shell="$1"; shift
+	printf "\n===========================  %-4s  ============================\n" $test_shell
+  eval "$test_shell tests/test_shifu.sh $verbose $@"
+}
+
+shifu_run run_cmd "$@"
