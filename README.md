@@ -4,15 +4,16 @@
 (____/(_)  (_)(_____)(_)    (______)
 ```
 
-**SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework to make creating a powerful cli from a shell script simple.
+**SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework, written in POSIX-compliant shell script, to make creating a powerful cli from a shell script simple.
 
-Shell scripts make gluing together functionality from different command line programs pretty easy. However, if you want to extend the script's capabilities to have advanced cli features: related but distinct entry points, aka subcommands, nested subcommands, distinct command line options for those subcommands, subcommand specific help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address that problem and make creating a powerful cli from a shell script declarative and maintainable.
+Shell scripts make gluing together functionality from different command line programs pretty easy. However, if you want to extend the script's capabilities to have advanced cli features: related but distinct entry points, aka subcommands, nested subcommands, distinct command line options for those subcommands, subcommand specific help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address this difficulty and make creating a configurable and intuitive cli from a shell script declarative and maintainable.
 
 Shifu has the following qualities:
 * declarative argument parsing
-* subcommand dispatching
+* automatic subcommand dispatching
 * scoped help generation
 * tab completion code generation for interactive shells
+* implemented 100% in POSIX-compliant shell script
 * compatibility with POSIX based shells; tested with: 
   * bash, dash, ksh, zsh
 
@@ -236,7 +237,7 @@ shifu_run quick_cmd "$@"
 
 ## Installation
 
-Since shifu is just a single POSIX compatible script, all you need to do is get a copy of it and either put it in a location on your path or in the same directory as your cli script.
+Since shifu is just a single POSIX compatible script, all you need to do is get a copy of it and either put it in a location on your `PATH` or in the same directory as your cli script.
 
 ```sh
 curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
@@ -244,13 +245,13 @@ curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
 
 ## Import
 
-To "import" shifu you simply need to source its file path. If you've installed shifu to location on your path you can include the following at the top of your script.
+To "import" shifu you simply need to source its file path. If you've installed shifu to location on your `PATH` you can include the following at the top of your script.
 
 ```sh
 . shifu || exit 1
 ```
 
-If you'd like not to assume that shifu is on the path, you can instead make sure shifu is in the same directory as the calling script and use the following.
+If you'd like not to assume that shifu is on the `PATH`, you can instead make sure shifu is in the same directory as the calling script and use the following.
 
 ```sh
 . "${0%/*}"/shifu || exit 1
