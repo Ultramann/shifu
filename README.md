@@ -4,9 +4,9 @@
 (____/(_)  (_)(_____)(_)    (______)
 ```
 
-**SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework to make creating a cli from a shell script simple.
+**SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework to make creating a powerful cli from a shell script simple.
 
-Shell scripts make gluing together functionality from different cli's pretty easy. However, if you want to extend the script's capabilities to have advanced cli features: related but distinct entry points, aka subcommands, nested subcommands, distinct command line options for those subcommands, subcommand specific help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address that problem and make creating a powerful cli from a shell script declarative and maintainable.
+Shell scripts make gluing together functionality from different command line programs pretty easy. However, if you want to extend the script's capabilities to have advanced cli features: related but distinct entry points, aka subcommands, nested subcommands, distinct command line options for those subcommands, subcommand specific help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address that problem and make creating a powerful cli from a shell script declarative and maintainable.
 
 Shifu has the following qualities:
 * declarative argument parsing
@@ -16,7 +16,7 @@ Shifu has the following qualities:
 * compatibility with POSIX based shells; tested with: 
   * bash, dash, ksh, zsh
 
-Some people may say that this is not what shell scripts are for; and perhaps they're right. However, sometimes a shell is all you want to require your users to need while still enabling a sophisticated cli ux; shifu can help deal with the cli boilerplate in those situations and let you focus on the real functionality. Plus, consider the following quote.
+Some people may say that this is not what shell scripts are for; and perhaps they're right. However, sometimes a shell is all you want to require your users to need while still enabling a sophisticated cli ux; shifu can help deal with the cli boilerplate in those situations and let you focus on real functionality. Plus, consider the following quote.
 
 > If you only do what you can do, then you will never be better than what you are.
 >
@@ -35,7 +35,7 @@ Shifu gives cli shell scripts the opportunity to be better than they are.
 
 ## Quickstart
 
-Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ calls shifu `cmd` functions. These functions provide a declarative way to tell shifu how to wire together your cli. Commands are passed to shifu's command runner `shifu_run`, or referenced as subcommands.
+Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ calls shifu `cmd` functions. These functions provide a dsl which shifu uses to wire together your cli. Commands are passed to shifu's command runner `shifu_run`, or referenced as subcommands.
 
 Below is a very minimal, introduction shifu cli script.
 
@@ -48,7 +48,8 @@ intro_cmd() {
   shifu_cmd_name intro
   shifu_cmd_func intro_function
   shifu_cmd_help "An introduction shifu cli"
-  shifu_cmd_long "This command function will invoke intro_function which prints an argument provided by '-a' or '--arg' or none if no argument is provided"
+  shifu_cmd_long "This command function will invoke intro_function which prints an argument
+provided by '-a' or '--arg' or none if no argument is provided"
   shifu_cmd_arg -a --arg -- ARG none "Example argument to echo"
 }
 
@@ -59,17 +60,18 @@ intro_function() {
 shifu_run intro_cmd "$@"
 ```
 
-Calling this cli, we can see how it parses the argument we declare, and also automatically generates help.
+Calling this cli, we can see how it parses the argument we declare, and also automatically generates help strings.
 
 ```txt
 $ examples/intro
 none
 $ examples/intro -a shifu
 shifu
-$ examples/intro -h
-An introduction example shifu cli
+$ examples/intro --help
+An introduction shifu cli
 
-This command function will invoke introduction_function which prints an argument provided by '-a' or '--arg' or none if no argument is provided
+This command function will invoke intro_function which prints an argument
+provided by '-a' or '--arg' or none if no argument is provided
 
 Options
   -a, --arg [ARG]
@@ -259,18 +261,23 @@ If you'd like not to assume that shifu is on the path, you can instead make sure
 Since shifu knows all about a cli's subcommand names it can generate tab completion code for interactive shell's that support it, bash and zsh. 
 
 1. Ensure your cli is in a directory on your shell's `PATH`
-1. Ensure your cli has access to shifu; either by putting shifu in the same `PATH ` directory as your cli or adding shifu to another `PATH` directory
-1. If you're using zsh, ensure that you've loaded and run `compinit` before the eval call in your zshrc file
-1. Add the following line the your shell's rc file, replacing `<shell>` with a supported shell: bash or zsh
+1. Ensure your cli has access to shifu; either by putting shifu in the same `PATH` directory as your cli or adding shifu to another `PATH` directory
+1. If you're using zsh, ensure that you've loaded and run `compinit` before the following eval call in your zshrc file
+1. Add the following line the your shell's rc file, replacing `<your-cli>` with the name of your cli and `<shell>` with a supported shell: bash or zsh
    ```sh
-   eval "$($shifu_cmd_name --tab-completion <shell>)"
+   eval "$(<your-cli> --tab-completion <shell>)"
    ```
+
+These instructions can also be found by running
+```sh
+<your-cli> --tab-completion help
+```
 
 ## FAQ
 
 * How does shifu name its variables/functions, will they collide with those in my script?
   * Shifu takes special care to prefix all variables/functions with `shifu_` or `_shifu_`
-  * Calling `shifu_less` will create versions of all the [`cmd` functions](#cmd-functions) without the `shifu_` prefix. This makes command code more terse, but adds function names that are more likely to be collided with
+  * Calling `shifu_less` will create versions of all the [`cmd` functions](#cmd-functions) without the `shifu_` prefix. This makes command code more terse, but adds function names that are more likely to cause a collision
 
 ## API
 
@@ -332,8 +339,24 @@ Since shifu knows all about a cli's subcommand names it can generate tab complet
   ```
 
 #### `shifu_cmd_arg`
-* Configuration to parse command line arguments to variable values
-* If used in a command with subcommands, all descendent subcommands will inherit the configuration
+* Configuration to parse command line arguments to variables, optionally setting defaults for those variables
+* Can parse command line arguments in the following ways
+  * Binary option: the value of a variable is assigned a value depending on whether or not the option is set
+    * e.g. `-v/--verbose` could set the `VERBOSE` variable to `true` but `false` if not provided
+    * Number of command line arguments parsed: 0 or 1, the option
+  * Option w/ default: the value of a variable has a default value which can be overwritten with an option and following value
+    * e.g. `-o/--output` could optionally set an output directory if provided
+    * Number of command line arguments parsed: 0 or 2, the option + the setting
+  * Option w/o default: the value of a variable can be set with an option and following value, but it's value is empty if unprovided
+    * e.g. `-t/--temp` could optionally set a file to use as temporary storage, by default it's empty so the program can decide what to do when this occurs
+    * Number of command line arguments parsed: 0 or 2, the option + the setting
+  * Positional arguments: the value of a variable must be set with a required value
+    * e.g. the main target of a program, required argument
+    * Number of command line arguments parsed: 1
+  * Remaining arguments: used when zero or more arguments can be passed together
+    * e.g. a list of files to work on
+    * No command line arguments are parsed in this case, the usage and help strings are updated with remaining arguments information and all unparsed command line arguments to the command function's target function, aka they will be accessible via `"$@"` in the target function
+    * Number of command line arguments parsed: 0
 * Arguments are passed in two parts separated by a required double dash, `--`:
   ```sh
   shifu_cmd_arg [matching patterns] -- [parsing configuration]
@@ -343,24 +366,23 @@ Since shifu knows all about a cli's subcommand names it can generate tab complet
   ```sh
   shifu_cmd_arg -v --verbose -- ...
   ```
-* Parsing configuration defines what values are stored when a pattern is matched or not
-  * The first argument is the variable to store parsed value in
-  * The last argument is always a help string
-  * Different argument counts enable different parsing instructions
 
-  | Kind               | Patterns | Variable | Default | Other     | Example                                    |
-  |--------------------|----------|----------|---------|-----------|--------------------------------------------|
-  | Option: binary     | > 0      | Yes      | Yes     | Set value | `-v -- VERBOSE false true "Binary option"` |
-  | Option: w/ default | > 0      | Yes      | Yes     |           | `-o -- OUTPUT_DIR out "Option w/ default"` |
-  | Option: no default | > 0      | Yes      | No      |           | `-l -- LOG_DIR "Option no default"`        |
-  | Positional         | 0        | Yes      | No      |           | `-- CONFIG_FILE "Positional"`              |
-  | Remaining          | 0        | No       | No      |           | `-- "Remaining"`                           |
+How different argument combinations are interpreted
+| Kind               | Structure                                               |
+|--------------------|---------------------------------------------------------|
+| Option: binary     | `[patterns] -- [variable] [default] [set value] "help"` |
+| Option: w/ default | `[patterns] -- [variable] [default] "help"`             |
+| Option: no default | `[patterns] -- [variable] "help"`                       |
+| Positional         | `           -- [variable] "help"`                       |
+| Remaining          | `           -- "help"`                                  |
 
-* The order that multiple calls to `shifu_cmd_args` occurs in a command function matters in a few ways
+Notes
+* The order that multiple calls to `shifu_cmd_arg` occurs in a command function matters in a few ways
+
   1. The help string generated from the arguments will match the order of the calls
+  1. Positional arguments are parsed from the command line arguments in the order they are declared in the command function
   1. No options can be declared after any positional or remaining argument declaration
-* Using `shifu_cmd_args` with the remaining argument combination does not actually parse command line arguments
-  * The call only serves as a way to include help for remaining arguments
+* If used in a command with subcommands, all descendent subcommands will inherit the configuration
 
 #### `shifu_cmd_arg_loc`
 * Local argument configuration

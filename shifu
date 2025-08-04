@@ -292,7 +292,7 @@ Instructions
    shifu in the same PATH directory as $shifu_cmd_name or adding
    shifu to another PATH directory
 3. If you're using zsh, ensure that you've loaded and run
-   compinit before the eval call in your zshrc file
+   compinit before the following eval call in your zshrc file
 4. Add the following to your shell's rc file
      eval \"\$($shifu_cmd_name --tab-completion <shell>)\"
    replacing <shell> with your shell. Supported shells:
