@@ -4,9 +4,8 @@
 (____/(_)  (_)(_____)(_)    (______)
 ```
 
-**SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework that makes creating a powerful cli from a shell script simple.
+**SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework that makes creating a powerful cli from a shell script simple. Shifu has the following qualities:
 
-Shifu has the following qualities:
 * declarative argument parsing
 * automatic subcommand dispatching
 * scoped help generation
@@ -203,7 +202,7 @@ quick_cmd() {
 # Write first subcommand, referenced in `cmd_subs` above
 hello_cmd() {
   cmd_name hello
- # Add target function
+  # Add target function
   cmd_func quick_hello
   cmd_help "A hello world subcommand"
   cmd_long "A subcommand that prints greeting with arguments"
@@ -391,8 +390,6 @@ These instructions can also be found by running
     | Option w/o default | 0 or 2      | `[patterns] -- [variable] "help"`                       |
     | Positional         | 1           | `           -- [variable] "help"`                       |
     | Remaining          | >= 0        | `           -- "help"`                                  |
-
-Notes
 * The order that multiple calls to `shifu_cmd_arg` occurs in a command function matters in a few ways
   1. The help string generated from the arguments will match the order of the calls
   1. Positional arguments are parsed from the command line arguments in the order they are declared in the command function
