@@ -243,7 +243,7 @@ _shifu_arg_help() {
   while [ $# -gt 1 -a "$1" != -- ]; do
     shifu_help_options="$shifu_help_options, $1"; shift
   done; shift
- # remaining
+  # remaining
   if [ $# -eq 1 ]; then
     shifu_help_stage=2
     shifu_help_usage="$shifu_help_usage ...[REMAINING]"
@@ -404,3 +404,5 @@ _shifu_trace() {
     eval "echo $shifu_trace_name: $@"
   fi
 }
+
+if [ $# -gt 0 -a "$1" = "less" ]; then shifu_less; fi

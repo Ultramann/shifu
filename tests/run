@@ -1,4 +1,4 @@
-# /bin/sh
+#! /bin/sh
 
 # Must be run from repo root with
 #    tests/run <args>

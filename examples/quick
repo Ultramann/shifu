@@ -1,6 +1,6 @@
 #! /bin/sh
 
-. "${0%/*}"/shifu && shifu_less || exit 1
+. "${0%/*}"/shifu less || exit 1
 
 quick_cmd() {
   cmd_name quick
