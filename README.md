@@ -197,7 +197,7 @@ quick_cmd() {
   * argument parsing
   * scoped help generation"
   # Add global argument
-  cmd_arg -g --global -- GLOBAL "" 🌐 "Global binary option"
+  cmd_arg -g --global -- GLOBAL false true "Global binary option"
 }
 
 # Write first subcommand, referenced in `cmd_subs` above
@@ -406,7 +406,7 @@ These instructions can also be found by running
   |                    | `           -- [variable] "help"`                       |
   |                    | `-- TEMPORARY "help"`                                   |
   | Remaining          | zero or more arguments passed to target function via "$@" |
-  | Remaining          | `           -- "help"`                                  |
+  |                    | `           -- "help"`                                  |
   |                    | `-- "help"`                                             |
 
 * The order that multiple calls to `shifu_cmd_arg` occurs in a command function matters in a few ways
