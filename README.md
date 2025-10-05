@@ -1,8 +1,12 @@
-```
-/ ___)( )__( )(_   _)( ____)(  )(  )
-\___ \|  __  | _) (_ | ___) | (__) | 
-(____/(_)  (_)(_____)(_)    (______)
-```
+<img src="./assets/banner.svg"
+     style="
+       background-color: rgb(80, 80, 85);
+       padding: 4%;
+       border-radius: 10px;
+       width: 75%;
+       display: block;
+       margin: 0 auto;
+">
 
 **SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework that makes creating a powerful cli from a shell script simple. Shifu has the following qualities:
 
@@ -164,7 +168,7 @@ Option w/ default:    default
 Option w/o default:   
 Positional argument:  example
 $ examples/quick start -g -d 'not default' \
-> --nullable 'not null' "example"
+> --nullable 'not null' example
 Global binary option: true
 Option w/ default:    not default
 Option w/o default:   not null
