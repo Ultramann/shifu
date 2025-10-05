@@ -21,7 +21,7 @@ Shell scripts make gluing together functionality from different command line pro
 * [Quickstart](#quickstart)
 * [Installation](#installation)
 * [Import](#import)
-* [Tab Completion](#tab-completion)
+* [Tab completion](#tab-completion)
 * [FAQ](#faq)
 * [API](#api)
 
@@ -89,7 +89,6 @@ intro_cmd() {            │       │       │
      └───────────────────────────────────┘ 
 ```
 
-
 Let's take a look at a more complicated example cli, [`examples/quick`](/examples/quick). This demo cli has two named subcommands, `hello` and `start`, each with their own arguments. First we'll see a gif interaction with the cli followed by the cli's annotated source.
 
 ![Quickstart](/assets/demo.gif)
@@ -132,8 +131,10 @@ Options
     Default: false, set: true
   -h, --help
     Show this help
-$ examples/quick hello -n World
-Hello, World!
+$ examples/quick hello -g -n World
+🌐 Hello, World!
+
+
 $ examples/quick start -h
 A quick subcommand
 
@@ -196,7 +197,7 @@ quick_cmd() {
   * argument parsing
   * scoped help generation"
   # Add global argument
-  cmd_arg -g --global -- GLOBAL false true "Global binary option"
+  cmd_arg -g --global -- GLOBAL "" 🌐 "Global binary option"
 }
 
 # Write first subcommand, referenced in `cmd_subs` above
@@ -213,8 +214,8 @@ hello_cmd() {
 
 # Write first subcommand target function
 quick_hello() {
-  # Use variable, `NAME`, populated by `cmd_arg` in `hello_cmd`
-  echo "Hello, $NAME!"
+  [ "$GLOBAL" = true ] && message="🌐 " || message=""
+  echo "${message}Hello, $NAME!"
 }
 
 # Write second subcommand, referenced in `cmd_subs` above
@@ -243,6 +244,26 @@ quick_start() {
 shifu_run quick_cmd "$@"
 ```
 
+The diagram below shows how shifu is connecting together this cli script to print the value `🌐 Hello, World!` in `quick_hello`.
+
+```
+┌─────────── sets to ─────────┐                                      
+│ ┌────────── true ──────────┐│                                      
+│ │                          ▼│                                      
+│ │     examples/quick hello -g --name World ────────────────────────┐
+│ │                ▲     ▲         ▲                                 │
+│ │                │     │         └───────────────────────────────┐ │
+│ │                └───┐ └───┐                                     │ │
+│ │ quick_cmd() {      │     │         hello_cmd() {               │ │
+│ │   cmd_name quick ──┘     └────────── cmd_name hello            │ │
+│ │   cmd_subs start_cmd hello_cmd       cmd_func quick_hello      │ │
+│ └── cmd_arg -g --global -- \           cmd_arg -n --name -- \ ───┘ │
+└─────► GLOBAL false true \          ┌───► NAME "mysterious user" \  │
+        "Global binary option"       │     "Name to greet"           │
+    }                                │ }                             │
+                                     └───────────────────────────────┘
+```
+
 ## Installation
 
 Since shifu is just a single POSIX compatible script, all you need to do is get a copy of it and either put it in a location on your `PATH` or in the same directory as your cli script.
@@ -265,7 +286,7 @@ If you'd like not to assume that shifu is on the `PATH`, you can instead make su
 . "${0%/*}"/shifu || exit 1
 ```
 
-## Tab Completion
+## Tab completion
 
 Since shifu knows all about a cli's (sub)command names it can generate tab completion code for interactive shell's that support it, bash and zsh. 
 
@@ -293,7 +314,7 @@ These instructions can also be found by running
     > \- Master Shifu, Kung Fu Panda
     
     Shifu gives cli shell scripts the opportunity to be better than they are
-  * Finally. I want to use something like shifu, maybe others do to
+  * Finally. I want to use something like shifu, maybe others do too
 
 * How does shifu name its variables/functions, will they collide with those in my script?
   * Shifu takes special care to prefix all variables/functions with `shifu_` or `_shifu_`
@@ -360,19 +381,6 @@ These instructions can also be found by running
 
 #### `shifu_cmd_arg`
 * Configuration to parse command line arguments to variables, optionally setting defaults for those variables
-* Can parse command line arguments in the following ways
-  * Binary option: the value of a variable is assigned a value depending on whether or not the option is set
-    * e.g. `-v/--verbose` could set the `VERBOSE` variable to `true` but `false` if not provided
-    * Number of command line arguments parsed: 0 or 1, the option
-  * Option w/ default: the value of a variable has a default value which can be overwritten with an option and following value
-    * e.g. `-o/--output` could optionally set an output directory if provided
-  * Option no default: the value of a variable can be set with an option and following value, but its value is empty if unprovided
-    * e.g. `-t/--temp` could optionally set a file to use as temporary storage, by default its empty so the program can decide what to do when this occurs
-  * Positional arguments: the value of a variable must be set with a required value
-    * e.g. the main target of a program, required argument
-  * Remaining arguments: used when zero or more arguments can be passed together
-    * e.g. a list of files to work on
-    * No command line arguments are parsed in this case, the usage and help strings are updated with remaining arguments information and all unparsed command line arguments to the command function's target function, aka they will be accessible via `"$@"` in the target function
 * Arguments are passed in two parts separated by a required double dash, `--`:
   ```sh
   shifu_cmd_arg [matching patterns] -- [parsing configuration]
@@ -382,14 +390,25 @@ These instructions can also be found by running
     ```sh
     shifu_cmd_arg -v --verbose -- ...
     ```
-  * How different argument combinations are interpreted
-    | Kind               | Args Parsed | Structure                                               |
-    |--------------------|-------------|---------------------------------------------------------|
-    | Binary option      | 0 or 1      | `[patterns] -- [variable] [default] [set value] "help"` |
-    | Option w/ default  | 0 or 2      | `[patterns] -- [variable] [default] "help"`             |
-    | Option w/o default | 0 or 2      | `[patterns] -- [variable] "help"`                       |
-    | Positional         | 1           | `           -- [variable] "help"`                       |
-    | Remaining          | >= 0        | `           -- "help"`                                  |
+* Parses arguments depending on patterns being provided and the number of arguments after the double dash
+  | Kind               | Description/Structure/Example                           | 
+  |--------------------|---------------------------------------------------------|
+  | Binary option      | variable is assigned a value depending on whether or not the option is set |
+  |                    | `[patterns] -- [variable] [default] [set value] "help"` |
+  |                    | `-v --verbose -- VERBOSE false true "help"`             |
+  | Option w/ default  | variable has a default value which can be overwritten with an option and following argument |
+  |                    | `[patterns] -- [variable] [default] "help"`             |
+  |                    | `-o --output -- OUTPUT "out" "help"`                    |
+  | Option w/o default | variable can be set with an option and following argument, empty if unprovided |
+  |                    | `[patterns] -- [variable] "help"`                       |
+  |                    | `-t --temp -- TEMPORARY "help"`                         |
+  | Positional         | variable set with required value from argument          |
+  |                    | `           -- [variable] "help"`                       |
+  |                    | `-- TEMPORARY "help"`                                   |
+  | Remaining          | zero or more arguments passed to target function via "$@" |
+  | Remaining          | `           -- "help"`                                  |
+  |                    | `-- "help"`                                             |
+
 * The order that multiple calls to `shifu_cmd_arg` occurs in a command function matters in a few ways
   1. The help string generated from the arguments will match the order of the calls
   1. Positional arguments are parsed from the command line arguments in the order they are declared in the command function

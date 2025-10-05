@@ -1,5 +1,6 @@
 # VHS tape file for generating demo gif. Run from repo root with
 #    vhs assets/demo.tape
+# https://github.com/charmbracelet/vhs
 
 Output assets/demo.gif
 
@@ -31,7 +32,7 @@ Sleep 200ms
 Enter
 Sleep 500ms
 
-Type "examples/quick hello -n World"
+Type "examples/quick hello -g -n World"
 Sleep 200ms
 Enter
 Sleep 3000ms

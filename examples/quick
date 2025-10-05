@@ -24,7 +24,8 @@ hello_cmd() {
 }
 
 quick_hello() {
-  echo "Hello, $NAME!"
+  [ "$GLOBAL" = true ] && message="🌐 " || message=""
+  echo "${message}Hello, $NAME!"
 }
 
 start_cmd() {
