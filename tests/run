@@ -6,7 +6,7 @@
 # tests can be run manually with
 #    <shell> tests/test_shifu.sh
 
-. shifu && shifu_less || exit 1
+. shifu less || exit 1
 
 run_cmd() {
   cmd_name run
