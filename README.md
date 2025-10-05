@@ -1,12 +1,7 @@
-<img src="./assets/banner.svg"
-     style="
-       background-color: rgb(80, 80, 85);
-       padding: 4%;
-       border-radius: 10px;
-       width: 75%;
-       display: block;
-       margin: 0 auto;
-">
+<p align="center">
+  <img src="./assets/banner-dark.svg#gh-dark-mode-only" width="65%">
+  <img src="./assets/banner-light.svg#gh-light-mode-only" width="65%">
+</p>
 
 **SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework that makes creating a powerful cli from a shell script simple. Shifu has the following qualities:
 
