@@ -172,7 +172,7 @@ Positional argument:  example
 
 </details>
 
-Note, this example calls `shifu less` to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
+Note, this example imports `shifu` with the `less` argument to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
 
 [`examples/quick`](/examples/quick)
 
