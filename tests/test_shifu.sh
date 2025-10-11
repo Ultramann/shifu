@@ -14,7 +14,7 @@ shifu_test_root_cmd() {
   shifu_cmd_help "Test root cmd help"
   shifu_cmd_subs shifu_test_sub_one_cmd shifu_test_sub_two_cmd
 
-  shifu_cmd_arg_loc -l --local-test -- local_test false true "A test local cmd arg"
+  shifu_cmd_arg -g --global -- global_test false true "A test global cmd arg"
 }
 
 shifu_test_sub_one_cmd() {
@@ -28,7 +28,7 @@ shifu_test_sub_two_cmd() {
   shifu_cmd_help "Test sub two cmd help"
   shifu_cmd_subs shifu_test_leaf_three_cmd shifu_test_leaf_four_cmd
 
-  shifu_cmd_arg -g --global -- global_test false true "A test global cmd arg"
+  shifu_cmd_arg_loc -l --local-test -- local_test false true "A test local cmd arg"
 }
 
 shifu_test_leaf_one_cmd() {
@@ -53,10 +53,15 @@ shifu_test_leaf_four_cmd() {
   shifu_cmd_name leaf-four
   shifu_cmd_help "Test leaf four cmd help"
   shifu_cmd_func shifu_test_leaf_func_four
+
+  shifu_cmd_arg -f --fake-arg -- FAKE_ARG "fake argument help"
+  shifu_cmd_arg -t --test-arg -- TEST_ARG "test argument help"
+  shifu_cmd_arg               -- POSITIONAL_ARG "positional argument help"
+  shifu_cmd_arg               -- "remaining argument help"
 }
 
 shifu_test_leaf_func_one() {
-  echo test leaf func one $# "$@"
+  echo test_leaf_func_one $# "$@"
 }
 
 shifu_test_leaf_func_two() {
@@ -68,7 +73,7 @@ shifu_test_leaf_three_func() {
 }
 
 shifu_test_leaf_func_four() {
-  echo test leaf func four $# "$@"
+  leaf_four_args="$@"
 }
 
 shifu_test_all_options_cmd() {
@@ -91,12 +96,10 @@ shifu_test_all_options_cmd() {
   shifu_cmd_arg                      --                "remaining arguments help"
 }
 
-no_op() {
-  echo "" > /dev/null
-}
+no_op() { : ; }
 
 test_shifu_run_good() {
-  expected="test leaf func one 2 one two"
+  expected="test_leaf_func_one 2 one two"
   actual=$(shifu_run shifu_test_root_cmd sub-one leaf-one one two 2>&1)
   shifu_assert_zero status $?
   shifu_assert_strings_equal output "$expected" "$actual"
@@ -110,74 +113,11 @@ test_shifu_run_good_cmd_global_arg() {
 }
 
 test_shifu_run_good_cmd_global_and_local_arg() {
-  shifu_run shifu_test_root_cmd -l sub-two leaf-three -g one two
+  shifu_run shifu_test_root_cmd sub-two -l leaf-three -g one two
   shifu_assert_zero status $?
   shifu_assert_equal local_test "$local_test" true
   shifu_assert_equal global_test "$global_test" true
   shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
-}
-
-test_shifu_run_bad_first_cmd() {
-  expected="$(
-    echo 'Unknown command: bad'
-    printf 'Test root cmd help
-
-Subcommands
-  sub-one
-    Test sub one cmd help
-  sub-two
-    Test sub two cmd help
-
-Options
-  -l, --local-test
-    A test local cmd arg
-    Default: false, set: true
-  -h, --help
-    Show this help'
-  )"
-  actual=$(shifu_run shifu_test_root_cmd bad sub-one leaf-two one two 2>&1)
-  shifu_assert_non_zero status $?
-  shifu_assert_strings_equal error_message "$expected" "$actual"
-}
-
-test_shifu_run_bad_sub_cmd() {
-  expected="$(
-    echo 'Unknown command: sub-bad'
-    printf 'Test sub one cmd help
-
-Subcommands
-  leaf-one
-    Test leaf one cmd help
-  leaf-two
-    Test leaf two cmd help
-
-Options
-  -h, --help
-    Show this help'
-  )"
-  actual=$(shifu_run shifu_test_root_cmd sub-one sub-bad one two 2>&1)
-  shifu_assert_non_zero status $?
-  shifu_assert_strings_equal error_message "$expected" "$actual"
-}
-
-test_shifu_run_bad_leaf_cmd() {
-  expected="$(
-    echo 'Unknown command: leaf-bad'
-    printf 'Test sub two cmd help
-
-Subcommands
-  leaf-three
-    Test leaf three cmd help
-  leaf-four
-    Test leaf four cmd help
-
-Options
-  -h, --help
-    Show this help'
-  )"
-  actual=$(shifu_run shifu_test_root_cmd sub-two leaf-bad one two 2>&1)
-  shifu_assert_non_zero status $?
-  shifu_assert_strings_equal error_message "$expected" "$actual"
 }
 
 test_shifu_run_args_all_set() {
@@ -224,6 +164,157 @@ test_shifu_run_args_all_unset() {
   shifu_assert_equal array_length $# 0
 }
 
+test_shifu_run_bad_first_cmd() {
+  expected="$(
+    echo 'Unknown command: bad'
+    printf 'Test root cmd help
+
+Subcommands
+  sub-one
+    Test sub one cmd help
+  sub-two
+    Test sub two cmd help
+
+Options
+  -g, --global
+    A test global cmd arg
+    Default: false, set: true
+  -h, --help
+    Show this help'
+  )"
+  actual=$(shifu_run shifu_test_root_cmd bad sub-one leaf-two one two 2>&1)
+  shifu_assert_non_zero status $?
+  shifu_assert_strings_equal error_message "$expected" "$actual"
+}
+
+test_shifu_run_bad_sub_cmd() {
+  expected="$(
+    echo 'Unknown command: sub-bad'
+    printf 'Test sub one cmd help
+
+Subcommands
+  leaf-one
+    Test leaf one cmd help
+  leaf-two
+    Test leaf two cmd help
+
+Options
+  -h, --help
+    Show this help'
+  )"
+  actual=$(shifu_run shifu_test_root_cmd sub-one sub-bad one two 2>&1)
+  shifu_assert_non_zero status $?
+  shifu_assert_strings_equal error_message "$expected" "$actual"
+}
+
+test_shifu_run_bad_leaf_cmd() {
+  expected="$(
+    echo 'Unknown command: leaf-bad'
+    printf 'Test sub two cmd help
+
+Subcommands
+  leaf-three
+    Test leaf three cmd help
+  leaf-four
+    Test leaf four cmd help
+
+Options
+  -l, --local-test
+    A test local cmd arg
+    Default: false, set: true
+  -h, --help
+    Show this help'
+  )"
+  actual=$(shifu_run shifu_test_root_cmd sub-two leaf-bad one two 2>&1)
+  shifu_assert_non_zero status $?
+  shifu_assert_strings_equal error_message "$expected" "$actual"
+}
+
+test_shifu_run_bad_cmd_global_and_local_arg() {
+  expected="$(
+    echo 'Invalid option: -g'
+    printf 'Test sub two cmd help
+
+Subcommands
+  leaf-three
+    Test leaf three cmd help
+  leaf-four
+    Test leaf four cmd help
+
+Options
+  -l, --local-test
+    A test local cmd arg
+    Default: false, set: true
+  -h, --help
+    Show this help'
+  )"
+  actual=$(shifu_run shifu_test_root_cmd sub-two -l -g leaf-three one two)
+  shifu_assert_non_zero status $?
+  shifu_assert_strings_equal error_message "$expected" "$actual"
+}
+
+test_shifu_run_bad_cmd_option_after_positional() {
+  expected="$(
+    echo 'No options allowed after any positional argument: -t'
+    printf 'Test leaf four cmd help
+
+Usage
+  leaf-four [OPTIONS] [POSITIONAL_ARG] ...[REMAINING]
+
+Arguments
+  POSITIONAL_ARG
+    positional argument help
+  REMAINING
+    remaining argument help
+
+Options
+  -f, --fake-arg [FAKE_ARG]
+    fake argument help
+  -t, --test-arg [TEST_ARG]
+    test argument help
+  -h, --help
+    Show this help'
+  )"
+  actual=$(shifu_run shifu_test_leaf_four_cmd test -t fake)
+  shifu_assert_non_zero status $?
+  shifu_assert_strings_equal error_message "$expected" "$actual"
+}
+
+test_shifu_run_bad_cmd_option_in_remaining() {
+  expected="$(
+    echo 'No options allowed after any positional argument: -t'
+    printf 'Test leaf four cmd help
+
+Usage
+  leaf-four [OPTIONS] [POSITIONAL_ARG] ...[REMAINING]
+
+Arguments
+  POSITIONAL_ARG
+    positional argument help
+  REMAINING
+    remaining argument help
+
+Options
+  -f, --fake-arg [FAKE_ARG]
+    fake argument help
+  -t, --test-arg [TEST_ARG]
+    test argument help
+  -h, --help
+    Show this help'
+  )"
+  actual=$(shifu_run shifu_test_leaf_four_cmd fake -t test positional)
+  shifu_assert_non_zero status $?
+  shifu_assert_strings_equal error_message "$expected" "$actual"
+}
+
+test_shifu_run_bad_cmd_option_w_allow_options_anywhere() {
+  shifu_allow_options_anywhere=true
+  shifu_run shifu_test_leaf_four_cmd fake -t test positional
+  shifu_assert_zero status $?
+  shifu_assert_strings_equal positional "$POSITIONAL_ARG" "fake"
+  shifu_assert_strings_equal remaining "$leaf_four_args" "-t test positional"
+}
+
 test_shifu_run_args_invalid_option() {
   expected=$(
     echo 'Invalid option: --invalid'
@@ -236,8 +327,8 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -l, --local-test
-    A test local cmd arg
+  -g, --global
+    A test global cmd arg
     Default: false, set: true
   -h, --help
     Show this help'
@@ -253,7 +344,7 @@ shifu_test_bad_positional_global_arg_cmd() {
   shifu_cmd_arg -- bad_positional "Bad help"
 }
 
-test_shifu_bad_positional_global_arg_cmd() {
+test_shifu_run_bad_positional_global_arg_cmd() {
   expected="Positional arguments cannot be global: bad_positional"
   actual=$(shifu_run shifu_test_bad_positional_global_arg_cmd does not matter 2>&1)
   shifu_assert_non_zero status $?
@@ -267,7 +358,7 @@ shifu_test_bad_positional_local_arg_cmd() {
   shifu_cmd_arg_loc -- bad_positional "Bad help"
 }
 
-test_shifu_bad_positional_local_arg_cmd() {
+test_shifu_run_bad_positional_local_arg_cmd() {
   expected="Positional arguments cannot be local: bad_positional"
   actual=$(shifu_run shifu_test_bad_positional_local_arg_cmd does not matter 2>&1)
   shifu_assert_non_zero status $?
@@ -330,8 +421,8 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -l, --local-test
-    A test local cmd arg
+  -g, --global
+    A test global cmd arg
     Default: false, set: true
   -h, --help
     Show this help'
@@ -340,7 +431,7 @@ Options
 }
 
 test_shifu_help_global() {
-  expected='Test leaf four cmd help
+  expected='Test leaf three cmd help
 
 Options
   -g, --global
@@ -348,7 +439,7 @@ Options
     Default: false, set: true
   -h, --help
     Show this help'
-  actual=$(shifu_run shifu_test_root_cmd sub-two leaf-four -h 2>&1)
+  actual=$(shifu_run shifu_test_root_cmd sub-two leaf-three -h 2>&1)
   shifu_assert_strings_equal help_message "$expected" "$actual"
 }
 
@@ -362,6 +453,21 @@ test_shifu_complete_nested_subcommands() {
   expected="leaf-one leaf-two"
   actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" "sub-one")
   shifu_assert_strings_equal output "$expected" "$actual"
+}
+
+test_shifu_set_variable() {
+  run_test() {
+    while [ $# -ne 0 ]; do
+      expected_status=$2
+      expected_output="$3"
+      actual=$(_shifu_set_variable "$1" any)
+      shifu_assert_equal status $expected_status $?
+      shifu_assert_strings_equal output "$expected_output" "$actual"
+      shift 3
+    done
+  }
+  run_test good_var 0 "" \
+           bad-var 1 "Invalid variable name: bad-var"
 }
 
 # Testing utilities
