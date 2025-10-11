@@ -364,6 +364,21 @@ test_shifu_complete_nested_subcommands() {
   shifu_assert_strings_equal output "$expected" "$actual"
 }
 
+test_shifu_set_variable() {
+  run_test() {
+    while [ $# -ne 0 ]; do
+      expected_status=$2
+      expected_output="$3"
+      actual=$(_shifu_set_variable "$1" any)
+      shifu_assert_equal status $expected_status $?
+      shifu_assert_strings_equal output "$expected_output" "$actual"
+      shift 3
+    done
+  }
+  run_test good_var 0 "" \
+           bad-var 1 "Invalid variable name: bad-var"
+}
+
 # Testing utilities
 shifu_assert_empty() {
   # 1: identifier, 2: value
