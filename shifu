@@ -41,8 +41,10 @@ shifu_cmd_arg() {
 
 shifu_cmd_arg_comp_enum() {
   [ ${shifu_mode:-0} -ne $shifu_mode_args_comp ] && return
-  shifu_case_stmt="$shifu_case_stmt [ \$# -ne 0 ] && shift"
-  shifu_case_stmt="$shifu_case_stmt || shifu_add_completions $@ ;;"
+  _shifu_add_value_on_new_line shifu_case_stmt '    [ \$# -ne 0 ] && shift'
+  shifu_case_stmt="$shifu_case_stmt || { shifu_add_completions $@; break; }"
+  [ ${shifu_parse_stage:-0} -eq 0 ] && shifu_tmp=" ;;" || shifu_tmp=";"
+  shifu_case_stmt="$shifu_case_stmt$shifu_tmp"
   shifu_arg_completion_set=true
 }
 
@@ -382,12 +384,12 @@ _shifu_complete_func_args() {
   shifu_mode=$shifu_mode_args_comp
   shifu_parse_stage=0
   shifu_parse_local="$1"; shift
-  shifu_case_stmt="case \"\$1\" in "
+  shifu_case_stmt="case \"\${1:-}\" in "
   shifu_arg_completion_set=true
   "$shifu_cmd"
-  _shifu_add_value_on_new_line shifu_case_stmt "  *) shift ;;"
+  _shifu_add_value_on_new_line shifu_case_stmt "    break ;;"
   _shifu_add_value_on_new_line shifu_case_stmt "esac"
-  while [ $# -ne 0 ]; do
+  while true; do
     eval "$shifu_case_stmt"
   done
 }
@@ -396,6 +398,7 @@ _shifu_update_comp_case_stmt() {
   if [ "$shifu_arg_completion_set" = false ]; then
     shifu_case_stmt="$shifu_case_stmt shift ;;"
   fi
+  shifu_arg_completion_set=false
   shifu_no_options=true
   if [ "$1" != -- ]; then
     shifu_no_options=false
@@ -405,25 +408,33 @@ _shifu_update_comp_case_stmt() {
   while [ $# -gt 1 -a "$1" != -- ]; do
     shifu_case_stmt="${shifu_case_stmt}|$1"; shift
   done; shift
-  # positional/remaining old
-  if [ "$shifu_no_options" = true ]; then
-    shifu_arg_completion_set=true
+
+  # remaining
+  if [ $# -eq 1 ]; then
+    # [ "$shifu_parse_local" = true ] && _shifu_error "Remaining arguments cannot be local: $1"
+    shifu_parse_stage=2
+  # positional
+  elif [ "$shifu_no_options" = true ]; then
+    # [ "$shifu_parse_local" = true ] && _shifu_error "Positional arguments cannot be local: $1"
+    if [ $shifu_parse_stage -eq 0 ]; then
+      shifu_parse_stage=1
+      _shifu_add_value_on_new_line shifu_case_stmt "  *)"
+    elif [ $shifu_parse_stage -gt 1 ]; then
+      _shifu_error "No arguments after remaining are declared: $1"
+    fi
   # option + argument without default
   elif [ $# -eq 2 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
     shifu_case_stmt="$shifu_case_stmt) shift;"
-    shifu_arg_completion_set=false
   # option + argument with default
   elif [ $# -eq 3 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
     shifu_case_stmt="$shifu_case_stmt) shift;"
-    shifu_arg_completion_set=false
   # option no argument, default-set
   elif [ $# -eq 4 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
     # this has no value that could be completed
-    shifu_case_stmt="$shifu_case_stmt) shift ;;"
-    shifu_arg_completion_set=true
+    shifu_case_stmt="$shifu_case_stmt)"
   fi
 }
 
