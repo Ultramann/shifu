@@ -75,17 +75,17 @@ Options
 The diagram below shows how shifu is connecting together this cli script to print the value `shifu` in `intro_function`.
 
 ```
-    examples/intro -a shifu ─────────────┐ 
-               ▲    ▲                    │ 
-               │    └────────────┐       │ 
-               └─────────┐       │       │ 
-intro_cmd() {            │       │       │ 
-  shifu_cmd_name intro ──┘       │       │ 
-  shifu_cmd_func intro_function  │       │ 
-  shifu_cmd_arg -a --arg -- \ ───┘       │ 
-    ARG none "Example argument to echo"  │ 
-}    ▲                                   │ 
-     └───────────────────────────────────┘ 
+    examples/intro -a shifu ────────────┐ 
+               ▲    ▲                   │ 
+               │    └────────────┐      │ 
+               └─────────┐       │      │ 
+intro_cmd() {            │       │      │ 
+  shifu_cmd_name intro ──┘       │      │ 
+  shifu_cmd_func intro_function  │      │ 
+  shifu_cmd_arg -a --arg -- \ ───┘      │ 
+    ARG none "Example argument to echo" │ 
+}    ▲                                  │ 
+     └──────────────────────────────────┘ 
 ```
 
 Let's take a look at a more complicated example cli, [`examples/quick`](/examples/quick). This demo cli has two named subcommands, `hello` and `start`, each with their own arguments. First we'll see a gif interaction with the cli followed by the cli's annotated source.
