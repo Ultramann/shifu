@@ -88,15 +88,24 @@ shifu_test_all_options_cmd() {
   shifu_cmd_arg_comp_enum flag option arg
   shifu_cmd_arg -D --flag-option-def -- FLAG_OPTION_DEF def_flag_opt \
                                     "default argument flag/option help"
+  shifu_cmd_arg_comp_func make_fake_option_completions
   shifu_cmd_arg                      -- POSITIONAL_ARG_1 "positional argument one help"
   shifu_cmd_arg_comp_enum positional arg one
   shifu_cmd_arg                      -- POSITIONAL_ARG_2 "positional argument two help"
-  shifu_cmd_arg_comp_enum positional arg two
+  shifu_cmd_arg_comp_func make_fake_positional_completions
   shifu_cmd_arg                      --                  "remaining arguments help"
 }
 
 no_op() {
   echo "" > /dev/null
+}
+
+make_fake_option_completions() {
+  shifu_add_completions flag option default
+}
+
+make_fake_positional_completions() {
+  shifu_add_completions positional arg two
 }
 
 test_shifu_run_good() {
@@ -382,6 +391,18 @@ test_shifu_complete_func_args_option_enum() {
 test_shifu_complete_func_args_positional_enum() {
   expected="positional arg one"
   actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -f -A done)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+test_shifu_complete_func_args_option_func() {
+  expected="flag option default"
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -f -D)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+test_shifu_complete_func_args_positional_func() {
+  expected="positional arg two"
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -f one)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 

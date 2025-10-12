@@ -48,6 +48,15 @@ shifu_cmd_arg_comp_enum() {
   shifu_arg_completion_set=true
 }
 
+shifu_cmd_arg_comp_func() {
+  [ ${shifu_mode:-0} -ne $shifu_mode_args_comp ] && return
+  _shifu_add_value_on_new_line shifu_case_stmt '    [ \$# -ne 0 ] && shift'
+  shifu_case_stmt="$shifu_case_stmt || { $1; break; }"
+  [ ${shifu_parse_stage:-0} -eq 0 ] && shifu_tmp=" ;;" || shifu_tmp=";"
+  shifu_case_stmt="$shifu_case_stmt$shifu_tmp"
+  shifu_arg_completion_set=true
+}
+
 shifu_cmd_arg_loc() {
   case $shifu_mode in
     $shifu_mode_help) _shifu_arg_help "$@" ;;
@@ -69,6 +78,7 @@ shifu_less() {
   cmd_func()          { shifu_cmd_func "$@"; }
   cmd_arg()           { shifu_cmd_arg "$@"; }
   cmd_arg_comp_enum() { shifu_cmd_arg_comp_enum "$@"; }
+  cmd_arg_comp_func() { shifu_cmd_arg_comp_func "$@"; }
   cmd_arg_loc()       { shifu_cmd_arg_loc "$@"; }
   add_completions()   { shifu_add_completions "$@"; }
 }
@@ -491,4 +501,4 @@ _shifu_trace() {
   fi
 }
 
-if [ $# -gt 0 -a "$1" = "less" ]; then shifu_less; fi
+if [ $# -gt 0 -a "$1" = less ]; then shifu_less; fi
