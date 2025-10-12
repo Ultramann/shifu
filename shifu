@@ -155,6 +155,7 @@ _shifu_update_case_stmt() {
   # remaining
   if [ $# -eq 1 ]; then
     [ "$shifu_parse_local" = true ] && _shifu_error "Remaining arguments cannot be local: $1"
+    [ $shifu_parse_stage -gt 1 ] && _shifu_error "Can only declare remaining arguments once: $1"
     [ $shifu_parse_stage -eq 0 ] && _shifu_update_case_stmt_invalid_option
     shifu_parse_stage=2
   # positional
@@ -418,10 +419,10 @@ _shifu_update_comp_case_stmt() {
   while [ $# -gt 1 -a "$1" != -- ]; do
     shifu_case_stmt="${shifu_case_stmt}|$1"; shift
   done; shift
-
   # remaining
   if [ $# -eq 1 ]; then
     # [ "$shifu_parse_local" = true ] && _shifu_error "Remaining arguments cannot be local: $1"
+    [ $shifu_parse_stage -eq 2 ] && _shifu_error "Can only declare remaining arguments once: $1"
     shifu_parse_stage=2
   # positional
   elif [ "$shifu_no_options" = true ]; then

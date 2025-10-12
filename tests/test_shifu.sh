@@ -94,6 +94,7 @@ shifu_test_all_options_cmd() {
   shifu_cmd_arg                      -- POSITIONAL_ARG_2 "positional argument two help"
   shifu_cmd_arg_comp_func make_fake_positional_completions
   shifu_cmd_arg                      --                  "remaining arguments help"
+  shifu_cmd_arg_comp_func make_fake_remaining_completions
 }
 
 no_op() {
@@ -106,6 +107,10 @@ make_fake_option_completions() {
 
 make_fake_positional_completions() {
   shifu_add_completions positional arg two
+}
+
+make_fake_remaining_completions() {
+  shifu_add_completions remaining args
 }
 
 test_shifu_run_good() {
@@ -378,31 +383,37 @@ test_shifu_complete_subcommands() {
 
 test_shifu_complete_nested_subcommands() {
   expected="leaf-one leaf-two"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" "sub-one")
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete cur_word sub-one)
   shifu_assert_strings_equal output "$expected" "$actual"
 }
 
 test_shifu_complete_func_args_option_enum() {
   expected="flag option arg"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -f -A)
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word -f -A)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
 test_shifu_complete_func_args_positional_enum() {
   expected="positional arg one"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -f -A done)
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word -f -A done)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
 test_shifu_complete_func_args_option_func() {
   expected="flag option default"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -f -D)
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word -f -D)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
 test_shifu_complete_func_args_positional_func() {
   expected="positional arg two"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -f one)
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word -f one)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+test_shifu_complete_func_args_remaining_func() {
+  expected="remaining args"
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word one two)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
