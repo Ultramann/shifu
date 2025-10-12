@@ -41,6 +41,7 @@ shifu_cmd_arg() {
 
 shifu_cmd_arg_comp_enum() {
   [ ${shifu_mode:-0} -ne $shifu_mode_args_comp ] && return
+  [ "$shifu_arg_completion_set" = true ] && _shifu_error "Can only add one completion per argument"
   _shifu_add_value_on_new_line shifu_case_stmt '    [ \$# -ne 0 ] && shift'
   shifu_case_stmt="$shifu_case_stmt || { shifu_add_completions $@; break; }"
   [ ${shifu_parse_stage:-0} -eq 0 ] && shifu_tmp=" ;;" || shifu_tmp=";"
@@ -50,6 +51,7 @@ shifu_cmd_arg_comp_enum() {
 
 shifu_cmd_arg_comp_func() {
   [ ${shifu_mode:-0} -ne $shifu_mode_args_comp ] && return
+  [ "$shifu_arg_completion_set" = true ] && _shifu_error "Can only add one completion per argument"
   _shifu_add_value_on_new_line shifu_case_stmt '    [ \$# -ne 0 ] && shift'
   shifu_case_stmt="$shifu_case_stmt || { $1; break; }"
   [ ${shifu_parse_stage:-0} -eq 0 ] && shifu_tmp=" ;;" || shifu_tmp=";"

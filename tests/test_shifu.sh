@@ -417,6 +417,22 @@ test_shifu_complete_func_args_remaining_func() {
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
+shifu_test_bad_multiple_completions_single_arg_cmd() {
+  shifu_cmd_name bad-multi-arg-completion
+  shifu_cmd_func no_op
+
+  shifu_cmd_arg -- positional "Bad help"
+  shifu_cmd_arg_comp_enum one two
+  shifu_cmd_arg_comp_func make_fake_positional_completions
+}
+
+test_shifu_bad_multiple_cmd_args_complete_calls() {
+  expected="Can only add one completion per argument"
+  actual=$(_shifu_complete shifu_test_bad_multiple_completions_single_arg_cmd --shifu-complete cur_word)
+  shifu_assert_non_zero status $?
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
 # Testing utilities
 shifu_assert_empty() {
   # 1: identifier, 2: value
