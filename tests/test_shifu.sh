@@ -14,7 +14,8 @@ shifu_test_root_cmd() {
   shifu_cmd_help "Test root cmd help"
   shifu_cmd_subs shifu_test_sub_one_cmd shifu_test_sub_two_cmd
 
-  shifu_cmd_arg_loc -l --local-test -- local_test false true "A test local cmd arg"
+  shifu_cmd_arg_loc -l --local-test -- LOCAL_TEST local-test "A test local cmd arg"
+  shifu_cmd_arg_comp_enum local option test
 }
 
 shifu_test_sub_one_cmd() {
@@ -28,7 +29,7 @@ shifu_test_sub_two_cmd() {
   shifu_cmd_help "Test sub two cmd help"
   shifu_cmd_subs shifu_test_leaf_three_cmd shifu_test_leaf_four_cmd
 
-  shifu_cmd_arg -g --global -- global_test false true "A test global cmd arg"
+  shifu_cmd_arg -g --global -- GLOBAL_TEST false true "A test global cmd arg"
 }
 
 shifu_test_leaf_one_cmd() {
@@ -123,15 +124,15 @@ test_shifu_run_good() {
 test_shifu_run_good_cmd_global_arg() {
   shifu_run shifu_test_root_cmd sub-two leaf-three -g one two
   shifu_assert_zero exit_code $?
-  shifu_assert_equal global_test "$global_test" true
+  shifu_assert_equal global_test "$GLOBAL_TEST" true
   shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
 }
 
 test_shifu_run_good_cmd_global_and_local_arg() {
-  shifu_run shifu_test_root_cmd -l sub-two leaf-three -g one two
+  shifu_run shifu_test_root_cmd -l local-val sub-two leaf-three -g one two
   shifu_assert_zero exit_code $?
-  shifu_assert_equal local_test "$local_test" true
-  shifu_assert_equal global_test "$global_test" true
+  shifu_assert_equal local_test "$LOCAL_TEST" "local-val"
+  shifu_assert_equal global_test "$GLOBAL_TEST" true
   shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
 }
 
@@ -147,9 +148,9 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -l, --local-test
+  -l, --local-test [LOCAL_TEST]
     A test local cmd arg
-    Default: false, set: true
+    Default: local-test
   -h, --help
     Show this help'
   )"
@@ -257,9 +258,9 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -l, --local-test
+  -l, --local-test [LOCAL_TEST]
     A test local cmd arg
-    Default: false, set: true
+    Default: local-test
   -h, --help
     Show this help'
   )
@@ -353,9 +354,9 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -l, --local-test
+  -l, --local-test [LOCAL_TEST]
     A test local cmd arg
-    Default: false, set: true
+    Default: local-test
   -h, --help
     Show this help'
   actual=$(shifu_run shifu_test_root_cmd -h)
@@ -414,6 +415,12 @@ test_shifu_complete_func_args_positional_func() {
 test_shifu_complete_func_args_remaining_func() {
   expected="remaining args"
   actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word one two)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+test_shifu_complete_func_args_local_func() {
+  expected="local option test"
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete cur_word -l)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
@@ -501,7 +508,7 @@ shifu_run_test() {
   # 1: test function
   errors=0
   [ "${shifu_trace_tests:-}" = true ] && set -x
-  $1 # 2> /dev/null
+  "$1"
   exit_code=$?
   [ "${shifu_trace_tests:-}" = true ] && set +x
   errors=$(($errors + $exit_code))
