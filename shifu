@@ -4,40 +4,39 @@
 shifu_allow_options_anywhere=false
 
 # modes
-# TODO: rename these to shifu_mode_xxxx_run
-shifu_mode_cmds=1
-shifu_mode_args=2
-shifu_mode_help=3
-shifu_mode_cmds_comp=4
-shifu_mode_args_comp=5
-shifu_mode_help_subs=6
+shifu_mode_cmds_run=1
+shifu_mode_args_run=2
+shifu_mode_help_run=3
+shifu_mode_help_subs=4
+shifu_mode_cmds_comp=5
+shifu_mode_args_comp=6
 
 shifu_cmd_name() {
   [ $# -ne 1 ] && _shifu_error "Commands cannot contain spaces got: \"$@\""
-  [ ${shifu_mode:-0} -ne $shifu_mode_args ] && shifu_cmd_name="$1"
+  [ ${shifu_mode:-0} -ne $shifu_mode_args_run ] && shifu_cmd_name="$1"
 }
 
 shifu_cmd_help() {
-  [ ${shifu_mode:-0} -ne $shifu_mode_args ] && shifu_cmd_help="$@"
+  [ ${shifu_mode:-0} -ne $shifu_mode_args_run ] && shifu_cmd_help="$@"
 }
 
 shifu_cmd_long() {
-  [ ${shifu_mode:-0} -ne $shifu_mode_args ] && shifu_cmd_long="$@"
+  [ ${shifu_mode:-0} -ne $shifu_mode_args_run ] && shifu_cmd_long="$@"
 }
 
 shifu_cmd_subs() {
-  [ ${shifu_mode:-0} -ne $shifu_mode_args ] && shifu_cmd_subs="$@"
+  [ ${shifu_mode:-0} -ne $shifu_mode_args_run ] && shifu_cmd_subs="$@"
 }
 
 shifu_cmd_func() {
-  [ ${shifu_mode:-0} -ne $shifu_mode_args ] && shifu_cmd_func="$@"
+  [ ${shifu_mode:-0} -ne $shifu_mode_args_run ] && shifu_cmd_func="$@"
 }
 
 shifu_cmd_arg() {
   case ${shifu_mode:-0} in
-    $shifu_mode_help)
+    $shifu_mode_help_run)
       _shifu_arg_help "$@" ;;
-    $shifu_mode_args)
+    $shifu_mode_args_run)
       [ -z "${shifu_cmd_subs:-}" ] && _shifu_update_case_stmt "$@" || _shifu_handle_arg_global "$@" ;;
     $shifu_mode_args_comp)
       [ -z "${shifu_cmd_subs:-}" ] && _shifu_update_comp_case_stmt "$@" ;;
@@ -66,8 +65,8 @@ shifu_cmd_arg_comp_func() {
 
 shifu_cmd_arg_loc() {
   case $shifu_mode in
-    $shifu_mode_help) _shifu_arg_help "$@" ;;
-    $shifu_mode_args) _shifu_update_case_stmt "$@" ;;
+    $shifu_mode_help_run) _shifu_arg_help "$@" ;;
+    $shifu_mode_args_run) _shifu_update_case_stmt "$@" ;;
     $shifu_mode_args_comp) _shifu_update_comp_case_stmt "$@" ;;
   esac
 }
@@ -101,13 +100,13 @@ shifu_run() {
 
 _shifu_run() {
   [ "${SHIFU_SET_X:-0}" = 1 ] && set -x
-  shifu_mode=$shifu_mode_cmds
+  shifu_mode=$shifu_mode_cmds_run
   shifu_parent="$1"; shifu_cmd="$1"; shift
   "$shifu_parent"
   _shifu_set_for_looping shifu_cmds shifu_cmd_subs
   while [ $# -ne 0 -a -n "${shifu_cmd_subs:-}" ]; do
     _shifu_parse_args true "$shifu_parent" "$@"
-    shifu_mode=$shifu_mode_cmds
+    shifu_mode=$shifu_mode_cmds_run
     shift $_shifu_args_parsed
     shifu_arg_matched=''
     for shifu_cmd in $shifu_cmds; do
@@ -135,7 +134,7 @@ _shifu_run() {
 }
 
 _shifu_parse_args() {
-  shifu_mode=$shifu_mode_args
+  shifu_mode=$shifu_mode_args_run
   shifu_parse_stage=0
   shifu_parse_local="$1"; shifu_cmd="$2"; shift 2
   shifu_case_stmt="case \"\$1\" in"
@@ -145,7 +144,7 @@ _shifu_parse_args() {
   _shifu_append_on_new_line shifu_case_stmt "  -h|--help) _shifu_help \"$shifu_cmd\" 0 ;; "
   "$shifu_cmd"
   [ $shifu_parse_stage -eq 0 ] && _shifu_update_case_stmt_invalid_option
-  shifu_case_stmt="${shifu_case_stmt} break ;;"
+  _shifu_append_on_new_line shifu_case_stmt "    break;;"
   _shifu_append_on_new_line shifu_case_stmt "esac"
   _shifu_args_parsed=0
   while true; do
@@ -182,7 +181,7 @@ _shifu_update_case_stmt() {
     fi
     _shifu_set_variable "$1" ""
     _shifu_update_case_stmt_positional_check "$1"
-    _shifu_append_on_new_line shifu_case_stmt "    $1=\\\$1; shift; _shifu_ack_arg;"
+    _shifu_append_on_new_line shifu_case_stmt "    $1=\\\$1; shift; _shifu_ack_arg"
   # option + argument without default
   elif [ $# -eq 2 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
@@ -247,10 +246,10 @@ _shifu_clear_cmd_vars() {
 }
 
 _shifu_help() {
-  shifu_mode=$shifu_mode_cmds
+  shifu_mode=$shifu_mode_cmds_run
   "$1"
   _shifu_make_subcmd_help
-  shifu_mode=$shifu_mode_help
+  shifu_mode=$shifu_mode_help_run
   _shifu_clear_cmd_vars
   shifu_help_stage=0
   "$1"
@@ -324,7 +323,7 @@ _shifu_arg_help() {
 }
 
 _shifu_generate_tab_completion() {
-  shifu_mode=$shifu_mode_cmds
+  shifu_mode=$shifu_mode_cmds_run
   "$1"
   case "$3" in
     zsh) _shifu_generate_zsh_tab_completion "$@";;
