@@ -90,7 +90,7 @@ intro_cmd() {            │       │      │
 
 Let's take a look at a more complicated example cli, [`examples/quick`](/examples/quick). This demo cli has two named subcommands, `hello` and `start`, each with their own arguments. First we'll see a gif interaction with the cli followed by the cli's annotated source.
 
-![Quickstart](/assets/demo.gif)
+![Quickstart](/assets/quick_demo.gif)
 
 <details>
 
@@ -337,7 +337,7 @@ shifu_run tab_cmd "$@"
 
 Below is a gif showing the tab completions working for this cli. If you'd like to test the tab completion in this example you can easily from a bash terminal by running `eval "$(examples/tab --tab-completion bash)"`.
 
-![Tab completion](/assets/tab_completion_demo.gif)
+![Tab completion](/assets/tab_demo.gif)
 
 ### Enable
 

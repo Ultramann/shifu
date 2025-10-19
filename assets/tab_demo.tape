@@ -1,8 +1,8 @@
 # VHS tape file for generating demo gif. Run from repo root with
-#    vhs assets/tab_completion_demo.tape
+#    vhs assets/tab_demo.tape
 # https://github.com/charmbracelet/vhs
 
-Output assets/tab_completion_demo.gif
+Output assets/tab_demo.gif
 
 Set Shell "bash"
 Set FontSize 22
