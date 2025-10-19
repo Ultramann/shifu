@@ -39,7 +39,7 @@ shifu_cmd_arg() {
     $shifu_mode_args_run)
       [ -z "${shifu_cmd_subs:-}" ] && _shifu_update_case_stmt "$@" || _shifu_handle_arg_global "$@" ;;
     $shifu_mode_args_comp)
-      [ -z "${shifu_cmd_subs:-}" ] && _shifu_update_comp_case_stmt "$@" ;;
+      _shifu_update_comp_case_stmt "$@" ;;
   esac
 }
 
