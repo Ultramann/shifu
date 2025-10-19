@@ -551,7 +551,6 @@ test_shifu_set_variable() {
   }
   run_test good_var 0 "" \
            bad-var 1 "Invalid variable name: bad-var"
-}
 
 # Testing utilities
 shifu_assert_empty() {

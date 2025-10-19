@@ -3,14 +3,14 @@
   <img src="./assets/banner-light.svg#gh-light-mode-only" width="65%">
 </p>
 
-**SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework that makes creating a powerful cli from a shell script simple. Shifu has the following qualities:
+**SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework that makes creating powerful clis from shell scripts simple. Shifu has the following qualities:
 
 * declarative argument parsing
-* automatic subcommand dispatching
+* subcommand dispatching
 * scoped help generation
 * tab completion code generation for interactive shells
 * implemented 100% in POSIX-compliant shell script
-* compatibility with POSIX based shells; tested with: 
+* compatibility with POSIX-based shells; tested with: 
   * bash, dash, ksh, zsh
 
 Shell scripts make gluing together functionality from different command line programs pretty easy. However, if you want to extend the script's capabilities to have advanced cli features: related but distinct entry points, aka subcommands, nested subcommands, distinct command line options for those subcommands, subcommand specific help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address this difficulty and make creating a configurable and intuitive cli from a shell script declarative and maintainable.
@@ -265,7 +265,7 @@ The diagram below shows how shifu is connecting together this cli script to prin
 
 ## Installation
 
-Since shifu is just a single POSIX compatible script, all you need to do is get a copy of it and either put it in a location on your `PATH` or in the same directory as your cli script.
+Since shifu is just a single POSIX-compatible script, all you need to do is get a copy of it and either put it in a location on your `PATH` or in the same directory as your cli script.
 
 ```sh
 curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
@@ -287,7 +287,30 @@ If you'd like not to assume that shifu is on the `PATH`, you can instead make su
 
 ## Tab completion
 
-Since shifu knows all about a cli's (sub)command names it can generate tab completion code for interactive shell's that support it, bash and zsh. 
+Since shifu knows all about the structure of your cli it can generate tab completion code for interactive shells that support it, bash and zsh. 
+
+By default, subcommand names can tab completed. If you'd like to add tab completion for option values and positions/remaining arguments shifu provides two `cmd` functions, `shifu_cmd_arg_comp_enum` and `shifu_cmd_arg_comp_func`. These functions can optionally be used after `shifu_cmd_arg` and instruct shifu what the completions for the preceding argument value should be.
+
+* `shifu_cmd_arg_comp_enum`: static list of completions
+
+  Example
+  ```sh
+  shifu_cmd_arg -m --mode -- MODE read "Mode, read or read-write"
+  shifu_cmd_arg_comp_enum read read-write
+  ```
+* `shifu_cmd_arg_comp_func`: function to generate list of completions. Completions are added with the shifu function `shifu_add_completions`
+
+  Example
+  ```sh
+  shifu_cmd_arg -o --out -- OUT_DIR "Directory to write output"
+  shifu_cmd_arg_comp_func directories
+
+  directories() { 
+    shifu_add_completions "$(ls -d)"
+  }
+  ```
+
+### Enable
 
 1. Ensure your cli is in a directory on your shell's `PATH`
 1. Ensure your cli has access to shifu; either by putting shifu in the same `PATH` directory as your cli or adding shifu to another `PATH` directory
@@ -316,8 +339,8 @@ These instructions can also be found by running
   * Finally. I want to use something like shifu, maybe others do too
 
 * How does shifu name its variables/functions, will they collide with those in my script?
-  * Shifu takes special care to prefix all variables/functions with `shifu_` or `_shifu_`
-  * Importing shifu with the `less` argument will create versions of all the [`cmd` functions](#cmd-functions) without the `shifu_` prefix. This makes command code more terse, but adds function names that are more likely to cause a collision with those in your script
+  * Shifu takes special care to prefix all variables/functions with `shifu` or `_shifu`
+  * Importing shifu with the `less` argument will create versions of all the [`cmd` functions](#cmd-functions) without the `shifu` prefix. This makes command code less busy, but adds function names that are more likely to cause a collision with those in your script
 
 ## API
 
