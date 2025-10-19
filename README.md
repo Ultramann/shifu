@@ -335,6 +335,10 @@ no_op() { :; }
 shifu_run tab_cmd "$@"
 ```
 
+Below is a gif showing the tab completions working for this cli. If you'd like to test the tab completion in this example you can easily from a bash terminal by running `eval "$(examples/tab --tab-completion bash)"`.
+
+![Tab completion](/assets/tab_completion_demo.gif)
+
 ### Enable
 
 1. Ensure your cli is in a directory on your shell's `PATH`
