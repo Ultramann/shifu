@@ -252,9 +252,9 @@ The diagram below shows how shifu is connecting together this cli script to prin
 │ │     examples/quick hello -g --name World ────────────────────────┐
 │ │                ▲     ▲         ▲                                 │
 │ │                │     │         └───────────────────────────────┐ │
-│ │                └───┐ └───┐                                     │ │
-│ │ quick_cmd() {      │     │         hello_cmd() {               │ │
-│ │   cmd_name quick ──┘     └────────── cmd_name hello            │ │
+│ │                └───┐ └───────────────────────────────┐         │ │
+│ │ quick_cmd() {      │               hello_cmd() {     │         │ │
+│ │   cmd_name quick ──┘                cmd_name hello ──┘         │ │
 │ │   cmd_subs start_cmd hello_cmd       cmd_func quick_hello      │ │
 │ └── cmd_arg -g --global -- \           cmd_arg -n --name -- \ ───┘ │
 └─────► GLOBAL false true \          ┌───► NAME "mysterious user" \  │
@@ -335,7 +335,7 @@ no_op() { :; }
 shifu_run tab_cmd "$@"
 ```
 
-Below is a gif showing the tab completions working for this cli. If you'd like to test the tab completion in this example you can easily from a bash terminal by running `eval "$(examples/tab --tab-completion bash)"`.
+Below is a gif showing the tab completions working for this cli. If you'd like to test the tab completion from this example you can easily from a bash terminal by running `eval "$(examples/tab --tab-completion bash)"`, then tabbing along to the beat.
 
 ![Tab completion](/assets/tab_demo.gif)
 
