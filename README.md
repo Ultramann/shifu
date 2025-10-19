@@ -292,23 +292,48 @@ Since shifu knows all about the structure of your cli it can generate tab comple
 By default, subcommand names can tab completed. If you'd like to add tab completion for option values and positions/remaining arguments shifu provides two `cmd` functions, `shifu_cmd_arg_comp_enum` and `shifu_cmd_arg_comp_func`. These functions can optionally be used after `shifu_cmd_arg` and instruct shifu what the completions for the preceding argument value should be.
 
 * `shifu_cmd_arg_comp_enum`: static list of completions
-
-  Example
-  ```sh
-  shifu_cmd_arg -m --mode -- MODE read "Mode, read or read-write"
-  shifu_cmd_arg_comp_enum read read-write
-  ```
 * `shifu_cmd_arg_comp_func`: function to generate list of completions. Completions are added with the shifu function `shifu_add_completions`
 
-  Example
-  ```sh
-  shifu_cmd_arg -o --out -- OUT_DIR "Directory to write output"
-  shifu_cmd_arg_comp_func directories
+Below is a very minimal shifu cli script demostrating tab completion capabilities.
 
-  directories() { 
-    shifu_add_completions "$(ls -d)"
-  }
-  ```
+[`examples/tab`](/examples/tab)
+
+```sh
+#! /bin/sh
+
+. "${0%/*}"/shifu less || exit 1
+
+tab_cmd() {
+  cmd_name tab
+  cmd_help "A tab completion shifu example"
+  cmd_long "An example shifu cli demonstrating
+  * subcommand completion
+  * option value completion"
+  cmd_subs completion_cmd
+}
+
+completion_cmd() {
+  cmd_name completion
+  cmd_func no_op
+
+  cmd_arg -o --option -- OPTION option "Option value"
+  # Add two completions: magic and option
+  cmd_arg_comp_enum magic option
+
+  cmd_arg -- POSITIONAL "Positional value"
+  # Add completions by calling function
+  cmd_arg_comp_func directory_completions
+}
+
+directory_completions() {
+  # Add completions when function is called
+  shifu_add_completions "$(ls -d */)"
+}
+
+no_op() { :; }
+
+shifu_run tab_cmd "$@"
+```
 
 ### Enable
 

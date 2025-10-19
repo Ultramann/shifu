@@ -1,0 +1,31 @@
+#! /bin/sh
+
+. "${0%/*}"/shifu less || exit 1
+
+tab_cmd() {
+  cmd_name tab
+  cmd_help "A tab completion shifu example"
+  cmd_long "An example shifu cli demonstrating
+  * subcommand completion
+  * option value completion"
+  cmd_subs completion_cmd
+}
+
+completion_cmd() {
+  cmd_name completion
+  cmd_func no_op
+
+  cmd_arg -o --option -- OPTION option "Option value"
+  cmd_arg_comp_enum magic option
+
+  cmd_arg -- POSITIONAL "Positional value"
+  cmd_arg_comp_func directory_completions
+}
+
+directory_completions() {
+  shifu_add_completions "$(ls -d */)"
+}
+
+no_op() { :; }
+
+shifu_run tab_cmd "$@"
