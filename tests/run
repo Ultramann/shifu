@@ -6,15 +6,16 @@
 # tests can be run manually with
 #    <shell> tests/test_shifu.sh
 
-. shifu && shifu_less || exit 1
+. shifu less || exit 1
 
 run_cmd() {
   cmd_name run
   cmd_func run_tests
   cmd_help "Run shifu tests"
 
-  cmd_arg -v --verbose -- verbose "" -v "Show status for every test, pass or fail"
-  cmd_arg              -- shell   "Shell to run tests in. Options: all, bash, dash, ksh, zsh"
+  cmd_arg -v --verbose -- verbose "" -v "Show status for each test, pass or fail"
+  cmd_arg -x           -- set_x "" -x "Set execution tracing for each test"
+  cmd_arg              -- shell "Shell to run tests in. Options: all, bash, dash, ksh, zsh"
   cmd_arg              --         "Specific tests to run"
 }
 
@@ -30,7 +31,7 @@ run_tests() {
 run_tests_in_shell() {
   test_shell="$1"; shift
 	printf "\n===========================  %-4s  ============================\n" $test_shell
-  eval "$test_shell tests/test_shifu.sh $verbose $@"
+  eval "$test_shell tests/test_shifu.sh $verbose $set_x $@"
 }
 
 shifu_run run_cmd "$@"

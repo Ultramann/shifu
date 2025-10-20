@@ -3,14 +3,14 @@
   <img src="./assets/banner-light.svg#gh-light-mode-only" width="65%">
 </p>
 
-**SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework that makes creating a powerful cli from a shell script simple. Shifu has the following qualities:
+**SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework that makes creating powerful clis from shell scripts simple. Shifu has the following qualities:
 
 * declarative argument parsing
-* automatic subcommand dispatching
+* subcommand dispatching
 * scoped help generation
 * tab completion code generation for interactive shells
 * implemented 100% in POSIX-compliant shell script
-* compatibility with POSIX based shells; tested with: 
+* compatibility with POSIX-based shells; tested with: 
   * bash, dash, ksh, zsh
 
 Shell scripts make gluing together functionality from different command line programs pretty easy. However, if you want to extend the script's capabilities to have advanced cli features: related but distinct entry points, aka subcommands, nested subcommands, distinct command line options for those subcommands, subcommand specific help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address this difficulty and make creating a configurable and intuitive cli from a shell script declarative and maintainable.
@@ -90,7 +90,7 @@ intro_cmd() {            │       │      │
 
 Let's take a look at a more complicated example cli, [`examples/quick`](/examples/quick). This demo cli has two named subcommands, `hello` and `start`, each with their own arguments. First we'll see a gif interaction with the cli followed by the cli's annotated source.
 
-![Quickstart](/assets/demo.gif)
+![Quickstart](/assets/quick_demo.gif)
 
 <details>
 
@@ -172,7 +172,7 @@ Positional argument:  example
 
 </details>
 
-Note, this example calls `shifu less` to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
+Note, this example imports `shifu` with the `less` argument to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
 
 [`examples/quick`](/examples/quick)
 
@@ -252,9 +252,9 @@ The diagram below shows how shifu is connecting together this cli script to prin
 │ │     examples/quick hello -g --name World ────────────────────────┐
 │ │                ▲     ▲         ▲                                 │
 │ │                │     │         └───────────────────────────────┐ │
-│ │                └───┐ └───┐                                     │ │
-│ │ quick_cmd() {      │     │         hello_cmd() {               │ │
-│ │   cmd_name quick ──┘     └────────── cmd_name hello            │ │
+│ │                └───┐ └───────────────────────────────┐         │ │
+│ │ quick_cmd() {      │               hello_cmd() {     │         │ │
+│ │   cmd_name quick ──┘                cmd_name hello ──┘         │ │
 │ │   cmd_subs start_cmd hello_cmd       cmd_func quick_hello      │ │
 │ └── cmd_arg -g --global -- \           cmd_arg -n --name -- \ ───┘ │
 └─────► GLOBAL false true \          ┌───► NAME "mysterious user" \  │
@@ -265,7 +265,7 @@ The diagram below shows how shifu is connecting together this cli script to prin
 
 ## Installation
 
-Since shifu is just a single POSIX compatible script, all you need to do is get a copy of it and either put it in a location on your `PATH` or in the same directory as your cli script.
+Since shifu is just a single POSIX-compatible script, all you need to do is get a copy of it and either put it in a location on your `PATH` or in the same directory as your cli script.
 
 ```sh
 curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
@@ -287,7 +287,59 @@ If you'd like not to assume that shifu is on the `PATH`, you can instead make su
 
 ## Tab completion
 
-Since shifu knows all about a cli's (sub)command names it can generate tab completion code for interactive shell's that support it, bash and zsh. 
+Since shifu knows all about the structure of your cli it can generate tab completion code for interactive shells that support it, bash and zsh. 
+
+By default, subcommand names can tab completed. If you'd like to add tab completion for option values and positions/remaining arguments shifu provides two `cmd` functions, `shifu_cmd_arg_comp_enum` and `shifu_cmd_arg_comp_func`. These functions can optionally be used after `shifu_cmd_arg` and instruct shifu what the completions for the preceding argument value should be.
+
+* `shifu_cmd_arg_comp_enum`: static list of completions
+* `shifu_cmd_arg_comp_func`: function to generate list of completions. Completions are added with the shifu function `shifu_add_completions`
+
+Below is a very minimal shifu cli script demostrating tab completion capabilities.
+
+[`examples/tab`](/examples/tab)
+
+```sh
+#! /bin/sh
+
+. "${0%/*}"/shifu less || exit 1
+
+tab_cmd() {
+  cmd_name tab
+  cmd_help "A tab completion shifu example"
+  cmd_long "An example shifu cli demonstrating
+  * subcommand completion
+  * option value completion"
+  cmd_subs completion_cmd
+}
+
+completion_cmd() {
+  cmd_name completion
+  cmd_func no_op
+
+  cmd_arg -o --option -- OPTION option "Option value"
+  # Add two completions: magic and option
+  cmd_arg_comp_enum magic option
+
+  cmd_arg -- POSITIONAL "Positional value"
+  # Add completions by calling function
+  cmd_arg_comp_func directory_completions
+}
+
+directory_completions() {
+  # Add completions when function is called
+  shifu_add_completions "$(ls -d */)"
+}
+
+no_op() { :; }
+
+shifu_run tab_cmd "$@"
+```
+
+Below is a gif showing the tab completions working for this cli. If you'd like to test the tab completion from this example you can easily from a bash terminal by running `eval "$(examples/tab --tab-completion bash)"`, then tabbing along to the beat.
+
+![Tab completion](/assets/tab_demo.gif)
+
+### Enable
 
 1. Ensure your cli is in a directory on your shell's `PATH`
 1. Ensure your cli has access to shifu; either by putting shifu in the same `PATH` directory as your cli or adding shifu to another `PATH` directory
@@ -316,8 +368,8 @@ These instructions can also be found by running
   * Finally. I want to use something like shifu, maybe others do too
 
 * How does shifu name its variables/functions, will they collide with those in my script?
-  * Shifu takes special care to prefix all variables/functions with `shifu_` or `_shifu_`
-  * Importing shifu with the `less` argument will create versions of all the [`cmd` functions](#cmd-functions) without the `shifu_` prefix. This makes command code more terse, but adds function names that are more likely to cause a collision with those in your script
+  * Shifu takes special care to prefix all variables/functions with `shifu` or `_shifu`
+  * Importing shifu with the `less` argument will create versions of all the [`cmd` functions](#cmd-functions) without the `shifu` prefix. This makes command code less busy, but adds function names that are more likely to cause a collision with those in your script
 
 ## API
 
