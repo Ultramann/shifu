@@ -412,6 +412,9 @@ _shifu_complete_func_args() {
   shifu_case_stmt="case \"\${1:-}\" in "
   shifu_arg_completion_set=true
   "$shifu_cmd"
+  if [ $shifu_parse_stage -eq 0 -a $shifu_arg_completion_set = false ]; then
+    shifu_case_stmt="$shifu_case_stmt shift ;;"
+  fi
   if [ "$shifu_parse_local" = true ]; then
     _shifu_append_on_new_line shifu_case_stmt "  *) break ;;"
   else
