@@ -37,7 +37,7 @@ shifu_cmd_arg() {
     $shifu_mode_help_run)
       _shifu_arg_help "$@" ;;
     $shifu_mode_args_run)
-      [ -z "${shifu_cmd_subs:-}" ] && _shifu_update_case_stmt "$@" || _shifu_handle_arg_global "$@" ;;
+      [ -n "${shifu_cmd_func:-}" ] && _shifu_update_case_stmt "$@" || _shifu_handle_arg_global "$@" ;;
     $shifu_mode_args_comp)
       _shifu_update_comp_case_stmt "$@" ;;
   esac
@@ -108,6 +108,7 @@ _shifu_run() {
   [ "${SHIFU_SET_X:-0}" = 1 ] && set -x
   shifu_mode=$shifu_mode_cmds_run
   shifu_parent="$1"; shifu_cmd="$1"; shift
+  shifu_required_variables=""
   "$shifu_parent"
   _shifu_set_for_looping shifu_cmds shifu_cmd_subs
   while [ $# -ne 0 -a -n "${shifu_cmd_subs:-}" ]; do
@@ -143,7 +144,7 @@ _shifu_parse_args() {
   shifu_mode=$shifu_mode_args_run
   shifu_parse_stage=0
   shifu_parse_local="$1"; shifu_cmd="$2"; shift 2
-  shifu_required_variables=""
+  [ "$shifu_parse_local" = true ] && shifu_required_variables_local=""
   shifu_case_stmt="case \"\$1\" in"
   if [ "$shifu_parse_local" = false -a -n "${shifu_global_case:-}" ]; then
     _shifu_append_on_new_line shifu_case_stmt "  ${shifu_global_case:-}"
@@ -157,10 +158,14 @@ _shifu_parse_args() {
   while [ $# -ne 0 ]; do
     eval "$shifu_case_stmt"
   done
-  _shifu_set_for_looping shifu_required_variables shifu_required_variables
-  for shifu_required_variable in $shifu_required_variables; do
-    eval "if [ \"\${$shifu_required_variable+set}\" != set ]; then
-      echo \"Required variable, $shifu_required_variable, is not set\"
+  if [ "$shifu_parse_local" = true ]; then
+    _shifu_set_for_looping shifu_required_vars shifu_required_variables_local
+  else
+    _shifu_set_for_looping shifu_required_vars shifu_required_variables
+  fi
+  for shifu_required_var in $shifu_required_vars; do
+    eval "if [ \"\${$shifu_required_var+set}\" != set ]; then
+      echo \"Required variable, $shifu_required_var, is not set\"
       exit 1
     fi"
   done
@@ -199,7 +204,11 @@ _shifu_update_case_stmt() {
   # option no argument, required
   elif [ $# -eq 2 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
-    shifu_required_variables="${shifu_required_variables:-} $1"
+    if [ "$shifu_parse_local" = true ]; then
+      shifu_required_variables_local="${shifu_required_variables_local} $1"
+    else
+      shifu_required_variables="${shifu_required_variables} $1"
+    fi
     shifu_case_stmt="$shifu_case_stmt) $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
   # option + argument with default
   elif [ $# -eq 3 ]; then

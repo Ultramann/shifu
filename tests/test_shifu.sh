@@ -192,17 +192,40 @@ test_shifu_run_args_not_required_unset() {
 
 test_shifu_run_required_options_unset() {
   run_test() {
-    test_cmd_args="$2"
+    test_cmd_args="$1"
     _shifu_set_for_looping test_cmd_args test_cmd_args
     actual=$(shifu_run shifu_test_all_options_cmd $test_cmd_args)
     shifu_assert_non_zero exit_code $?
-    shifu_assert_strings_equal error_message "$3" "$actual"
+    shifu_assert_strings_equal error_message "$2" "$actual"
   }
   shifu_parameterize_test \
-    run_test 3 \
+    run_test 2 \
     flag        ""                                        "Required variable, FLAG_REQ, is not set" \
     option      "-a flag_value"                           "Required variable, OPTION_REQ, is not set" \
     flag_option "-a flag_value --option-req option_value" "Required variable, FLAG_OPTION_REQ, is not set"
+}
+
+shifu_test_required_options_cmd() {
+  shifu_cmd_name required-options
+  shifu_cmd_subs shifu_test_leaf_three_cmd
+
+  shifu_cmd_arg_loc -l --local -- LOCAL_TEST "A test required local cmd arg"
+  shifu_cmd_arg -g --global -- GLOBAL_TEST "A test required global cmd arg"
+}
+
+test_shifu_run_required_local_and_global_options() {
+  run_test() {
+    test_cmd_args="$1"
+    _shifu_set_for_looping test_cmd_args test_cmd_args
+   actual=$(shifu_run shifu_test_required_options_cmd $test_cmd_args)
+   shifu_assert_equal exit_code $2 $?
+   shifu_assert_equal error_message "$3" "$actual"
+  }
+  shifu_parameterize_test \
+    run_test 3 \
+    both_set  "-l local leaf-three -g global" 0 "" \
+    local_set "-l local leaf-three"           1 "Required variable, GLOBAL_TEST, is not set" \
+    none_set  "leaf-three"                    1 "Required variable, LOCAL_TEST, is not set"
 }
 
 test_shifu_run_bad_first_cmd() {
@@ -563,24 +586,29 @@ test_shifu_bad_multiple_cmd_args_complete_calls() {
 
 test_shifu_set_variable() {
   run_test() {
-    actual=$(_shifu_set_variable "$2" any)
-    shifu_assert_equal exit_code $3 $?
-    shifu_assert_strings_equal output "$4" "$actual"
+    actual=$(_shifu_set_variable "$1" any)
+    shifu_assert_equal exit_code $2 $?
+    shifu_assert_strings_equal output "$3" "$actual"
   }
   shifu_parameterize_test \
-    run_test 4 \
+    run_test 3 \
     good-var good_var 0 "" \
     bad-var bad-var 1 "Invalid variable name: bad-var"
 }
 
 # Testing utilities
 shifu_parameterize_test() {
+  # 1: name of test function to run, 2: number of arguments the function accepts
+  # remaining: groups of arguments describing different tests
+  # * first element of the each group is the parameterized run name, used in error reporting
+  # * remaining elements are passed to the test function
   p_test_name="$1"; n_args=$2; shift 2
-  if [ $(($# % $n_args )) -ne 0 ]; then
-    echo "${p_test_name} recieved incorrect number of arguments"
+  if [ $(($# % ($n_args + 1))) -ne 0 ]; then
+    echo "${p_test_name} received incorrect number of arguments"
     exit 1
   fi
   while [ $# -ne 0 ]; do
+    p_run_name="$1"; shift
     "$p_test_name" "$@"
     shift $n_args
   done
@@ -590,7 +618,7 @@ shifu_assert_empty() {
   # 1: identifier, 2: value
   [ -z "$2" ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_test_name+$p_test_name }$1: expected empty, got" "${#1}"
+  shifu_report_context "${p_run_name+$p_run_name }$1: expected empty, got" "${#1}"
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
 }
@@ -599,7 +627,7 @@ shifu_assert_zero() {
   # 1: identifier, 2: value
   [ $2 -eq 0 ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_test_name+$p_test_name }$1: expected zero value, got" $2
+  shifu_report_context "${p_run_name+$p_run_name }$1: expected zero value, got" $2
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
 }
@@ -608,7 +636,7 @@ shifu_assert_non_zero() {
   # 1: identifier, 2: value
   [ $2 -ne 0 ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_test_name+$p_test_name }$1: expected non-zero value, got" $2
+  shifu_report_context "${p_run_name+$p_run_name }$1: expected non-zero value, got" $2
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
 }
@@ -617,7 +645,7 @@ shifu_assert_equal() {
   # 1: identifier, 2: first, 3: second
   [ "$2" = "$3" ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_test_name+$p_test_name }$1: expected values to be equal, got" \
+  shifu_report_context "${p_run_name+$p_run_name }$1: expected values to be equal, got" \
     "${2:-<empty>}" "${3:-<empty>}"
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
