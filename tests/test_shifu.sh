@@ -14,7 +14,8 @@ shifu_test_root_cmd() {
   shifu_cmd_help "Test root cmd help"
   shifu_cmd_subs shifu_test_sub_one_cmd shifu_test_sub_two_cmd
 
-  shifu_cmd_arg -g --global -- GLOBAL_TEST false true "A test global cmd arg"
+  shifu_cmd_arg -g --global-bin -- GLOBAL_BIN false true "A test global bin cmd arg"
+  shifu_cmd_arg -G --global-def -- GLOBAL_DEF global_def "A test global def cmd arg"
 }
 
 shifu_test_sub_one_cmd() {
@@ -125,17 +126,19 @@ test_shifu_run_good() {
 }
 
 test_shifu_run_good_cmd_global_arg() {
-  shifu_run shifu_test_root_cmd sub-two leaf-three -g one two
+  shifu_run shifu_test_root_cmd sub-two leaf-three -g -G global_val one two
   shifu_assert_zero exit_code $?
-  shifu_assert_equal global_test "$GLOBAL_TEST" true
+  shifu_assert_equal global_bin "$GLOBAL_BIN" true
+  shifu_assert_equal global_def "$GLOBAL_DEF" global_val
   shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
 }
 
 test_shifu_run_good_cmd_global_and_local_arg() {
-  shifu_run shifu_test_root_cmd sub-two -l local-val leaf-three -g one two
+  shifu_run shifu_test_root_cmd sub-two -l local-val leaf-three -g -G global_val one two
   shifu_assert_zero exit_code $?
   shifu_assert_equal local_test "$LOCAL_TEST" "local-val"
-  shifu_assert_equal global_test "$GLOBAL_TEST" true
+  shifu_assert_equal global_bin "$GLOBAL_BIN" true
+  shifu_assert_equal global_def "$GLOBAL_DEF" global_val
   shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
 }
 
@@ -240,9 +243,12 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -g, --global
-    A test global cmd arg
+  -g, --global-bin
+    A test global bin cmd arg
     Default: false, set: true
+  -G, --global-def [GLOBAL_DEF]
+    A test global def cmd arg
+    Default: global_def
   -h, --help
     Show this help'
   )"
@@ -396,9 +402,12 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -g, --global
-    A test global cmd arg
+  -g, --global-bin
+    A test global bin cmd arg
     Default: false, set: true
+  -G, --global-def [GLOBAL_DEF]
+    A test global def cmd arg
+    Default: global_def
   -h, --help
     Show this help'
   )
@@ -492,9 +501,12 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -g, --global
-    A test global cmd arg
+  -g, --global-bin
+    A test global bin cmd arg
     Default: false, set: true
+  -G, --global-def [GLOBAL_DEF]
+    A test global def cmd arg
+    Default: global_def
   -h, --help
     Show this help'
   actual=$(shifu_run shifu_test_root_cmd -h)
@@ -505,9 +517,12 @@ test_shifu_help_global() {
   expected='Test leaf three cmd help
 
 Options
-  -g, --global
-    A test global cmd arg
+  -g, --global-bin
+    A test global bin cmd arg
     Default: false, set: true
+  -G, --global-def [GLOBAL_DEF]
+    A test global def cmd arg
+    Default: global_def
   -h, --help
     Show this help'
   actual=$(shifu_run shifu_test_root_cmd sub-two leaf-three -h 2>&1)

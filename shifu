@@ -244,14 +244,14 @@ _shifu_handle_arg_global() {
     _shifu_error "Positional arguments cannot be global: $1"
   # option no argument, required
   elif [ $# -eq 2 ]; then
-    shifu_required_variables="${shifu_required_variables:-} $1"
-    shifu_global_case="${shifu_global_case:-}) $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
-    shifu_global_help="${shifu_global_help:-} $1\n    $2"
+    shifu_required_variables="${shifu_required_variables} $1"
+    shifu_global_case="${shifu_global_case:-}) $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
+    shifu_global_help="${shifu_global_help:-} [$1]\n    $2"
   # option + argument with default
   elif [ $# -eq 3 ]; then
     _shifu_set_variable "$1" "$2"
-    shifu_global_case="${shifu_global_case:-}) $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
-    shifu_global_help="${shifu_global_help:-} $1\n    $3\n    Default: $2"
+    shifu_global_case="${shifu_global_case:-}) $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
+    shifu_global_help="${shifu_global_help:-} [$1]\n    $3\n    Default: $2"
   # option no argument, default set
   elif [ $# -eq 4 ]; then
     _shifu_set_variable "$1" "$2"
