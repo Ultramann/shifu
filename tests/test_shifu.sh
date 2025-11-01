@@ -104,7 +104,7 @@ shifu_test_all_options_cmd() {
   shifu_cmd_arg_comp_func make_fake_remaining_completions
 }
 
-no_op() { : ; }
+no_op() { :; }
 
 make_fake_option_completions() {
   shifu_add_completions flag option default
