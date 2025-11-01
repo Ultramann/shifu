@@ -201,7 +201,7 @@ _shifu_update_case_stmt() {
     _shifu_set_variable "$1" ""
     _shifu_update_case_stmt_positional_check "$1"
     _shifu_append_on_new_line shifu_case_stmt "    $1=\\\$1; shift; _shifu_ack_arg"
-  # option no argument, required
+  # option + argument, required
   elif [ $# -eq 2 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
     if [ "$shifu_parse_local" = true ]; then
@@ -210,12 +210,12 @@ _shifu_update_case_stmt() {
       shifu_required_variables="${shifu_required_variables} $1"
     fi
     shifu_case_stmt="$shifu_case_stmt) $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
-  # option + argument with default
+  # option + argument, with default
   elif [ $# -eq 3 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
     _shifu_set_variable "$1" "$2"
     shifu_case_stmt="$shifu_case_stmt) $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
-  # option no argument, default set
+  # option no argument, binary: default/set
   elif [ $# -eq 4 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
     _shifu_set_variable "$1" "$2"
@@ -242,17 +242,17 @@ _shifu_handle_arg_global() {
   # positional
   elif [ "$shifu_no_options" = true ]; then
     _shifu_error "Positional arguments cannot be global: $1"
-  # option no argument, required
+  # option + argument, required
   elif [ $# -eq 2 ]; then
     shifu_required_variables="${shifu_required_variables} $1"
     shifu_global_case="${shifu_global_case:-}) $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
-    shifu_global_help="${shifu_global_help:-} [$1]\n    $2"
-  # option + argument with default
+    shifu_global_help="${shifu_global_help:-} [$1]\n    $2\n    Required"
+  # option + argument, with default
   elif [ $# -eq 3 ]; then
     _shifu_set_variable "$1" "$2"
     shifu_global_case="${shifu_global_case:-}) $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
     shifu_global_help="${shifu_global_help:-} [$1]\n    $3\n    Default: $2"
-  # option no argument, default set
+  # option no argument, binary: default/set
   elif [ $# -eq 4 ]; then
     _shifu_set_variable "$1" "$2"
     shifu_global_case="${shifu_global_case:-}) $1=$3; shift; _shifu_ack_arg ;;"
@@ -330,15 +330,15 @@ _shifu_arg_help() {
     fi
     shifu_help_usage="${shifu_help_usage:-} [$1]"
     shifu_help_arguments="${shifu_help_arguments:-}\n  $1\n    $2"
-  # option + argument without default
+  # option + argument, required
   elif [ $# -eq 2 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_help_stage
-    shifu_help_options="$shifu_help_options [$1]\n    $2"
-  # option + argument with default
+    shifu_help_options="$shifu_help_options [$1]\n    $2\n    Required"
+  # option + argument, with default
   elif [ $# -eq 3 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_help_stage
     shifu_help_options="$shifu_help_options [$1]\n    $3\n    Default: $2"
-  # option no argument default set
+  # option no argument, binary: default/set
   elif [ $# -eq 4 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_help_stage
     shifu_help_options="$shifu_help_options\n    $4\n    Default: ${2:-empty}, set: $3"
@@ -477,7 +477,7 @@ _shifu_update_comp_case_stmt() {
     elif [ $shifu_parse_stage -gt 1 ]; then
       _shifu_error "No arguments after remaining are declared: $1"
     fi
-  # option + argument without default
+  # option + argument, required
   elif [ $# -eq 2 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
     shifu_case_stmt="$shifu_case_stmt) shift;"
@@ -485,10 +485,10 @@ _shifu_update_comp_case_stmt() {
   elif [ $# -eq 3 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
     shifu_case_stmt="$shifu_case_stmt) shift;"
-  # option no argument, default set
+  # option no argument, binary default/set
   elif [ $# -eq 4 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
-    # this has no value that could be completed
+    # has no value that could be completed
     shifu_case_stmt="$shifu_case_stmt)"
   fi
 }

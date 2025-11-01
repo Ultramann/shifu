@@ -465,6 +465,7 @@ Options
     Default: 0, set: 1
   -a [FLAG_REQ]
     required flag help
+    Required
   -d [FLAG_DEF]
     default argument flag help
     Default: def_flag
@@ -473,6 +474,7 @@ Options
     Default: 0, set: 1
   --option-req [OPTION_REQ]
     required option help
+    Required
   --option-def [OPTION_DEF]
     default argument option help
     Default: def_opt
@@ -481,6 +483,7 @@ Options
     Default: 0, set: 1
   -A, --flag-option-req [FLAG_OPTION_REQ]
     required flag/option help
+    Required
   -D, --flag-option-def [FLAG_OPTION_DEF]
     default argument flag/option help
     Default: def_flag_opt
