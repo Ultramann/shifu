@@ -769,5 +769,5 @@ shifu_set_test_functions() {
   [ -n "${ZSH_VERSION:-}" ] && eval "test_functions=( \${=test_functions} )"
 }
 
-this_script="$0"  # at global for zsh compatibility
+this_script="$0"  # at global scope for zsh compatibility
 shifu_run_test_suite "$@"
