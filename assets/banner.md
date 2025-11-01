@@ -1,4 +1,4 @@
-* https://text-to-svg.com: ubuntu mono, 700, line height 68
+* https://text-to-svg.com: ubuntu mono, 700, line height 64
   ```
   ┌────────────────────────────────────┐ 
   │   ____  _   _  ____  ____  _   _   │ 
