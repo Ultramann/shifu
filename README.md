@@ -133,7 +133,6 @@ Options
 $ examples/quick hello -g -n World
 🌐 Hello, World!
 
-
 $ examples/quick start -h
 A quick subcommand
 
@@ -448,7 +447,7 @@ These instructions can also be found by running
   | Option: binary     | variable is assigned a value depending on whether or not the option is set |
   |                    | `[patterns] -- [variable] [default] [set value] "help"` |
   |                    | `-v --verbose -- VERBOSE false true "help"`             |
-  | Option: w/ default | variable has a default value which can be overwritten with an option and following argument |
+  | Option: default    | variable has a default value which can be overwritten with an option and following argument |
   |                    | `[patterns] -- [variable] [default] "help"`             |
   |                    | `-o --output -- OUTPUT "out" "help"`                    |
   | Option: required   | variable must be set with an option and following argument, error if not set |
