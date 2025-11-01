@@ -14,7 +14,8 @@ shifu_test_root_cmd() {
   shifu_cmd_help "Test root cmd help"
   shifu_cmd_subs shifu_test_sub_one_cmd shifu_test_sub_two_cmd
 
-  shifu_cmd_arg -g --global -- GLOBAL_TEST false true "A test global cmd arg"
+  shifu_cmd_arg -g --global-bin -- GLOBAL_BIN false true "A test global bin cmd arg"
+  shifu_cmd_arg -G --global-def -- GLOBAL_DEF global_def "A test global def cmd arg"
 }
 
 shifu_test_sub_one_cmd() {
@@ -55,8 +56,8 @@ shifu_test_leaf_four_cmd() {
   shifu_cmd_help "Test leaf four cmd help"
   shifu_cmd_func shifu_test_leaf_func_four
 
-  shifu_cmd_arg -f --fake-arg -- FAKE_ARG "fake argument help"
-  shifu_cmd_arg -t --test-arg -- TEST_ARG "test argument help"
+  shifu_cmd_arg -f --fake-arg -- FAKE_ARG fake_default "fake argument help"
+  shifu_cmd_arg -t --test-arg -- TEST_ARG test_default "test argument help"
   shifu_cmd_arg               -- POSITIONAL_ARG "positional argument help"
   shifu_cmd_arg               -- "remaining argument help"
 }
@@ -84,13 +85,13 @@ shifu_test_all_options_cmd() {
   shifu_cmd_func no_op
 
   shifu_cmd_arg -f -- FLAG_BIN 0 1      "binary flag help"
-  shifu_cmd_arg -a -- FLAG_ARG          "flag argument help"
+  shifu_cmd_arg -a -- FLAG_REQ          "required flag help"
   shifu_cmd_arg -d -- FLAG_DEF def_flag "default argument flag help"
   shifu_cmd_arg --option-bin -- OPTION_BIN 0 1     "binary option help"
-  shifu_cmd_arg --option-arg -- OPTION_ARG         "argument option help"
+  shifu_cmd_arg --option-req -- OPTION_REQ         "required option help"
   shifu_cmd_arg --option-def -- OPTION_DEF def_opt "default argument option help"
   shifu_cmd_arg -F --flag-option-bin -- FLAG_OPTION_BIN 0 1 "binary flag/option help"
-  shifu_cmd_arg -A --flag-option-arg -- FLAG_OPTION_ARG     "argument flag/option help"
+  shifu_cmd_arg -A --flag-option-req -- FLAG_OPTION_REQ     "required flag/option help"
   shifu_cmd_arg_comp_enum flag option arg
   shifu_cmd_arg -D --flag-option-def -- FLAG_OPTION_DEF def_flag_opt \
                                     "default argument flag/option help"
@@ -103,7 +104,7 @@ shifu_test_all_options_cmd() {
   shifu_cmd_arg_comp_func make_fake_remaining_completions
 }
 
-no_op() { : ; }
+no_op() { :; }
 
 make_fake_option_completions() {
   shifu_add_completions flag option default
@@ -125,65 +126,109 @@ test_shifu_run_good() {
 }
 
 test_shifu_run_good_cmd_global_arg() {
-  shifu_run shifu_test_root_cmd sub-two leaf-three -g one two
+  shifu_run shifu_test_root_cmd sub-two leaf-three -g -G global_val one two
   shifu_assert_zero exit_code $?
-  shifu_assert_equal global_test "$GLOBAL_TEST" true
+  shifu_assert_equal global_bin "$GLOBAL_BIN" true
+  shifu_assert_equal global_def "$GLOBAL_DEF" global_val
   shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
 }
 
 test_shifu_run_good_cmd_global_and_local_arg() {
-  shifu_run shifu_test_root_cmd sub-two -l local-val leaf-three -g one two
+  shifu_run shifu_test_root_cmd sub-two -l local-val leaf-three -g -G global_val one two
   shifu_assert_zero exit_code $?
   shifu_assert_equal local_test "$LOCAL_TEST" "local-val"
-  shifu_assert_equal global_test "$GLOBAL_TEST" true
+  shifu_assert_equal global_bin "$GLOBAL_BIN" true
+  shifu_assert_equal global_def "$GLOBAL_DEF" global_val
   shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
 }
 
 test_shifu_run_args_all_set() {
   shifu_run shifu_test_all_options_cmd \
-                   -f \
-                   -a flag_value \
-                   -d not_default_flag_value \
-                   --option-bin \
-                   --option-arg option_value \
-                   --option-def not_default_option_value \
-                   --flag-option-bin \
-                   --flag-option-arg flag_option_value \
-                   -D not_default_flag_option_value \
-                   positional_arg_value_one positional_arg_value_two \
-                   remaining arguments
+    -f \
+    -a req_flag_value \
+    -d not_default_flag_value \
+    --option-bin \
+    --option-req req_option_value \
+    --option-def not_default_option_value \
+    --flag-option-bin \
+    --flag-option-req req_flag_option_value \
+    -D not_default_flag_option_value \
+    positional_arg_value_one positional_arg_value_two \
+    remaining arguments
   shifu_assert_zero exit_code $?
   # this acts as a proxy test for shifu_align_args, since we don't have $@ here
   shifu_assert_equal args_parsed $_shifu_args_parsed 17
   shifu_assert_equal flag_bin "$FLAG_BIN" 1
-  shifu_assert_equal flag_arg "$FLAG_ARG" "flag_value"
+  shifu_assert_equal flag_req "$FLAG_REQ" "req_flag_value"
   shifu_assert_equal flag_def "$FLAG_DEF" "not_default_flag_value"
   shifu_assert_equal option_bin "$OPTION_BIN" 1
-  shifu_assert_equal option_arg "$OPTION_ARG" "option_value"
+  shifu_assert_equal option_req "$OPTION_REQ" "req_option_value"
   shifu_assert_equal option_def "$OPTION_DEF" "not_default_option_value"
   shifu_assert_equal flag_option_bin "$FLAG_OPTION_BIN" 1
-  shifu_assert_equal flag_option_arg "$FLAG_OPTION_ARG" "flag_option_value"
+  shifu_assert_equal flag_option_req "$FLAG_OPTION_REQ" "req_flag_option_value"
   shifu_assert_equal flag_option_def "$FLAG_OPTION_DEF" "not_default_flag_option_value"
   shifu_assert_equal positional_arg "$POSITIONAL_ARG_1" "positional_arg_value_one"
   shifu_assert_equal positional_arg "$POSITIONAL_ARG_2" "positional_arg_value_two"
 }
 
-test_shifu_run_args_all_unset() {
-  shifu_run shifu_test_all_options_cmd positional_arg_value_one positional_arg_value_two
+test_shifu_run_args_not_required_unset() {
+  shifu_run shifu_test_all_options_cmd \
+    -a req_flag_value \
+    --option-req req_option_value \
+    --flag-option-req req_flag_option_value \
+    positional_arg_value_one positional_arg_value_two
   shifu_assert_zero exit_code $?
-  shifu_assert_equal args_parsed "$_shifu_args_parsed" 2
+  shifu_assert_equal args_parsed "$_shifu_args_parsed" 8
   shifu_assert_equal flag_bin "$FLAG_BIN" 0
-  shifu_assert_empty flag_arg "$FLAG_ARG"
+  shifu_assert_equal flag_req "$FLAG_REQ" "req_flag_value"
   shifu_assert_equal flag_def "$FLAG_DEF" "def_flag"
   shifu_assert_equal option_bin "$OPTION_BIN" 0
-  shifu_assert_empty option_arg "$OPTION_ARG"
+  shifu_assert_equal option_req "$OPTION_REQ" "req_option_value"
   shifu_assert_equal option_def "$OPTION_DEF" "def_opt"
   shifu_assert_equal flag_option_bin "$FLAG_OPTION_BIN" 0
-  shifu_assert_empty flag_option_arg "$FLAG_OPTION_ARG"
+  shifu_assert_equal flag_option_req "$FLAG_OPTION_REQ" "req_flag_option_value"
   shifu_assert_equal flag_option_def "$FLAG_OPTION_DEF" "def_flag_opt"
   shifu_assert_equal positional_arg_1 "$POSITIONAL_ARG_1" "positional_arg_value_one"
   shifu_assert_equal positional_arg_2 "$POSITIONAL_ARG_2" "positional_arg_value_two"
   shifu_assert_equal array_length $# 0
+}
+
+test_shifu_run_required_options_unset() {
+  run_test() {
+    test_cmd_args="$1"
+    _shifu_set_for_looping test_cmd_args test_cmd_args
+    actual=$(shifu_run shifu_test_all_options_cmd $test_cmd_args)
+    shifu_assert_non_zero exit_code $?
+    shifu_assert_strings_equal error_message "$2" "$actual"
+  }
+  shifu_parameterize_test \
+    run_test 2 \
+    flag        ""                                        "Required variable, FLAG_REQ, is not set" \
+    option      "-a flag_value"                           "Required variable, OPTION_REQ, is not set" \
+    flag_option "-a flag_value --option-req option_value" "Required variable, FLAG_OPTION_REQ, is not set"
+}
+
+shifu_test_required_options_cmd() {
+  shifu_cmd_name required-options
+  shifu_cmd_subs shifu_test_leaf_three_cmd
+
+  shifu_cmd_arg_loc -l --local -- LOCAL_TEST "A test required local cmd arg"
+  shifu_cmd_arg -g --global -- GLOBAL_TEST "A test required global cmd arg"
+}
+
+test_shifu_run_required_local_and_global_options() {
+  run_test() {
+    test_cmd_args="$1"
+    _shifu_set_for_looping test_cmd_args test_cmd_args
+   actual=$(shifu_run shifu_test_required_options_cmd $test_cmd_args)
+   shifu_assert_equal exit_code $2 $?
+   shifu_assert_equal error_message "$3" "$actual"
+  }
+  shifu_parameterize_test \
+    run_test 3 \
+    both_set  "-l local leaf-three -g global" 0 "" \
+    local_set "-l local leaf-three"           1 "Required variable, GLOBAL_TEST, is not set" \
+    none_set  "leaf-three"                    1 "Required variable, LOCAL_TEST, is not set"
 }
 
 test_shifu_run_bad_first_cmd() {
@@ -198,9 +243,12 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -g, --global
-    A test global cmd arg
+  -g, --global-bin
+    A test global bin cmd arg
     Default: false, set: true
+  -G, --global-def [GLOBAL_DEF]
+    A test global def cmd arg
+    Default: global_def
   -h, --help
     Show this help'
   )"
@@ -293,8 +341,10 @@ Arguments
 Options
   -f, --fake-arg [FAKE_ARG]
     fake argument help
+    Default: fake_default
   -t, --test-arg [TEST_ARG]
     test argument help
+    Default: test_default
   -h, --help
     Show this help'
   )"
@@ -320,8 +370,10 @@ Arguments
 Options
   -f, --fake-arg [FAKE_ARG]
     fake argument help
+    Default: fake_default
   -t, --test-arg [TEST_ARG]
     test argument help
+    Default: test_default
   -h, --help
     Show this help'
   )"
@@ -350,9 +402,12 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -g, --global
-    A test global cmd arg
+  -g, --global-bin
+    A test global bin cmd arg
     Default: false, set: true
+  -G, --global-def [GLOBAL_DEF]
+    A test global def cmd arg
+    Default: global_def
   -h, --help
     Show this help'
   )
@@ -408,24 +463,27 @@ Options
   -f
     binary flag help
     Default: 0, set: 1
-  -a [FLAG_ARG]
-    flag argument help
+  -a [FLAG_REQ]
+    required flag help
+    Required
   -d [FLAG_DEF]
     default argument flag help
     Default: def_flag
   --option-bin
     binary option help
     Default: 0, set: 1
-  --option-arg [OPTION_ARG]
-    argument option help
+  --option-req [OPTION_REQ]
+    required option help
+    Required
   --option-def [OPTION_DEF]
     default argument option help
     Default: def_opt
   -F, --flag-option-bin
     binary flag/option help
     Default: 0, set: 1
-  -A, --flag-option-arg [FLAG_OPTION_ARG]
-    argument flag/option help
+  -A, --flag-option-req [FLAG_OPTION_REQ]
+    required flag/option help
+    Required
   -D, --flag-option-def [FLAG_OPTION_DEF]
     default argument flag/option help
     Default: def_flag_opt
@@ -446,9 +504,12 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -g, --global
-    A test global cmd arg
+  -g, --global-bin
+    A test global bin cmd arg
     Default: false, set: true
+  -G, --global-def [GLOBAL_DEF]
+    A test global def cmd arg
+    Default: global_def
   -h, --help
     Show this help'
   actual=$(shifu_run shifu_test_root_cmd -h)
@@ -459,9 +520,12 @@ test_shifu_help_global() {
   expected='Test leaf three cmd help
 
 Options
-  -g, --global
-    A test global cmd arg
+  -g, --global-bin
+    A test global bin cmd arg
     Default: false, set: true
+  -G, --global-def [GLOBAL_DEF]
+    A test global def cmd arg
+    Default: global_def
   -h, --help
     Show this help'
   actual=$(shifu_run shifu_test_root_cmd sub-two leaf-three -h 2>&1)
@@ -540,25 +604,39 @@ test_shifu_bad_multiple_cmd_args_complete_calls() {
 
 test_shifu_set_variable() {
   run_test() {
-    while [ $# -ne 0 ]; do
-      expected_exit_code=$2
-      expected_output="$3"
-      actual=$(_shifu_set_variable "$1" any)
-      shifu_assert_equal exit_code $expected_exit_code $?
-      shifu_assert_strings_equal output "$expected_output" "$actual"
-      shift 3
-    done
+    actual=$(_shifu_set_variable "$1" any)
+    shifu_assert_equal exit_code $2 $?
+    shifu_assert_strings_equal output "$3" "$actual"
   }
-  run_test good_var 0 "" \
-           bad-var 1 "Invalid variable name: bad-var"
+  shifu_parameterize_test \
+    run_test 3 \
+    good-var good_var 0 "" \
+    bad-var bad-var 1 "Invalid variable name: bad-var"
 }
 
 # Testing utilities
+shifu_parameterize_test() {
+  # 1: name of test function to run, 2: number of arguments the function accepts
+  # remaining: groups of arguments describing different tests
+  # * first element of the each group is the parameterized run name, used in error reporting
+  # * remaining elements are passed to the test function
+  p_test_name="$1"; n_args=$2; shift 2
+  if [ $(($# % ($n_args + 1))) -ne 0 ]; then
+    echo "${p_test_name} received incorrect number of arguments"
+    exit 1
+  fi
+  while [ $# -ne 0 ]; do
+    p_run_name="$1"; shift
+    "$p_test_name" "$@"
+    shift $n_args
+  done
+}
+
 shifu_assert_empty() {
   # 1: identifier, 2: value
   [ -z "$2" ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "$1: expected empty, got" "${#1}"
+  shifu_report_context "${p_run_name+$p_run_name }$1: expected empty, got" "${#1}"
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
 }
@@ -567,7 +645,7 @@ shifu_assert_zero() {
   # 1: identifier, 2: value
   [ $2 -eq 0 ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "$1: expected zero value, got" $2
+  shifu_report_context "${p_run_name+$p_run_name }$1: expected zero value, got" $2
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
 }
@@ -576,7 +654,7 @@ shifu_assert_non_zero() {
   # 1: identifier, 2: value
   [ $2 -ne 0 ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "$1: expected non-zero value, got" $2
+  shifu_report_context "${p_run_name+$p_run_name }$1: expected non-zero value, got" $2
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
 }
@@ -585,7 +663,8 @@ shifu_assert_equal() {
   # 1: identifier, 2: first, 3: second
   [ "$2" = "$3" ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "$1: expected values to be equal, got" "${2:-<empty>}" "${3:-<empty>}"
+  shifu_report_context "${p_run_name+$p_run_name }$1: expected values to be equal, got" \
+    "${2:-<empty>}" "${3:-<empty>}"
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
 }
@@ -690,5 +769,5 @@ shifu_set_test_functions() {
   [ -n "${ZSH_VERSION:-}" ] && eval "test_functions=( \${=test_functions} )"
 }
 
-this_script="$0"  # at global for zsh compatibility
+this_script="$0"  # at global scope for zsh compatibility
 shifu_run_test_suite "$@"

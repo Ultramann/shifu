@@ -49,7 +49,7 @@ issue_cmd() {
   cmd_subs issue_list_cmd issue_get_cmd
   cmd_help "Commands for interacting with github repository issues"
 
-  cmd_arg -R --repo -- REPO "Github repository in OWNER/REPO format"
+  cmd_arg -R --repo -- REPO "current repo" "Github repository in OWNER/REPO format"
 }
 
 issue_list_cmd() {
@@ -98,7 +98,7 @@ pr_cmd() {
   cmd_subs pr_list_cmd pr_get_cmd
   cmd_help "Commands for interacting with github repository pull requests"
 
-  cmd_arg -R --repo -- REPO "Github repository in OWNER/REPO format"
+  cmd_arg -R --repo -- REPO "current repo" "Github repository in OWNER/REPO format"
 }
 
 pr_list_cmd() {
@@ -106,13 +106,15 @@ pr_list_cmd() {
   cmd_func pr_list
   cmd_help "List pull requests in a GitHub repository"
 
-  cmd_arg -n --number -- NUMBER 10 "Max number of results"
+  cmd_arg -s --state  -- STATE open "State of PR: open, closed, all"
+  cmd_arg -n --number -- NUMBER 10  "Max number of results"
 }
 
 pr_list() {
   _resolve_repo
   _get_auth_token
-  _update_query per_page "$NUMBER"
+  _update_query state "$STATE"
+  _update_query per_page $NUMBER
   _gh_api_query "repos/$REPO/pulls" | \
     jq -M '.[] | "\(.number): \(.title)"' | xargs -I{} echo {}
 }
@@ -139,7 +141,7 @@ Body: \(.body)
 }
 
 _resolve_repo() {
-  [ -n "$REPO" ] && return
+  [ "$REPO" != "current repo" ] && return
   origin_url=$(git config --get remote.origin.url)
   if [ "${origin_url}" != "${origin_url#https}" ]; then
     REPO="${origin_url#https://github.com/}"
@@ -168,7 +170,8 @@ _gh_api() {
     -H \"X-GitHub-Api-Version: 2022-11-28\""
   [ -n "$auth_token" ] && curl_call="$curl_call \\
     -H \"Authorization: Bearer $auth_token\""
-  curl_call="$curl_call https://api.github.com/$1"
+  curl_call="$curl_call \\
+    https://api.github.com/$1"
   eval "$curl_call"
 }
 

@@ -133,7 +133,6 @@ Options
 $ examples/quick hello -g -n World
 🌐 Hello, World!
 
-
 $ examples/quick start -h
 A quick subcommand
 
@@ -147,26 +146,27 @@ Arguments
     Example positional argument
 
 Options
-  -d, --default [W_DEFAULT]
+  -r, --required [REQUIRED]
+    Example required option w/ argument
+    Required
+  -d, --default [DEFAULT]
     Example option w/ argument
     Default: default
-  -n, --nullable [WO_DEFAULT]
-    Example option argument w/o default
   -g, --global
     Global binary option
     Default: false, set: true
   -h, --help
     Show this help
-$ examples/quick start example
+$ examples/quick start --required 'provided' example
 Global binary option: false
+Required option:      provided
 Option w/ default:    default
-Option w/o default:   
 Positional argument:  example
-$ examples/quick start -g -d 'not default' \
-> --nullable 'not null' example
+$ examples/quick start -g --required 'provided' \
+> -d 'not default' example
 Global binary option: true
+Required option:      provided
 Option w/ default:    not default
-Option w/o default:   not null
 Positional argument:  example
 ```
 
@@ -224,9 +224,9 @@ start_cmd() {
   cmd_help "A quick subcommand"
   cmd_long "A subcommand that prints results of parsed arguments"
 
-  # Add argument, will populate variables when parsing cli args
-  cmd_arg -d --default  -- W_DEFAULT  "default" "Example option w/ argument"
-  cmd_arg -n --nullable -- WO_DEFAULT "Example option argument w/o default"
+  # Add arguments, will populate variables when parsing cli args
+  cmd_arg -r --required -- REQUIRED   "Example required option w/ argument"
+  cmd_arg -d --default  -- DEFAULT    "default" "Example option w/ argument"
   cmd_arg               -- POSITIONAL "Example positional argument"
 }
 
@@ -234,8 +234,8 @@ start_cmd() {
 quick_start() {
   # Use variables populated by `cmd_arg` in `start_cmd` and `quick_cmd`
   echo "Global binary option: $GLOBAL"
-  echo "Option w/ default:    $W_DEFAULT"
-  echo "Option w/o default:   $WO_DEFAULT"
+  echo "Required option:      $REQUIRED"
+  echo "Option w/ default:    $DEFAULT"
   echo "Positional argument:  $POSITIONAL"
 }
 
@@ -252,13 +252,13 @@ The diagram below shows how shifu is connecting together this cli script to prin
 │ │     examples/quick hello -g --name World ────────────────────────┐
 │ │                ▲     ▲         ▲                                 │
 │ │                │     │         └───────────────────────────────┐ │
-│ │                └───┐ └───────────────────────────────┐         │ │
-│ │ quick_cmd() {      │               hello_cmd() {     │         │ │
-│ │   cmd_name quick ──┘                cmd_name hello ──┘         │ │
-│ │   cmd_subs start_cmd hello_cmd       cmd_func quick_hello      │ │
-│ └── cmd_arg -g --global -- \           cmd_arg -n --name -- \ ───┘ │
-└─────► GLOBAL false true \          ┌───► NAME "mysterious user" \  │
-        "Global binary option"       │     "Name to greet"           │
+│ │                └───┐ └─────────────────────────────────┐       │ │
+│ │ quick_cmd() {      │            ┌─► hello_cmd() {      │       │ │
+│ │   cmd_name quick ──┘            │     cmd_name hello ──┘       │ │
+│ │   cmd_subs start_cmd hello_cmd ─┘     cmd_func quick_hello     │ │
+│ └── cmd_arg -g --global -- \            cmd_arg -n --name -- \ ──┘ │
+└─────► GLOBAL false true \          ┌──► NAME "mysterious user" \   │
+        "Global binary option"       │    "Name to greet"            │
     }                                │ }                             │
                                      └───────────────────────────────┘
 ```
@@ -444,18 +444,18 @@ These instructions can also be found by running
 * Parses arguments depending on patterns being provided and the number of arguments after the double dash
   | Kind               | Description/Structure/Example                           | 
   |--------------------|---------------------------------------------------------|
-  | Binary option      | variable is assigned a value depending on whether or not the option is set |
+  | Option: binary     | variable is assigned a value depending on whether or not the option is set |
   |                    | `[patterns] -- [variable] [default] [set value] "help"` |
   |                    | `-v --verbose -- VERBOSE false true "help"`             |
-  | Option w/ default  | variable has a default value which can be overwritten with an option and following argument |
+  | Option: default    | variable has a default value which can be overwritten with an option and following argument |
   |                    | `[patterns] -- [variable] [default] "help"`             |
   |                    | `-o --output -- OUTPUT "out" "help"`                    |
-  | Option w/o default | variable can be set with an option and following argument, empty if unprovided |
+  | Option: required   | variable must be set with an option and following argument, error if not set |
   |                    | `[patterns] -- [variable] "help"`                       |
-  |                    | `-t --temp -- TEMPORARY "help"`                         |
+  |                    | `-m --mode -- MODE "help"`                         |
   | Positional         | variable set with required value from argument          |
   |                    | `           -- [variable] "help"`                       |
-  |                    | `-- TEMPORARY "help"`                                   |
+  |                    | `-- TARGET "help"`                                      |
   | Remaining          | zero or more arguments passed to target function via "$@" |
   |                    | `           -- "help"`                                  |
   |                    | `-- "help"`                                             |

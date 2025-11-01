@@ -34,15 +34,15 @@ start_cmd() {
   cmd_help "A quick subcommand"
   cmd_long "A subcommand that prints results of parsed arguments"
 
-  cmd_arg -d --default  -- W_DEFAULT  "default" "Example option w/ argument"
-  cmd_arg -n --nullable -- WO_DEFAULT "Example option argument w/o default"
+  cmd_arg -r --required -- REQUIRED   "Example required option w/ argument"
+  cmd_arg -d --default  -- DEFAULT    "default" "Example option w/ argument"
   cmd_arg               -- POSITIONAL "Example positional argument"
 }
 
 quick_start() {
   echo "Global binary option: $GLOBAL"
-  echo "Option w/ default:    $W_DEFAULT"
-  echo "Option w/o default:   $WO_DEFAULT"
+  echo "Required option:      $REQUIRED"
+  echo "Option w/ default:    $DEFAULT"
   echo "Positional argument:  $POSITIONAL"
 }
 
