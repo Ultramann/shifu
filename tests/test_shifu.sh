@@ -586,6 +586,12 @@ test_shifu_complete_func_args_local_func_bad() {
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
+test_shifu_complete_func_args_options() {
+  expected="--option-bin --option-req --option-def"
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete --op)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
 shifu_test_bad_multiple_completions_single_arg_cmd() {
   shifu_cmd_name bad-multi-arg-completion
   shifu_cmd_func no_op
