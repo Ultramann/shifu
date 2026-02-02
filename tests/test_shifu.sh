@@ -231,6 +231,30 @@ test_shifu_run_required_local_and_global_options() {
     none_set  "leaf-three"                    1 "Required variable, LOCAL_TEST, is not set"
 }
 
+shifu_test_option_missing_value_cmd() {
+  shifu_cmd_name option-missing-value
+  shifu_cmd_help "Test cmd for option without value"
+  shifu_cmd_func no_op
+
+  shifu_cmd_arg -o --option-with-value -- OPTION_VALUE default_value "Option that requires a value"
+  shifu_cmd_arg -t --test-opt -- TEST_OPT test_default "Test option with value"
+}
+
+test_shifu_run_option_missing_value() {
+  run_test() {
+    _shifu_set_for_looping test_cmd_args test_cmd_args
+    expected="Option $1 requires a value"
+    actual=$(shifu_run shifu_test_option_missing_value_cmd $1 2>&1)
+    exit_code=$?
+    shifu_assert_non_zero exit_code $exit_code
+    shifu_assert_string_contains error_message "$actual" "$expected"
+  }
+  shifu_parameterize_test \
+    run_test 1 \
+    long_option "--option-with-value" \
+    short_option "-o"
+}
+
 test_shifu_run_bad_first_cmd() {
   expected="$(
     echo 'Unknown command: bad'
@@ -586,6 +610,24 @@ test_shifu_complete_func_args_local_func_bad() {
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
+test_shifu_complete_func_args_options() {
+  expected="--option-bin --option-req --option-def"
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete --op)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+test_shifu_complete_func_args_flags() {
+  expected="-f"
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -f)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+test_shifu_complete_func_args_flag_options() {
+  expected="--flag-option-bin --flag-option-req --flag-option-def"
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete --flag)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
 shifu_test_bad_multiple_completions_single_arg_cmd() {
   shifu_cmd_name bad-multi-arg-completion
   shifu_cmd_func no_op
@@ -673,6 +715,18 @@ shifu_assert_strings_equal() {
   # 1: identifier, 2: first, 3: second
   [ "${shifu_trace_tests:-}" = true ] && set +x
   shifu_assert_equal "$1" "\"$2\"" "\"$3\""
+  [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
+}
+
+shifu_assert_string_contains() {
+  # 1: identifier, 2: string to search in, 3: string to search for
+  case "$2" in
+    *"$3"*) return 0 ;;
+  esac
+  [ "${shifu_trace_tests:-}" = true ] && set +x
+  shifu_report_context "${p_run_name+$p_run_name }$1: expected string to be contained" \
+    "string: \"${2:-<empty>}\"" "search: \"${3:-<empty>}\""
+  errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
 }
 

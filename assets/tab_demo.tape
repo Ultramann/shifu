@@ -32,16 +32,21 @@ Type "examples/tab "
 Sleep 500ms
 Tab
 Sleep 500ms
-Type "-o "
-Tab 2
+Type "--o"
+Sleep 500ms
+Tab
+Sleep 500ms
+Type "t"
+Sleep 500ms
+Tab
 Sleep 500ms
 Type "m"
-Sleep 300ms
+Sleep 500ms
 Tab
-Sleep 300ms
+Sleep 500ms
 Tab 2
 Sleep 500ms
 Type "e"
-Sleep 300ms
+Sleep 500ms
 Tab
 Sleep 1500ms
