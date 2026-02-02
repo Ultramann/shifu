@@ -289,7 +289,7 @@ If you'd like not to assume that shifu is on the `PATH`, you can instead make su
 
 Since shifu knows all about the structure of your cli it can generate tab completion code for interactive shells that support it, bash and zsh. 
 
-By default, subcommand names can tab completed. If you'd like to add tab completion for option values and positions/remaining arguments shifu provides two `cmd` functions, `shifu_cmd_arg_comp_enum` and `shifu_cmd_arg_comp_func`. These functions can optionally be used after `shifu_cmd_arg` and instruct shifu what the completions for the preceding argument value should be.
+By default, subcommand and option names can tab completed. If you'd like to add tab completion for option values and positions/remaining arguments shifu provides two `cmd` functions, `shifu_cmd_arg_comp_enum` and `shifu_cmd_arg_comp_func`. These functions can optionally be used after `shifu_cmd_arg` and instruct shifu what the completions for the preceding argument value should be.
 
 * `shifu_cmd_arg_comp_enum`: static list of completions
 * `shifu_cmd_arg_comp_func`: function to generate list of completions. Completions are added with the shifu function `shifu_add_completions`
@@ -336,7 +336,7 @@ no_op() { :; }
 shifu_run tab_cmd "$@"
 ```
 
-Below is a gif showing the tab completions working for this cli. If you'd like to test the tab completion from this example you can easily from a bash terminal by running `eval "$(examples/tab --tab-completion bash)"`, then tabbing along to the beat.
+Below is a gif showing the tab completions working for this cli. If you'd like to test the tab completion from this example you can easily from a bash or zsh (requires autoloading `compinit`) terminal by running `eval "$(examples/tab --tab-completion bash)"` or `eval "$(examples/tab --tab-completion zsh)"`, then tabbing along to the beat.
 
 ![Tab completion](/assets/tab_demo.gif)
 
