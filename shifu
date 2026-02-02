@@ -209,12 +209,14 @@ _shifu_update_case_stmt() {
     else
       shifu_required_variables="${shifu_required_variables} $1"
     fi
-    shifu_case_stmt="$shifu_case_stmt) [ \$# -lt 2 ] && { echo \"Option \$1 requires a value\"; _shifu_help \"\$shifu_cmd\" 1; }; $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
+    _shifu_update_case_stmt_option_value_check
+    shifu_case_stmt="$shifu_case_stmt $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
   # option + argument, with default
   elif [ $# -eq 3 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
     _shifu_set_variable "$1" "$2"
-    shifu_case_stmt="$shifu_case_stmt) [ \$# -lt 2 ] && { echo \"Option \$1 requires a value\"; _shifu_help \"\$shifu_cmd\" 1; }; $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
+    _shifu_update_case_stmt_option_value_check
+    shifu_case_stmt="$shifu_case_stmt $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
   # option no argument, binary: default/set
   elif [ $# -eq 4 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
@@ -245,12 +247,14 @@ _shifu_handle_arg_global() {
   # option + argument, required
   elif [ $# -eq 2 ]; then
     shifu_required_variables="${shifu_required_variables} $1"
-    shifu_global_case="${shifu_global_case:-}) [ \\\$# -lt 2 ] && { echo \\\"Option \\\$1 requires a value\\\"; _shifu_help \\\"\\\$shifu_cmd\\\" 1; }; $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
+    _shifu_update_case_stmt_option_value_check global
+    shifu_global_case="$shifu_global_case $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
     shifu_global_help="${shifu_global_help:-} [$1]\n    $2\n    Required"
   # option + argument, with default
   elif [ $# -eq 3 ]; then
     _shifu_set_variable "$1" "$2"
-    shifu_global_case="${shifu_global_case:-}) [ \\\$# -lt 2 ] && { echo \\\"Option \\\$1 requires a value\\\"; _shifu_help \\\"\\\$shifu_cmd\\\" 1; }; $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
+    _shifu_update_case_stmt_option_value_check global
+    shifu_global_case="$shifu_global_case $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
     shifu_global_help="${shifu_global_help:-} [$1]\n    $3\n    Default: $2"
   # option no argument, binary: default/set
   elif [ $# -eq 4 ]; then
@@ -551,6 +555,14 @@ _shifu_update_case_stmt_positional_check() {
     _shifu_append_on_new_line positional_clause "      _shifu_help \"\$shifu_cmd\" 1
     }"
     _shifu_append_on_new_line shifu_case_stmt "    $positional_clause"
+}
+
+_shifu_update_case_stmt_option_value_check() {
+  if [ "${1:-}" = "global" ]; then
+    shifu_global_case="${shifu_global_case:-}) [ \\\$# -lt 2 ] && { echo \\\"Option \\\$1 requires a value\\\"; _shifu_help \\\"\\\$shifu_cmd\\\" 1; };"
+  else
+    shifu_case_stmt="$shifu_case_stmt) [ \$# -lt 2 ] && { echo \"Option \$1 requires a value\"; _shifu_help \"\$shifu_cmd\" 1; };"
+  fi
 }
 
 _shifu_set_for_looping() {
