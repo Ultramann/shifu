@@ -316,9 +316,10 @@ completion_cmd() {
   cmd_name completion
   cmd_func no_op
 
-  cmd_arg -o --option -- OPTION option "Option value"
-  # Add two completions: magic and option
-  cmd_arg_comp_enum magic option
+  cmd_arg -o --option-one -- OPTION_ONE option_one "Option value"
+  cmd_arg -o --option-two -- OPTION_TWO option_two "Option value"
+  # Add two completions: magic and value
+  cmd_arg_comp_enum magic value
 
   cmd_arg -- POSITIONAL "Positional value"
   # Add completions by calling function
