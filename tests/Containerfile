@@ -12,6 +12,7 @@ RUN curl -fsSL https://ftp.gnu.org/gnu/bash/bash-4.4.tar.gz | tar xz \
 
 FROM alpine:3.21
 
+# ncurses for tput colors
 RUN apk add --no-cache dash mksh zsh ncurses
 
 COPY --from=builder /opt/bash-4.4/bin/bash /usr/local/bin/bash
