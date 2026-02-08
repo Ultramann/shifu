@@ -12,13 +12,10 @@ RUN curl -fsSL https://ftp.gnu.org/gnu/bash/bash-4.4.tar.gz | tar xz \
 
 FROM alpine:3.21
 
-# Install shells from apk (ncurses for tput colors)
 RUN apk add --no-cache dash mksh zsh ncurses
 
-# Copy only the bash binary from builder
 COPY --from=builder /opt/bash-4.4/bin/bash /usr/local/bin/bash
 
-# Create symlinks for easy access
 RUN ln -s /bin/busybox /usr/local/bin/ash \
     && ln -s /bin/mksh /usr/local/bin/ksh
 
