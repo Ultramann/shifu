@@ -1,0 +1,25 @@
+FROM alpine:3.21 AS builder
+
+RUN apk add --no-cache gcc musl-dev make curl
+
+RUN curl -fsSL https://ftp.gnu.org/gnu/bash/bash-4.4.tar.gz | tar xz \
+    && cd bash-4.4 \
+    && CFLAGS="-Wno-error=implicit-function-declaration" \
+       ./configure --prefix=/opt/bash-4.4 --without-bash-malloc --disable-nls \
+    && make \
+    && make install \
+    && strip /opt/bash-4.4/bin/bash
+
+FROM alpine:3.21
+
+# Install shells from apk (ncurses for tput colors)
+RUN apk add --no-cache dash mksh zsh ncurses
+
+# Copy only the bash binary from builder
+COPY --from=builder /opt/bash-4.4/bin/bash /usr/local/bin/bash
+
+# Create symlinks for easy access
+RUN ln -s /bin/busybox /usr/local/bin/ash \
+    && ln -s /bin/mksh /usr/local/bin/ksh
+
+WORKDIR /shifu
