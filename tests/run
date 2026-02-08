@@ -8,41 +8,43 @@
 
 . shifu less || exit 1
 
+yellow="$(tput setaf 3)"
+reset="$(tput sgr0)"
+
 run_cmd() {
   cmd_name run
   cmd_func run_tests
   cmd_help "Run shifu tests"
 
   cmd_arg -v --verbose -- verbose "" -v "Show status for each test, pass or fail"
-  cmd_arg -x           -- set_x "" -x "Set execution tracing for each test"
-  cmd_arg    --image   -- image "" "Docker image to run tests in"
-  cmd_arg              -- shell "Shell to run tests in. Options: all, bash, dash, ksh, zsh"
+  cmd_arg -x           -- set_x   "" -x "Set execution tracing for each test"
+  cmd_arg -i --image   -- image   ""    "Docker image to run tests in"
+  cmd_arg              -- shell "Shell to run tests in. Options: all, ash, bash, dash, ksh, zsh"
   cmd_arg              --         "Specific tests to run"
 }
 
 run_tests() {
   shells="ash bash dash ksh zsh"
-  case "$shell" in
-    all) for s in $shells; do run_tests_in_shell "$s" "$@"; done; echo ;;
-    ash|bash|dash|ksh|zsh) run_tests_in_shell "$shell" "$@"; echo ;;
-    *)
-      if [ -n "$image" ]; then
-        run_tests_in_shell "$shell" "$@"; echo
-      else
-        echo "Unknown shell: $shell"; return
-      fi
-      ;;
-  esac
+  if [ -n "$image" ]; then
+    podman run --rm -t -v "$(pwd):/shifu" -w /shifu "$image" \
+      tests/run $verbose $set_x "$shell" "$@"
+  elif [ "$shell" = "all" ]; then
+    for s in $shells; do run_tests_in_shell "$s" "$@"; done
+  else
+    run_tests_in_shell "$shell" "$@"
+  fi
+  echo
 }
 
 run_tests_in_shell() {
   test_shell="$1"; shift
-	printf "\n=========================  %-4s  ==========================\n" $test_shell
-  if [ -n "$image" ]; then
-    podman run --rm -t -v "$(pwd):/shifu" -w /shifu "$image" \
-      "$test_shell" tests/test_shifu.sh $verbose $set_x "$@"
-  else
+  len=${#test_shell}
+  pad=$(( (6 - len) / 2 ))
+  printf "\n=========================%*s %-*s ==========================\n" $pad "" $((6 - pad)) "$test_shell"
+  if command -v "$test_shell" >/dev/null 2>&1; then
     eval "$test_shell tests/test_shifu.sh $verbose $set_x $@"
+  else
+    printf "==================== %s Shell not found %s ====================\n" "$yellow" "$reset"
   fi
 }
 
