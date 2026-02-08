@@ -4,7 +4,7 @@
 #    tests/run <args>
 # If shifu has a bug that causes this script to not start correctly
 # tests can be run manually with
-#    <shell> tests/test_shifu.sh
+#    <shell> tests/test_shifu.sh <args>
 
 . shifu less || exit 1
 
