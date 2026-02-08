@@ -2,12 +2,19 @@
 
 set -u
 
+if command -v tput >/dev/null 2>&1; then
 # to see more color options run:
 #   for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
-shifu_grey="$(tput setaf 0)"
-shifu_red="$(tput setaf 1)"
-shifu_green="$(tput setaf 2)"
-shifu_reset="$(tput sgr0)"
+  shifu_grey="$(tput setaf 0)"
+  shifu_red="$(tput setaf 1)"
+  shifu_green="$(tput setaf 2)"
+  shifu_reset="$(tput sgr0)"
+else
+  shifu_grey=""
+  shifu_red=""
+  shifu_green=""
+  shifu_reset=""
+fi
 
 shifu_test_root_cmd() {
   shifu_cmd_name root
@@ -792,26 +799,23 @@ shifu_run_test_suite() {
     shifu_run_test_and_report "$test_function"
   done
 
-  percent_passed=$(echo "scale=2; $n_passed * 100 / $n_tests" | bc)
   if [ $n_failed -eq 0 ]; then
     color="$shifu_green"
-    percent_passed=100.0
+    percent_passed=100
+  elif [ $n_tests -eq 0 ]; then
+    color="$shifu_red"
+    percent_passed=0
   else
     color="$shifu_red"
+    percent_passed=$((n_passed * 100 / n_tests))
   fi
-  test_report="$percent_passed% tests passed"
-  echo "==================== $color $test_report $shifu_reset ===================="
+  printf "====================%s %3s%% tests passed %s====================\n" \
+  "$color" "$percent_passed" "$shifu_reset"
   exit $n_failed
 }
 
 shifu_read_test_functions() {
-  # 1: test script path
-  test_functions=$(
-    cat "$this_script" | \
-    # -r: extended regex, -n: don't echo lines to stdout
-    sed -rn "/^(test_.*) ?\(\) {/!d;
-            s/^(test_.*) ?\(\) {/\1/p"
-  )
+  test_functions=$(grep -E "^test_.* ?\(\)" "$this_script" | sed 's/() {$//' | sed 's/() $//' | sed 's/ $//')
 }
 
 shifu_set_test_functions() {
