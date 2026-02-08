@@ -15,23 +15,35 @@ run_cmd() {
 
   cmd_arg -v --verbose -- verbose "" -v "Show status for each test, pass or fail"
   cmd_arg -x           -- set_x "" -x "Set execution tracing for each test"
+  cmd_arg    --image   -- image "" "Docker image to run tests in"
   cmd_arg              -- shell "Shell to run tests in. Options: all, bash, dash, ksh, zsh"
   cmd_arg              --         "Specific tests to run"
 }
 
 run_tests() {
-  shells="bash dash ksh zsh"
+  shells="ash bash dash ksh zsh"
   case "$shell" in
     all) for s in $shells; do run_tests_in_shell "$s" "$@"; done; echo ;;
-    bash|dash|ksh|zsh) run_tests_in_shell "$shell" "$@"; echo ;;
-    *) echo "Unknown shell: $shell"; return ;;
+    ash|bash|dash|ksh|zsh) run_tests_in_shell "$shell" "$@"; echo ;;
+    *)
+      if [ -n "$image" ]; then
+        run_tests_in_shell "$shell" "$@"; echo
+      else
+        echo "Unknown shell: $shell"; return
+      fi
+      ;;
   esac
 }
 
 run_tests_in_shell() {
   test_shell="$1"; shift
-	printf "\n===========================  %-4s  ============================\n" $test_shell
-  eval "$test_shell tests/test_shifu.sh $verbose $set_x $@"
+	printf "\n=========================  %-4s  ==========================\n" $test_shell
+  if [ -n "$image" ]; then
+    podman run --rm -t -v "$(pwd):/shifu" -w /shifu "$image" \
+      "$test_shell" tests/test_shifu.sh $verbose $set_x "$@"
+  else
+    eval "$test_shell tests/test_shifu.sh $verbose $set_x $@"
+  fi
 }
 
 shifu_run run_cmd "$@"
