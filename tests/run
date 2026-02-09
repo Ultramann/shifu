@@ -18,6 +18,7 @@ run_cmd() {
 
   cmd_arg -v --verbose -- verbose "" -v "Show status for each test, pass or fail"
   cmd_arg -x           -- set_x   "" -x "Set execution tracing for each test"
+  cmd_arg -t --timeout -- timeout 1     "Timeout in seconds for each shell test suite"
   cmd_arg -i --image   -- image   ""    "Docker image to run tests in"
   cmd_arg              -- shell "Shell to run tests in. Options: all, ash, bash, dash, ksh, zsh"
   cmd_arg              --         "Specific tests to run"
@@ -27,7 +28,7 @@ run_tests() {
   shells="ash bash dash ksh zsh"
   if [ -n "$image" ]; then
     podman run --rm -t -v "$(pwd):/shifu" -w /shifu "$image" \
-      tests/run $verbose $set_x "$shell" "$@"
+      tests/run $verbose $set_x -t "$timeout" "$shell" "$@"
   elif [ "$shell" = "all" ]; then
     for s in $shells; do run_tests_in_shell "$s" "$@"; done
   else
@@ -42,7 +43,7 @@ run_tests_in_shell() {
   pad=$(( (6 - len) / 2 ))
   printf "\n=========================%*s %-*s ==========================\n" $pad "" $((6 - pad)) "$test_shell"
   if command -v "$test_shell" >/dev/null 2>&1; then
-    eval "$test_shell tests/test_shifu.sh $verbose $set_x $@"
+    eval "timeout $timeout $test_shell tests/test_shifu.sh $verbose $set_x $@"
   else
     printf "==================== %s Shell not found %s ====================\n" "$yellow" "$reset"
   fi
