@@ -23,6 +23,7 @@ shifu_test_root_cmd() {
 
   shifu_cmd_arg -g --global-bin -- GLOBAL_BIN false true "A test global bin cmd arg"
   shifu_cmd_arg -G --global-def -- GLOBAL_DEF global_def "A test global def cmd arg"
+  shifu_cmd_arg_comp_enum global_one global_two global_three
 }
 
 shifu_test_sub_one_cmd() {
@@ -644,6 +645,25 @@ test_shifu_complete_global_option_names() {
 test_shifu_complete_global_option_names_no_func() {
   expected=""
   actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --global sub-one)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+
+test_shifu_complete_global_option_values() {
+  expected="global_one global_two global_three"
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one leaf-one -G)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+test_shifu_complete_global_option_values_no_func() {
+  expected=""
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one -G)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+test_shifu_complete_global_option_values_at_root() {
+  expected=""
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" -G)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
