@@ -635,6 +635,18 @@ test_shifu_complete_func_args_flag_options() {
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
+test_shifu_complete_global_option_names() {
+  expected="--global-bin --global-def"
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --global sub-one leaf-one)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+test_shifu_complete_global_option_names_no_func() {
+  expected=""
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --global sub-one)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
 shifu_test_bad_multiple_completions_single_arg_cmd() {
   shifu_cmd_name bad-multi-arg-completion
   shifu_cmd_func no_op
