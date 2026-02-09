@@ -1,0 +1,19 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build test container
+        run: podman build -t shifu-shells -f tests/Containerfile.test .
+
+      - name: Run tests
+        run: tests/run --image shifu-shells all
