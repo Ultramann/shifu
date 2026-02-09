@@ -30,6 +30,9 @@ shifu_test_sub_one_cmd() {
   shifu_cmd_name sub-one
   shifu_cmd_help "Test sub one cmd help"
   shifu_cmd_subs shifu_test_leaf_one_cmd shifu_test_leaf_two_cmd
+
+  shifu_cmd_arg -S --sub-global -- SUB_GLOBAL sub_global "A test sub-one global arg"
+  shifu_cmd_arg_comp_func make_fake_sub_global_completions
 }
 
 shifu_test_sub_two_cmd() {
@@ -124,6 +127,10 @@ make_fake_positional_completions() {
 
 make_fake_remaining_completions() {
   shifu_add_completions remaining args
+}
+
+make_fake_sub_global_completions() {
+  shifu_add_completions sub_global_a sub_global_b sub_global_c
 }
 
 test_shifu_run_good() {
@@ -302,6 +309,9 @@ Subcommands
     Test leaf two cmd help
 
 Options
+  -S, --sub-global [SUB_GLOBAL]
+    A test sub-one global arg
+    Default: sub_global
   -h, --help
     Show this help'
   )"
@@ -664,6 +674,18 @@ test_shifu_complete_global_option_values_no_func() {
 test_shifu_complete_global_option_values_at_root() {
   expected=""
   actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" -G)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+test_shifu_complete_global_option_func_values() {
+  expected="sub_global_a sub_global_b sub_global_c"
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one leaf-one -S)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+test_shifu_complete_global_option_func_values_no_func() {
+  expected=""
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one -S)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
