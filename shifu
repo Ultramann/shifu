@@ -10,6 +10,7 @@ shifu_mode_help_run=3
 shifu_mode_help_subs=4
 shifu_mode_cmds_comp=5
 shifu_mode_args_comp=6
+shifu_mode_opt_names_comp=7
 
 shifu_cmd_name() {
   [ $# -ne 1 ] && _shifu_error "Commands cannot contain spaces got: \"$@\""
@@ -40,6 +41,8 @@ shifu_cmd_arg() {
       [ -n "${shifu_cmd_func:-}" ] && _shifu_update_case_stmt "$@" || _shifu_handle_arg_global "$@" ;;
     $shifu_mode_args_comp)
       _shifu_update_comp_case_stmt "$@" ;;
+    $shifu_mode_opt_names_comp)
+      _shifu_collect_option_names "$@" ;;
   esac
 }
 
@@ -68,6 +71,7 @@ shifu_cmd_arg_loc() {
     $shifu_mode_help_run) _shifu_arg_help "$@" ;;
     $shifu_mode_args_run) _shifu_update_case_stmt "$@" ;;
     $shifu_mode_args_comp) _shifu_update_comp_case_stmt "$@" ;;
+    $shifu_mode_opt_names_comp) _shifu_collect_option_names "$@" ;;
   esac
 }
 
@@ -420,9 +424,39 @@ _shifu_complete() {
     break
   done
   shifu_comp_option_names="${shifu_comp_global_option_names:-}"
-  [ -n "${shifu_cmd_func:-}" ] && _shifu_complete_func_args false "$shifu_cmd" "$@"
-  [ -n "${shifu_cmd_subs:-}" -a $# -eq 0 ] && _shifu_complete_subcmd_names
+  _shifu_set_completing_option
+  if [ "$shifu_completing_option" = true -a -n "${shifu_cmd_func:-}" ]; then
+    _shifu_complete_option_names
+  elif [ "$shifu_completing_option" = false -a -n "${shifu_cmd_func:-}" ]; then
+    _shifu_complete_func_args false "$shifu_cmd" "$@"
+  elif [ "$shifu_completing_option" = false -a -n "${shifu_cmd_subs:-}" -a $# -eq 0 ]; then
+    _shifu_complete_subcmd_names
+  fi
   [ -n "${shifu_completions:-}" ] && echo "$shifu_completions"
+}
+
+_shifu_set_completing_option() {
+  case "${shifu_current_word:-}" in
+    -*|--*) shifu_completing_option=true ;;
+    *) shifu_completing_option=false ;;
+  esac
+}
+
+_shifu_complete_option_names() {
+  shifu_mode=$shifu_mode_opt_names_comp
+  "$shifu_cmd"
+  _shifu_set_for_looping shifu_comp_option_list shifu_comp_option_names
+  _shifu_filter_matching_options "$shifu_current_word" $shifu_comp_option_list
+}
+
+_shifu_collect_option_names() {
+  [ "$1" = -- ] && return
+  shifu_comp_option_names="${shifu_comp_option_names:-}${shifu_comp_option_names:+ }$1"
+  shift
+  while [ $# -gt 1 -a "$1" != -- ]; do
+    shifu_comp_option_names="$shifu_comp_option_names $1"
+    shift
+  done
 }
 
 _shifu_complete_subcmd_names() {
@@ -442,10 +476,7 @@ _shifu_complete_func_args() {
   shifu_arg_completion_set=true
   "$shifu_cmd"
   case "${shifu_current_word:-}" in
-    -*|--*)
-      _shifu_set_for_looping shifu_comp_option_list shifu_comp_option_names
-      _shifu_filter_matching_options "$shifu_current_word" $shifu_comp_option_list
-      return 0 ;;
+    -*|--*) return 0 ;;
   esac
   if [ $shifu_parse_stage -eq 0 -a $shifu_arg_completion_set = false ]; then
     shifu_case_stmt="$shifu_case_stmt shift ;;"
@@ -466,16 +497,15 @@ _shifu_update_comp_case_stmt() {
     shifu_case_stmt="$shifu_case_stmt shift ;;"
   fi
   shifu_arg_completion_set=false
+  _shifu_collect_option_names "$@"
   shifu_no_options=true
   if [ "$1" != -- ]; then
     shifu_no_options=false
     _shifu_append_on_new_line shifu_case_stmt "  $1"
-    shifu_comp_option_names="${shifu_comp_option_names:-}${shifu_comp_option_names:+ }$1"
     shift
   fi
   while [ $# -gt 1 -a "$1" != -- ]; do
     shifu_case_stmt="${shifu_case_stmt}|$1"
-    shifu_comp_option_names="$shifu_comp_option_names $1"
     shift
   done; shift
   # remaining
