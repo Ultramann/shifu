@@ -298,7 +298,7 @@ Options
     Show this help'
   )"
   actual=$(shifu_run shifu_test_root_cmd sub-one sub-bad one two 2>&1)
-  shifu_assert_non_zero exit_code $?
+  shifu_assert_zero exit_code $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
 }
 
