@@ -8,8 +8,8 @@
 
 . ./shifu && shifu_less || exit 1
 
-yellow="$(tput setaf 3)"
-reset="$(tput sgr0)"
+yellow="$(tput setaf 3 2>/dev/null || true)"
+reset="$(tput sgr0 2>/dev/null || true)"
 
 run_cmd() {
   cmd_name run
