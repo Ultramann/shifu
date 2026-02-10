@@ -7,10 +7,18 @@ on:
     branches: [main]
 
 jobs:
-  run-tests:
+  run:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Shell info
+        run: |
+          echo "Default shell: $(readlink -f /bin/sh)"
+          /bin/sh --version 2>&1 || true
+          echo "---"
+          echo "Testing '. ./shifu less':"
+          /bin/sh -c '. ./shifu less; type cmd_name 2>&1 || echo "cmd_name not defined"'
 
       - name: Cache container image
         uses: actions/cache@v4
