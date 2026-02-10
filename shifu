@@ -628,5 +628,3 @@ _shifu_trace() {
     eval "echo $shifu_trace_name: $@"
   fi
 }
-
-if [ $# -gt 0 -a "$1" = less ]; then shifu_less; fi

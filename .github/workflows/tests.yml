@@ -12,20 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Shell info
-        run: |
-          echo "Default shell: $(readlink -f /bin/sh)"
-          /bin/sh --version 2>&1 || true
-          echo "---"
-          echo "Testing '. ./shifu less':"
-          /bin/sh -c '. ./shifu less; type cmd_name 2>&1 || echo "cmd_name not defined"'
-          echo "---"
-          echo "Checking args inside sourced script:"
-          /bin/sh -c 'echo "before source: \$#=$# \$1=$1"; . ./shifu less; echo "after source: \$#=$# \$1=$1"'
-          echo "---"
-          echo "Direct test of shifu conditional:"
-          /bin/sh -c '. ./shifu less; echo "shifu_less defined: $(type shifu_less 2>&1)"'
-
       - name: Cache container image
         uses: actions/cache@v4
         id: cache-image

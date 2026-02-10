@@ -172,7 +172,7 @@ Positional argument:  example
 
 </details>
 
-Note, this example imports `shifu` with the `less` argument to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
+Note, this example calls `shifu_less` after sourcing `shifu` to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
 
 [`examples/quick`](/examples/quick)
 
@@ -180,7 +180,7 @@ Note, this example imports `shifu` with the `less` argument to provide a version
 #! /bin/sh
 
 # Source, "import", shifu
-. "${0%/*}"/shifu less || exit 1
+. "${0%/*}"/shifu && shifu_less || exit 1
 
 # Write root command
 quick_cmd() {
@@ -301,7 +301,7 @@ Below is a very minimal shifu cli script demostrating tab completion capabilitie
 ```sh
 #! /bin/sh
 
-. "${0%/*}"/shifu less || exit 1
+. "${0%/*}"/shifu && shifu_less || exit 1
 
 tab_cmd() {
   cmd_name tab
@@ -370,7 +370,7 @@ These instructions can also be found by running
 
 * How does shifu name its variables/functions, will they collide with those in my script?
   * Shifu takes special care to prefix all variables/functions with `shifu` or `_shifu`
-  * Importing shifu with the `less` argument will create versions of all the [`cmd` functions](#cmd-functions) without the `shifu` prefix. This makes command code less busy, but adds function names that are more likely to cause a collision with those in your script
+  * Calling `shifu_less` after sourcing shifu will create versions of all the [`cmd` functions](#cmd-functions) without the `shifu` prefix. This makes command code less busy, but adds function names that are more likely to cause a collision with those in your script
 
 ## API
 
