@@ -2,19 +2,12 @@
 
 set -u
 
-if command -v tput >/dev/null 2>&1; then
 # to see more color options run:
 #   for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
-  shifu_grey="$(tput setaf 0)"
-  shifu_red="$(tput setaf 1)"
-  shifu_green="$(tput setaf 2)"
-  shifu_reset="$(tput sgr0)"
-else
-  shifu_grey=""
-  shifu_red=""
-  shifu_green=""
-  shifu_reset=""
-fi
+shifu_grey="$(tput setaf 0 2>/dev/null || true)"
+shifu_red="$(tput setaf 1 2>/dev/null || true)"
+shifu_green="$(tput setaf 2 2>/dev/null || true)"
+shifu_reset="$(tput sgr0 2>/dev/null || true)"
 
 shifu_test_root_cmd() {
   shifu_cmd_name root

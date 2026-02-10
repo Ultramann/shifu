@@ -1,0 +1,33 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache container image
+        uses: actions/cache@v4
+        id: cache-image
+        with:
+          path: /tmp/shifu-shells.tar
+          key: shifu-shells-${{ hashFiles('tests/Containerfile.test') }}
+
+      - name: Load cached image
+        if: steps.cache-image.outputs.cache-hit == 'true'
+        run: podman load -i /tmp/shifu-shells.tar
+
+      - name: Build test container
+        if: steps.cache-image.outputs.cache-hit != 'true'
+        run: |
+          podman build -t shifu-shells -f tests/Containerfile.test .
+          podman save -o /tmp/shifu-shells.tar shifu-shells
+
+      - name: Run tests
+        run: tests/run --image shifu-shells all
