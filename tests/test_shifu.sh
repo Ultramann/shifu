@@ -587,7 +587,7 @@ test_shifu_complete_func_args_option_enum() {
 
 test_shifu_complete_func_args_positional_enum() {
   expected="positional arg one"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word -f -A done)
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word -f -A flag)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
@@ -679,6 +679,48 @@ test_shifu_complete_global_option_func_values() {
 test_shifu_complete_global_option_func_values_no_func() {
   expected=""
   actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one -S)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+shifu_test_path_completion_cmd() {
+  shifu_cmd_name path-comp
+  shifu_cmd_func no_op
+
+  shifu_cmd_arg -f --file -- FILE_ARG file_default "File argument"
+  shifu_cmd_arg_comp_path
+  shifu_cmd_arg -- PATH_ARG "Path argument"
+  shifu_cmd_arg_comp_path
+}
+
+test_shifu_complete_path_option() {
+  expected="SHIFU_COMP_PATH"
+  actual=$(_shifu_complete shifu_test_path_completion_cmd --shifu-complete cur_word -f)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+test_shifu_complete_path_positional() {
+  expected="SHIFU_COMP_PATH"
+  actual=$(_shifu_complete shifu_test_path_completion_cmd --shifu-complete cur_word -f filled)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+shifu_test_global_path_completion_cmd() {
+  shifu_cmd_name global-path
+  shifu_cmd_subs shifu_test_leaf_one_cmd
+
+  shifu_cmd_arg -c --config -- CONFIG config_default "Config file"
+  shifu_cmd_arg_comp_path
+}
+
+test_shifu_complete_global_path() {
+  expected="SHIFU_COMP_PATH"
+  actual=$(_shifu_complete shifu_test_global_path_completion_cmd --shifu-complete cur_word leaf-one -c)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
+test_shifu_complete_global_path_no_func() {
+  expected=""
+  actual=$(_shifu_complete shifu_test_global_path_completion_cmd --shifu-complete cur_word -c)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
