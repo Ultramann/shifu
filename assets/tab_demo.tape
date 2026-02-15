@@ -7,7 +7,7 @@ Output assets/tab_demo.gif
 Set Shell "bash"
 Set FontSize 22
 Set Width 1200
-Set Height 500
+Set Height 650
 Set Padding 50
 Set CursorBlink false
 Set Framerate 40
@@ -30,13 +30,18 @@ Ctrl+l
 
 Type "examples/tab "
 Sleep 500ms
+Tab 2
+Sleep 500ms
+Type "c"
 Tab
 Sleep 500ms
-Type "--o"
+Type "--"
 Sleep 500ms
-Tab
+Tab 2
 Sleep 500ms
-Type "t"
+Type "e"
+Sleep 500ms
+Tab 2
 Sleep 500ms
 Tab
 Sleep 500ms
@@ -44,9 +49,18 @@ Type "m"
 Sleep 500ms
 Tab
 Sleep 500ms
+Type "--f"
+Sleep 500ms
+Tab
+Sleep 500ms
+Tab
+Sleep 500ms
+Type "t"
+Sleep 500ms
+Tab
+Sleep 500ms
 Tab 2
 Sleep 500ms
-Type "e"
-Sleep 500ms
+Type "r"
 Tab
 Sleep 1500ms
