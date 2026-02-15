@@ -327,12 +327,12 @@ completion_cmd() {
   cmd_arg_comp_enum magic value
   cmd_arg -f --func -- FUNC_COMP func_comp "Function completion, file extensions"
   cmd_arg_comp_func file_extension_completions
-
-  cmd_arg -- PATH_COMP "Path completion"
+  cmd_arg           -- PATH_COMP "Path completion"
   cmd_arg_comp_path
 }
 
 file_extension_completions() {
+  # dynamically complete with extenstions from files in current directory
   shifu_add_completions "$(ls -1 | grep '\.' | sed 's/.*\.//' | sort -u)"
 }
 
