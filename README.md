@@ -289,12 +289,14 @@ If you'd like not to assume that shifu is on the `PATH`, you can instead make su
 
 Since shifu knows all about the structure of your cli it can generate tab completion code for interactive shells that support it, bash and zsh. 
 
-By default, subcommand and option names can tab completed. If you'd like to add tab completion for option values and positions/remaining arguments shifu provides two `cmd` functions, `shifu_cmd_arg_comp_enum` and `shifu_cmd_arg_comp_func`. These functions can optionally be used after `shifu_cmd_arg` and instruct shifu what the completions for the preceding argument value should be.
-
+By default, subcommand and option names can be tab completed. If you'd like to add tab completion for option values and positions/remaining arguments shifu provides three `cmd` functions
 * `shifu_cmd_arg_comp_enum`: static list of completions
 * `shifu_cmd_arg_comp_func`: function to generate list of completions. Completions are added with the shifu function `shifu_add_completions`
+* `shifu_cmd_arg_comp_path`: ties into your shell completion framework to enable each path completions for directories and files
 
-Below is a very minimal shifu cli script demostrating tab completion capabilities.
+These functions can optionally be used after `shifu_cmd_arg` and instruct shifu what the completions for the preceding argument value should be.
+
+Below is a small shifu cli script demostrating tab completion capabilities.
 
 [`examples/tab`](/examples/tab)
 
@@ -306,29 +308,38 @@ Below is a very minimal shifu cli script demostrating tab completion capabilitie
 tab_cmd() {
   cmd_name tab
   cmd_help "A tab completion shifu example"
-  cmd_long "An example shifu cli demonstrating
-  * subcommand completion
-  * option value completion"
-  cmd_subs completion_cmd
+  cmd_long "An example shifu cli demonstrating completions for
+  * subcommand names
+  * option names
+  * option values with
+    * enum completions
+    * function completions
+    * path completions"
+  cmd_subs completion_cmd demo_cmd
 }
 
 completion_cmd() {
   cmd_name completion
+  cmd_help "Main command with example options and tab completion capabilities"
   cmd_func no_op
 
-  cmd_arg -o --option-one -- OPTION_ONE option_one "Option value"
-  cmd_arg -o --option-two -- OPTION_TWO option_two "Option value"
-  # Add two completions: magic and value
+  cmd_arg -e --enum -- ENUM_COMP enum_comp "Enum completion"
   cmd_arg_comp_enum magic value
+  cmd_arg -f --func -- FUNC_COMP func_comp "Function completion, file extensions"
+  cmd_arg_comp_func file_extension_completions
 
-  cmd_arg -- POSITIONAL "Positional value"
-  # Add completions by calling function
-  cmd_arg_comp_func directory_completions
+  cmd_arg -- PATH_COMP "Path completion"
+  cmd_arg_comp_path
 }
 
-directory_completions() {
-  # Add completions when function is called
-  shifu_add_completions "$(ls -d */)"
+file_extension_completions() {
+  shifu_add_completions "$(ls -1 | grep '\.' | sed 's/.*\.//' | sort -u)"
+}
+
+demo_cmd() {
+  cmd_name demo
+  cmd_help "No-op command to show multiple subcommand completion options"
+  cmd_func no_op
 }
 
 no_op() { :; }
@@ -336,7 +347,17 @@ no_op() { :; }
 shifu_run tab_cmd "$@"
 ```
 
-Below is a gif showing the tab completions working for this cli. If you'd like to test the tab completion from this example you can easily from a bash or zsh (requires autoloading `compinit`) terminal by running `eval "$(examples/tab --tab-completion bash)"` or `eval "$(examples/tab --tab-completion zsh)"`, then tabbing along to the beat.
+Below is a gif showing the tab completions working for this cli. If you'd like to test the tab completion from this example you can easily from a bash or zsh (requires autoloading `compinit`) terminal by running
+```sh
+export PATH="$PATH:$(pwd)/examples"
+```
+so your shell can find the example `tab` cli, and
+```sh
+eval "$(examples/tab --tab-completion bash)"
+# or, choose for your shell
+eval "$(examples/tab --tab-completion zsh)"
+```
+then tabbing along to the beat.
 
 ![Tab completion](/assets/tab_demo.gif)
 
@@ -469,7 +490,7 @@ These instructions can also be found by running
 
 #### `shifu_cmd_arg_loc`
 * Local argument configuration
-* Same purpose and usage as `shifu_cmd_arg_loc` except subcommands do not inherit configuration
+* Same purpose and usage as `shifu_cmd_arg` except subcommands do not inherit configuration
 * Instead option arguments will be parsed greedily when parsing subcommand names allowing usage like
   ```sh
   cli root --local sub --args
