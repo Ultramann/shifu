@@ -29,7 +29,7 @@ completion_cmd() {
 }
 
 file_extension_completions() {
-  # dynamically complete with extenstions from files in current directory
+  # dynamically complete with extensions from files in current directory
   shifu_add_completions "$(ls -1 | grep '\.' | sed 's/.*\.//' | sort -u)"
 }
 

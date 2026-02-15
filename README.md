@@ -26,7 +26,7 @@ Shell scripts make gluing together functionality from different command line pro
 
 ## Quickstart
 
-Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ contains calls shifu `cmd` functions. Shifu `cmd` functions provide a dsl which shifu uses to wire together your cli. Commands are passed to shifu's command runner, `shifu_run`, or referenced as subcommands.
+Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ contains calls to shifu `cmd` functions. Shifu `cmd` functions provide a dsl which shifu uses to wire together your cli. Commands are passed to shifu's command runner, `shifu_run`, or referenced as subcommands.
 
 Below is a very minimal, introduction shifu cli script.
 
@@ -273,7 +273,7 @@ curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
 
 ## Import
 
-To "import" shifu you simply need to source its file path. If you've installed shifu to location on your `PATH` you can include the following at the top of your script.
+To "import" shifu you simply need to source its file path. If you've installed shifu to a location on your `PATH` you can include the following at the top of your script.
 
 ```sh
 . shifu || exit 1
@@ -292,11 +292,11 @@ Since shifu knows all about the structure of your cli it can generate tab comple
 By default, subcommand and option names can be tab completed. If you'd like to add tab completion for option values and positions/remaining arguments shifu provides three `cmd` functions
 * `shifu_cmd_arg_comp_enum`: static list of completions
 * `shifu_cmd_arg_comp_func`: function to generate list of completions. Completions are added with the shifu function `shifu_add_completions`
-* `shifu_cmd_arg_comp_path`: ties into your shell completion framework to enable each path completions for directories and files
+* `shifu_cmd_arg_comp_path`: ties into your shell completion framework to enable easy path completions for directories and files
 
 These functions can optionally be used after `shifu_cmd_arg` and instruct shifu what the completions for the preceding argument value should be.
 
-Below is a small shifu cli script demostrating tab completion capabilities.
+Below is a small shifu cli script demonstrating tab completion capabilities.
 
 [`examples/tab`](/examples/tab)
 
@@ -332,7 +332,7 @@ completion_cmd() {
 }
 
 file_extension_completions() {
-  # dynamically complete with extenstions from files in current directory
+  # dynamically complete with extensions from files in current directory
   shifu_add_completions "$(ls -1 | grep '\.' | sed 's/.*\.//' | sort -u)"
 }
 
@@ -366,7 +366,7 @@ then tabbing along to the beat.
 1. Ensure your cli is in a directory on your shell's `PATH`
 1. Ensure your cli has access to shifu; either by putting shifu in the same `PATH` directory as your cli or adding shifu to another `PATH` directory
 1. If you're using zsh, ensure that you've loaded and run `compinit` before the following eval call in your zshrc file
-1. Add the following line the your shell's rc file, replacing `<your-cli>` with the name of your cli and `<shell>` with a supported shell: bash or zsh
+1. Add the following line to your shell's rc file, replacing `<your-cli>` with the name of your cli and `<shell>` with a supported shell: bash or zsh
    ```sh
    eval "$(<your-cli> --tab-completion <shell>)"
    ```
@@ -403,7 +403,7 @@ These instructions can also be found by running
 * Dispatches call by parsing arguments in `"$@"` based on information in command function
 * Parses arguments that match subcommand names until the subcommand specifies a function to call with `shifu_cmd_func`
 * Parses all unparsed arguments into variables declared in `shifu_cmd_arg` calls
-* Calls the function in `shifu_cmd_func` passing any still unparsed 
+* Calls the function in `shifu_cmd_func` passing any still unparsed arguments
 * Example
   ```sh
   shifu_run root_cmd "$@"
