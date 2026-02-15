@@ -5,26 +5,38 @@
 tab_cmd() {
   cmd_name tab
   cmd_help "A tab completion shifu example"
-  cmd_long "An example shifu cli demonstrating
-  * subcommand completion
-  * option value completion"
-  cmd_subs completion_cmd
+  cmd_long "An example shifu cli demonstrating completions for
+  * subcommand names
+  * option names
+  * option values with
+    * enum completions
+    * function completions
+    * path completions"
+  cmd_subs completion_cmd demo_cmd
 }
 
 completion_cmd() {
   cmd_name completion
+  cmd_help "Main command with example options and tab completion capabilities"
   cmd_func no_op
 
-  cmd_arg -o --option-one -- OPTION_ONE option_one "Option value"
-  cmd_arg -o --option-two -- OPTION_TWO option_two "Option value"
+  cmd_arg -e --enum -- ENUM_COMP enum_comp "Enum completion"
   cmd_arg_comp_enum magic value
+  cmd_arg -f --func -- FUNC_COMP func_comp "Function completion, file extensions"
+  cmd_arg_comp_func file_extension_completions
 
-  cmd_arg -- POSITIONAL "Positional value"
-  cmd_arg_comp_func directory_completions
+  cmd_arg -- PATH_COMP "Path completion"
+  cmd_arg_comp_path
 }
 
-directory_completions() {
-  shifu_add_completions "$(ls -d */)"
+file_extension_completions() {
+  shifu_add_completions "$(ls -1 | grep '\.' | sed 's/.*\.//' | sort -u)"
+}
+
+demo_cmd() {
+  cmd_name demo
+  cmd_help "No-op command to show multiple subcommand completion options"
+  cmd_func no_op
 }
 
 no_op() { :; }
