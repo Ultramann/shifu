@@ -421,11 +421,12 @@ _shifu_generate_bash_tab_completion() {
   full_words=( \"\${COMP_WORDS[@]:1:\${#COMP_WORDS[@]}-2}\" )
   completions=\$($shifu_cmd_name --shifu-complete \"\$current\" \"\${full_words[@]}\")
   case \"\$completions\" in
-    SHIFU_COMP_PATH) COMPREPLY=( \$(compgen -f -- \"\$current\") ); compopt -o filenames ;;
-    *) COMPREPLY=( \$(compgen -W \"\$completions\" -- \"\$current\") ) ;;
+    SHIFU_COMP_PATH) COMPREPLY=( \$(compgen -f -- \"\$current\") ) ;;
+    *) COMPREPLY=( \$(compgen -W \"\$completions\" -- \"\$current\") )
+       compopt +o filenames 2>/dev/null ;;
   esac
 }
-complete -F _${shifu_cmd_name}_completion $shifu_cmd_name"
+complete -o filenames -F _${shifu_cmd_name}_completion $shifu_cmd_name"
 }
 
 _shifu_complete() {
