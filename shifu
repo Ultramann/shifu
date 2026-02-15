@@ -403,16 +403,7 @@ Instructions
 4. Add the following to your shell's rc file
      eval \"\$($shifu_cmd_name --tab-completion <shell>)\"
    replacing <shell> with your shell. Supported shells:
-     zsh, bash"
-}
-
-_shifu_generate_zsh_tab_completion() {
-  echo "_${shifu_cmd_name}_completion() {
-  current=\"\${words[\$CURRENT]}\"
-  full_words=( \"\${words[@]:1:\${#words[@]}-2}\" )
-  compadd -q -- \$($shifu_cmd_name --shifu-complete \"\$current\" \"\${full_words[@]}\")
-}
-compdef _${shifu_cmd_name}_completion $shifu_cmd_name"
+     bash, zsh"
 }
 
 _shifu_generate_bash_tab_completion() {
@@ -427,6 +418,19 @@ _shifu_generate_bash_tab_completion() {
   esac
 }
 complete -o filenames -F _${shifu_cmd_name}_completion $shifu_cmd_name"
+}
+
+_shifu_generate_zsh_tab_completion() {
+  echo "_${shifu_cmd_name}_completion() {
+  current=\"\${words[\$CURRENT]}\"
+  full_words=( \"\${words[@]:1:\${#words[@]}-2}\" )
+  completions=\$($shifu_cmd_name --shifu-complete \"\$current\" \"\${full_words[@]}\")
+  case \"\$completions\" in
+    SHIFU_COMP_PATH) _files ;;
+    *) compadd -q -- \${=completions} ;;
+  esac
+}
+compdef _${shifu_cmd_name}_completion $shifu_cmd_name"
 }
 
 _shifu_complete() {
