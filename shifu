@@ -664,6 +664,10 @@ _shifu_set_variable() {
   _shifu_error "Invalid variable name: $1"
 }
 
+_shifu_list_append() {
+  eval "$1=\"\${$1:-}\${$1:+ }$2\""
+}
+
 _shifu_error_if_invalid_arg_order() {
   [ $2 -eq 0 ] && return
   _shifu_error "No options after positional/remaining arguments: $1"
@@ -672,10 +676,6 @@ _shifu_error_if_invalid_arg_order() {
 _shifu_error() {
   echo "$1"
   exit 1
-}
-
-_shifu_list_append() {
-  eval "$1=\"\${$1:-}\${$1:+ }$2\""
 }
 
 _shifu_trace() {
