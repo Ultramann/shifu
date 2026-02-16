@@ -175,6 +175,7 @@ _shifu_parse_args() {
   shifu_parse_stage=0
   shifu_parse_local="$1"; shifu_cmd="$2"; shift 2
   [ "$shifu_parse_local" = true ] && shifu_required_variables_local=""
+  shifu_required_positionals=""
   shifu_case_stmt="case \"\$1\" in"
   if [ "$shifu_parse_local" = false -a -n "${shifu_global_case:-}" ]; then
     _shifu_append_on_new_line shifu_case_stmt "  ${shifu_global_case:-}"
@@ -196,6 +197,13 @@ _shifu_parse_args() {
   for shifu_required_var in $shifu_required_vars; do
     eval "if [ \"\${$shifu_required_var+set}\" != set ]; then
       echo \"Required variable, $shifu_required_var, is not set\"
+      exit 1
+    fi"
+  done
+  _shifu_set_for_looping shifu_required_positionals shifu_required_positionals
+  for shifu_required_pos in $shifu_required_positionals; do
+    eval "if [ -z \"\${$shifu_required_pos}\" ]; then
+      echo \"Missing positional argument $shifu_required_pos\"
       exit 1
     fi"
   done
@@ -229,7 +237,7 @@ _shifu_update_case_stmt() {
       _shifu_error "No arguments after remaining are declared: $1"
     fi
     _shifu_set_variable "$1" ""
-    _shifu_update_case_stmt_positional_check "$1"
+    shifu_required_positionals="${shifu_required_positionals}${shifu_required_positionals:+ }$1"
     _shifu_append_on_new_line shifu_case_stmt "    $1=\\\$1; shift; _shifu_ack_arg"
   # option + argument, required
   elif [ $# -eq 2 ]; then
@@ -639,17 +647,6 @@ _shifu_error_if_options() {
     esac
     shift
   done
-}
-
-_shifu_update_case_stmt_positional_check() {
-    positional_clause="[ \$# -eq 0 ] && {"
-    if [ "$shifu_allow_options_anywhere" = false ]; then
-      _shifu_append_on_new_line positional_clause "      _shifu_error_if_options \"\$1\" && return 1"
-    fi
-    _shifu_append_on_new_line positional_clause "      echo 'Missing positional argument $1'"
-    _shifu_append_on_new_line positional_clause "      _shifu_help \"\$shifu_cmd\" 1
-    }"
-    _shifu_append_on_new_line shifu_case_stmt "    $positional_clause"
 }
 
 _shifu_update_case_stmt_option_value_check() {
