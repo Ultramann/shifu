@@ -17,12 +17,20 @@ Shell scripts make gluing together functionality from different command line pro
 
 ## Table of contents
 
-* [Quickstart](#quickstart)
 * [Installation](#installation)
+* [Quickstart](#quickstart)
 * [Import](#import)
 * [Tab completion](#tab-completion)
 * [FAQ](#faq)
 * [API](#api)
+
+## Installation
+
+Since shifu is just a single POSIX-compatible script, all you need to do is get a copy of it and either put it in a location on your `PATH` or in the same directory as your cli script.
+
+```sh
+curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
+```
 
 ## Quickstart
 
@@ -261,14 +269,6 @@ The diagram below shows how shifu is connecting together this cli script to prin
         "Global binary option"       │    "Name to greet"            │
     }                                │ }                             │
                                      └───────────────────────────────┘
-```
-
-## Installation
-
-Since shifu is just a single POSIX-compatible script, all you need to do is get a copy of it and either put it in a location on your `PATH` or in the same directory as your cli script.
-
-```sh
-curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
 ```
 
 ## Import
