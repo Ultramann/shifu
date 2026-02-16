@@ -197,14 +197,14 @@ _shifu_parse_args() {
   for shifu_req_variables in $shifu_req_variables; do
     eval "if [ \"\${$shifu_req_variables+set}\" != set ]; then
       echo \"Required variable, $shifu_req_variables, is not set\"
-      exit 1
+      _shifu_help \"$shifu_cmd\" 1
     fi"
   done
   _shifu_set_for_looping shifu_req_positionals shifu_required_positionals
   for shifu_req_positional in $shifu_req_positionals; do
     eval "if [ -z \"\${$shifu_req_positional}\" ]; then
       echo \"Missing positional argument $shifu_req_positional\"
-      exit 1
+      _shifu_help \"$shifu_cmd\" 1
     fi"
   done
   [ "$shifu_parse_local" = true -o $# -eq 0 -o "$shifu_allow_options_anywhere" != false ] && return
