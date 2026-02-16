@@ -201,19 +201,21 @@ test_shifu_run_args_not_required_unset() {
   shifu_assert_equal array_length $# 0
 }
 
-test_shifu_run_required_options_unset() {
+test_shifu_run_required_args_unset() {
   run_test() {
     test_cmd_args="$1"
     _shifu_set_for_looping test_cmd_args test_cmd_args
     actual=$(shifu_run shifu_test_all_options_cmd $test_cmd_args)
     shifu_assert_non_zero exit_code $?
-    shifu_assert_strings_equal error_message "$2" "$actual"
+    shifu_assert_string_contains error_message "$actual" "$2"
   }
   shifu_parameterize_test \
     run_test 2 \
     flag        ""                                        "Required variable, FLAG_REQ, is not set" \
     option      "-a flag_value"                           "Required variable, OPTION_REQ, is not set" \
-    flag_option "-a flag_value --option-req option_value" "Required variable, FLAG_OPTION_REQ, is not set"
+    flag_option "-a flag_value --option-req option_value" "Required variable, FLAG_OPTION_REQ, is not set" \
+    positional  "-a flag_value --option-req option_value --flag-option-req flag_option_value" \
+                "Missing positional argument POSITIONAL_ARG_1"
 }
 
 shifu_test_required_options_cmd() {
@@ -228,9 +230,9 @@ test_shifu_run_required_local_and_global_options() {
   run_test() {
     test_cmd_args="$1"
     _shifu_set_for_looping test_cmd_args test_cmd_args
-   actual=$(shifu_run shifu_test_required_options_cmd $test_cmd_args)
-   shifu_assert_equal exit_code $2 $?
-   shifu_assert_equal error_message "$3" "$actual"
+    actual=$(shifu_run shifu_test_required_options_cmd $test_cmd_args)
+    shifu_assert_equal exit_code $2 $?
+    shifu_assert_string_contains error_message "$actual" "$3"
   }
   shifu_parameterize_test \
     run_test 3 \

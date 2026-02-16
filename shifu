@@ -102,7 +102,7 @@ shifu_cmd_arg_loc() {
 
 shifu_add_completions() {
   for completion in "$@"; do
-    _shifu_add_completion "$completion"
+    _shifu_list_append shifu_completions "$completion"
   done
 }
 
@@ -175,6 +175,7 @@ _shifu_parse_args() {
   shifu_parse_stage=0
   shifu_parse_local="$1"; shifu_cmd="$2"; shift 2
   [ "$shifu_parse_local" = true ] && shifu_required_variables_local=""
+  shifu_required_positionals=""
   shifu_case_stmt="case \"\$1\" in"
   if [ "$shifu_parse_local" = false -a -n "${shifu_global_case:-}" ]; then
     _shifu_append_on_new_line shifu_case_stmt "  ${shifu_global_case:-}"
@@ -189,14 +190,21 @@ _shifu_parse_args() {
     eval "$shifu_case_stmt"
   done
   if [ "$shifu_parse_local" = true ]; then
-    _shifu_set_for_looping shifu_required_vars shifu_required_variables_local
+    _shifu_set_for_looping shifu_req_variables shifu_required_variables_local
   else
-    _shifu_set_for_looping shifu_required_vars shifu_required_variables
+    _shifu_set_for_looping shifu_req_variables shifu_required_variables
   fi
-  for shifu_required_var in $shifu_required_vars; do
-    eval "if [ \"\${$shifu_required_var+set}\" != set ]; then
-      echo \"Required variable, $shifu_required_var, is not set\"
-      exit 1
+  for shifu_req_variables in $shifu_req_variables; do
+    eval "if [ \"\${$shifu_req_variables+set}\" != set ]; then
+      echo \"Required variable, $shifu_req_variables, is not set\"
+      _shifu_help \"$shifu_cmd\" 1
+    fi"
+  done
+  _shifu_set_for_looping shifu_req_positionals shifu_required_positionals
+  for shifu_req_positional in $shifu_req_positionals; do
+    eval "if [ -z \"\${$shifu_req_positional}\" ]; then
+      echo \"Missing positional argument $shifu_req_positional\"
+      _shifu_help \"$shifu_cmd\" 1
     fi"
   done
   [ "$shifu_parse_local" = true -o $# -eq 0 -o "$shifu_allow_options_anywhere" != false ] && return
@@ -229,15 +237,15 @@ _shifu_update_case_stmt() {
       _shifu_error "No arguments after remaining are declared: $1"
     fi
     _shifu_set_variable "$1" ""
-    _shifu_update_case_stmt_positional_check "$1"
+    _shifu_list_append shifu_required_positionals "$1"
     _shifu_append_on_new_line shifu_case_stmt "    $1=\\\$1; shift; _shifu_ack_arg"
   # option + argument, required
   elif [ $# -eq 2 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
     if [ "$shifu_parse_local" = true ]; then
-      shifu_required_variables_local="${shifu_required_variables_local} $1"
+      _shifu_list_append shifu_required_variables_local "$1"
     else
-      shifu_required_variables="${shifu_required_variables} $1"
+      _shifu_list_append shifu_required_variables "$1"
     fi
     _shifu_update_case_stmt_option_value_check
     shifu_case_stmt="$shifu_case_stmt $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
@@ -276,7 +284,7 @@ _shifu_handle_arg_global() {
     _shifu_error "Positional arguments cannot be global: $1"
   # option + argument, required
   elif [ $# -eq 2 ]; then
-    shifu_required_variables="${shifu_required_variables} $1"
+    _shifu_list_append shifu_required_variables "$1"
     _shifu_update_case_stmt_option_value_check global
     shifu_global_case="$shifu_global_case $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
     shifu_global_help="${shifu_global_help:-} [$1]\n    $2\n    Required"
@@ -324,7 +332,7 @@ _shifu_help() {
 }
 
 _shifu_add_to_help_string() {
-  [ -z "${shifu_help_string:-}" ] && shifu_help_string="$1" || shifu_help_string="$shifu_help_string\n\n$1"
+  shifu_help_string="${shifu_help_string:-}${shifu_help_string:+\n\n}$1"
 }
 
 _shifu_make_subcmd_help() {
@@ -486,7 +494,7 @@ _shifu_complete_option_names() {
 
 _shifu_collect_option_names() {
   [ "$1" = -- ] && return
-  shifu_comp_option_names="${shifu_comp_option_names:-}${shifu_comp_option_names:+ }$1"
+  _shifu_list_append shifu_comp_option_names "$1"
   shift
   while [ $# -gt 1 -a "$1" != -- ]; do
     shifu_comp_option_names="$shifu_comp_option_names $1"
@@ -499,7 +507,7 @@ _shifu_complete_subcmd_names() {
   _shifu_set_for_looping shifu_cmds shifu_cmd_subs
   for shifu_cmd in $shifu_cmds; do
     "$shifu_cmd"
-    _shifu_add_completion "$shifu_cmd_name"
+    _shifu_list_append shifu_completions "$shifu_cmd_name"
   done
 }
 
@@ -603,20 +611,12 @@ _shifu_handle_comp_arg_global() {
   shifu_global_comp_case="${shifu_global_comp_case:-})$shifu_tmp"
 }
 
-_shifu_add_completion() {
-    if [ -z "${shifu_completions:-}" ]; then
-      shifu_completions="$1"
-    else
-      shifu_completions="$shifu_completions $1"
-    fi
-}
-
 _shifu_filter_matching_options() {
   shifu_filter_current_word="$1"; shift
   for shifu_filter_option in "$@"; do
     case "$shifu_filter_option" in
       "$shifu_filter_current_word"*)
-        _shifu_add_completion "$shifu_filter_option" ;;
+        _shifu_list_append shifu_completions "$shifu_filter_option" ;;
     esac
   done
 }
@@ -641,17 +641,6 @@ _shifu_error_if_options() {
   done
 }
 
-_shifu_update_case_stmt_positional_check() {
-    positional_clause="[ \$# -eq 0 ] && {"
-    if [ "$shifu_allow_options_anywhere" = false ]; then
-      _shifu_append_on_new_line positional_clause "      _shifu_error_if_options \"\$1\" && return 1"
-    fi
-    _shifu_append_on_new_line positional_clause "      echo 'Missing positional argument $1'"
-    _shifu_append_on_new_line positional_clause "      _shifu_help \"\$shifu_cmd\" 1
-    }"
-    _shifu_append_on_new_line shifu_case_stmt "    $positional_clause"
-}
-
 _shifu_update_case_stmt_option_value_check() {
   if [ "${1:-}" = "global" ]; then
     shifu_global_case="${shifu_global_case:-}) [ \\\$# -lt 2 ] && { echo \\\"Option \\\$1 requires a value\\\"; _shifu_help \\\"\\\$shifu_cmd\\\" 1; };"
@@ -673,6 +662,10 @@ _shifu_set_variable() {
   eval "$1=\"$2\"" > /dev/null 2>&1
   [ $? -eq 0 ] && return 0
   _shifu_error "Invalid variable name: $1"
+}
+
+_shifu_list_append() {
+  eval "$1=\"\${$1:-}\${$1:+ }$2\""
 }
 
 _shifu_error_if_invalid_arg_order() {

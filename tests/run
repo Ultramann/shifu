@@ -29,6 +29,7 @@ run_tests() {
   if [ -n "$image" ]; then
     podman run --rm -t -v "$(pwd):/shifu" -w /shifu "$image" \
       tests/run $verbose $set_x -t "$timeout" "$shell" "$@"
+    return
   elif [ "$shell" = "all" ]; then
     for s in $shells; do run_tests_in_shell "$s" "$@"; done
   else
