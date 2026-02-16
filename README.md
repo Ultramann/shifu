@@ -29,7 +29,7 @@ Shell scripts are great for gluing commands together. But when you need to make 
 Since shifu is just a single POSIX-compatible script, all you need to do is get a copy of it and either put it in a location on your `PATH` or in the same directory as your cli script.
 
 ```sh
-curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
+curl -O https://raw.githubusercontent.com/Ultramann/shifu/v0.1.0/shifu
 ```
 
 ## Quickstart
