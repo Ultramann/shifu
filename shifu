@@ -102,7 +102,7 @@ shifu_cmd_arg_loc() {
 
 shifu_add_completions() {
   for completion in "$@"; do
-    _shifu_add_completion "$completion"
+    _shifu_list_append shifu_completions "$completion"
   done
 }
 
@@ -507,7 +507,7 @@ _shifu_complete_subcmd_names() {
   _shifu_set_for_looping shifu_cmds shifu_cmd_subs
   for shifu_cmd in $shifu_cmds; do
     "$shifu_cmd"
-    _shifu_add_completion "$shifu_cmd_name"
+    _shifu_list_append shifu_completions "$shifu_cmd_name"
   done
 }
 
@@ -611,16 +611,12 @@ _shifu_handle_comp_arg_global() {
   shifu_global_comp_case="${shifu_global_comp_case:-})$shifu_tmp"
 }
 
-_shifu_add_completion() {
-  _shifu_list_append shifu_completions "$1"
-}
-
 _shifu_filter_matching_options() {
   shifu_filter_current_word="$1"; shift
   for shifu_filter_option in "$@"; do
     case "$shifu_filter_option" in
       "$shifu_filter_current_word"*)
-        _shifu_add_completion "$shifu_filter_option" ;;
+        _shifu_list_append shifu_completions "$shifu_filter_option" ;;
     esac
   done
 }
