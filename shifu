@@ -174,7 +174,7 @@ _shifu_parse_args() {
   shifu_mode=$shifu_mode_args_run
   shifu_parse_stage=0
   shifu_parse_local="$1"; shifu_cmd="$2"; shift 2
-  [ "$shifu_parse_local" = true ] && shifu_required_variables_loc=""
+  [ "$shifu_parse_local" = true ] && shifu_required_variables_local=""
   shifu_required_positionals=""
   shifu_case_stmt="case \"\$1\" in"
   if [ "$shifu_parse_local" = false -a -n "${shifu_global_case:-}" ]; then
@@ -190,20 +190,20 @@ _shifu_parse_args() {
     eval "$shifu_case_stmt"
   done
   if [ "$shifu_parse_local" = true ]; then
-    _shifu_set_for_looping shifu_required_vars shifu_required_variables_loc
+    _shifu_set_for_looping shifu_req_variables shifu_required_variables_local
   else
-    _shifu_set_for_looping shifu_required_vars shifu_required_variables
+    _shifu_set_for_looping shifu_req_variables shifu_required_variables
   fi
-  for shifu_required_var in $shifu_required_vars; do
-    eval "if [ \"\${$shifu_required_var+set}\" != set ]; then
-      echo \"Required variable, $shifu_required_var, is not set\"
+  for shifu_req_variables in $shifu_req_variables; do
+    eval "if [ \"\${$shifu_req_variables+set}\" != set ]; then
+      echo \"Required variable, $shifu_req_variables, is not set\"
       exit 1
     fi"
   done
-  _shifu_set_for_looping shifu_required_positionals shifu_required_positionals
-  for shifu_required_pos in $shifu_required_positionals; do
-    eval "if [ -z \"\${$shifu_required_pos}\" ]; then
-      echo \"Missing positional argument $shifu_required_pos\"
+  _shifu_set_for_looping shifu_req_positionals shifu_required_positionals
+  for shifu_req_positional in $shifu_req_positionals; do
+    eval "if [ -z \"\${$shifu_req_positional}\" ]; then
+      echo \"Missing positional argument $shifu_req_positional\"
       exit 1
     fi"
   done
@@ -243,7 +243,7 @@ _shifu_update_case_stmt() {
   elif [ $# -eq 2 ]; then
     _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
     if [ "$shifu_parse_local" = true ]; then
-      _shifu_list_append shifu_required_variables_loc "$1"
+      _shifu_list_append shifu_required_variables_local "$1"
     else
       _shifu_list_append shifu_required_variables "$1"
     fi
