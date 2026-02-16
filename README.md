@@ -3,7 +3,7 @@
   <img src="./assets/banner-light.svg#gh-light-mode-only" width="65%">
 </p>
 
-**SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework that makes creating powerful clis from shell scripts simple. Shifu has the following qualities:
+**SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework that makes creating powerful clis from shell scripts simple. Shifu has the following features:
 
 * declarative argument parsing
 * subcommand dispatching
@@ -19,7 +19,7 @@ Shell scripts are great for gluing commands together. But when you need to make 
 
 * [Installation](#installation)
 * [Quickstart](#quickstart)
-* [Import](#import)
+* [Subcommand dispatch](#subcommand-dispatch)
 * [Tab completion](#tab-completion)
 * [FAQ](#faq)
 * [API](#api)
@@ -96,13 +96,37 @@ intro_cmd() {            │       │      │
      └──────────────────────────────────┘ 
 ```
 
-Let's take a look at a more complicated example cli, [`examples/quick`](/examples/quick). This demo cli has two named subcommands, `hello` and `start`, each with their own arguments. First we'll see a gif interaction with the cli followed by the cli's annotated source.
+## Subcommand dispatch
+
+Shifu supports nested subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. Arguments declared in parent commands are automatically inherited by descendants. Here's what the minimal structure a subcommnd cli looks like (a complete example can be found below):
+
+```sh
+root_cmd() {
+  shifu_cmd_name root
+  shifu_cmd_subs sub_cmd
+}
+
+# referenced by name in root_cmd -> shifu_cmd_subs
+sub_cmd() {
+  shifu_cmd_name sub
+  shifu_cmd_func sub_func
+}
+
+# referenced by name in sub_cmd -> shifu_cmd_func
+sub_func() {
+  echo "in subcommand"
+}
+
+shifu_run root_cmd "$@"
+```
+
+Below is an example cli, [`examples/quick`](/examples/quick), with two subcommands, `hello` and `start`, each with their own arguments.
 
 ![Quickstart](/assets/quick_demo.gif)
 
 <details>
 
-<summary>Static Output</summary>
+<summary>Static output</summary>
 
 ```txt
 $ examples/quick -h
@@ -180,6 +204,10 @@ Positional argument:  example
 
 </details>
 
+<details>
+
+<summary>Source code</summary>
+
 Note, this example calls `shifu_less` after sourcing `shifu` to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
 
 [`examples/quick`](/examples/quick)
@@ -254,9 +282,9 @@ shifu_run quick_cmd "$@"
 The diagram below shows how shifu is connecting together this cli script to print the value `🌐 Hello, World!` in `quick_hello`.
 
 ```
-┌─────────── sets to ─────────┐                                      
-│ ┌────────── true ──────────┐│                                      
-│ │                          ▼│                                      
+┌─────────── sets to ─────────┐
+│ ┌────────── true ──────────┐│
+│ │                          ▼│
 │ │     examples/quick hello -g --name World ────────────────────────┐
 │ │                ▲     ▲         ▲                                 │
 │ │                │     │         └───────────────────────────────┐ │
@@ -271,19 +299,7 @@ The diagram below shows how shifu is connecting together this cli script to prin
                                      └───────────────────────────────┘
 ```
 
-## Import
-
-To "import" shifu you simply need to source its file path. If you've installed shifu to a location on your `PATH` you can include the following at the top of your script.
-
-```sh
-. shifu || exit 1
-```
-
-If you'd like not to assume that shifu is on the `PATH`, you can instead make sure shifu is in the same directory as the calling script and use the following.
-
-```sh
-. "${0%/*}"/shifu || exit 1
-```
+</details>
 
 ## Tab completion
 
@@ -296,7 +312,13 @@ By default, subcommand and option names can be tab completed. If you'd like to a
 
 These functions can optionally be used after `shifu_cmd_arg` and instruct shifu what the completions for the preceding argument value should be.
 
-Below is a small shifu cli script demonstrating tab completion capabilities.
+Below is an example cli, [`examples/tab`](/examples/tab), demonstrating tab completion capabilities.
+
+![Tab completion](/assets/tab_demo.gif)
+
+<details>
+
+<summary>Source code</summary>
 
 [`examples/tab`](/examples/tab)
 
@@ -347,19 +369,23 @@ no_op() { :; }
 shifu_run tab_cmd "$@"
 ```
 
-Below is a gif showing the tab completions working for this cli. If you'd like to test the tab completion from this example you can easily from a bash or zsh (requires autoloading `compinit`) terminal by running
+If you'd like to test the tab completion from this example you can easily from a bash or zsh (requires autoloading `compinit`) terminal by running
+
 ```sh
 export PATH="$PATH:$(pwd)/examples"
 ```
+
 so your shell can find the example `tab` cli, and
+
 ```sh
 eval "$(examples/tab --tab-completion bash)"
 # or, choose for your shell
 eval "$(examples/tab --tab-completion zsh)"
 ```
+
 then tabbing along to the beat.
 
-![Tab completion](/assets/tab_demo.gif)
+</details>
 
 ### Enable
 
@@ -392,6 +418,12 @@ These instructions can also be found by running
 * How does shifu name its variables/functions, will they collide with those in my script?
   * Shifu takes special care to prefix all variables/functions with `shifu` or `_shifu`
   * Calling `shifu_less` after sourcing shifu will create versions of all the [`cmd` functions](#cmd-functions) without the `shifu` prefix. This makes command code less busy, but adds function names that are more likely to cause a collision with those in your script
+
+* What's with the `. "${0%/*}"/shifu || exit 1`?
+  * `.` is the POSIX source command - it executes a file in the current shell, making shifu's functions available to your script, akin to importing
+  * `"${0%/*}"` is parameter expansion that strips the filename from `$0` (the script path), leaving just the directory. This lets your script find shifu relative to itself rather than relying on `PATH`
+  * `|| exit 1` exits the script if sourcing fails (e.g., shifu not found), preventing cryptic errors later
+  * If shifu is on your `PATH`, you can simply use `. shifu || exit 1`
 
 ## API
 
