@@ -28,7 +28,8 @@ run_tests() {
   shells="ash bash dash ksh zsh"
   run_exit_code=0
   if [ -n "$image" ]; then
-    podman run --rm -t -v "$(pwd):/shifu" -w /shifu "$image" \
+    podman run --rm -t -v "$(pwd):/shifu" -w /shifu \
+      ${SHIFU_TEST_GREY:+-e SHIFU_TEST_GREY} "$image" \
       tests/run $verbose $set_x -t "$timeout" "$shell" "$@"
     return $?
   elif [ "$shell" = "all" ]; then

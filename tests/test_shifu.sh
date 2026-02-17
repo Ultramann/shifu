@@ -4,9 +4,9 @@ set -u
 
 # to see more color options run:
 #   for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
-shifu_grey="$(tput setaf 0 2>/dev/null || true)"
 shifu_red="$(tput setaf 1 2>/dev/null || true)"
 shifu_green="$(tput setaf 2 2>/dev/null || true)"
+shifu_grey="$(tput setaf "${SHIFU_TEST_GREY:-0}" 2>/dev/null || true)"
 shifu_reset="$(tput sgr0 2>/dev/null || true)"
 
 shifu_test_root_cmd() {

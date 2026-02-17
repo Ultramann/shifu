@@ -31,3 +31,5 @@ jobs:
 
       - name: Run tests
         run: tests/run --image shifu-shells all
+        env:
+          SHIFU_TEST_GREY: 7
