@@ -4,9 +4,9 @@ set -u
 
 # to see more color options run:
 #   for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
-shifu_grey="$(tput setaf 0 2>/dev/null || true)"
 shifu_red="$(tput setaf 1 2>/dev/null || true)"
 shifu_green="$(tput setaf 2 2>/dev/null || true)"
+shifu_grey="$(tput setaf "${SHIFU_TEST_GREY:-0}" 2>/dev/null || true)"
 shifu_reset="$(tput sgr0 2>/dev/null || true)"
 
 shifu_test_root_cmd() {
@@ -641,6 +641,12 @@ test_shifu_complete_func_args_flag_options() {
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
+test_shifu_complete_single_dash_shows_only_double_dash_options() {
+  expected="--option-bin --option-req --option-def --flag-option-bin --flag-option-req --flag-option-def"
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
 test_shifu_complete_global_option_names() {
   expected="--global-bin --global-def"
   actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --global sub-one leaf-one)
@@ -900,7 +906,7 @@ shifu_run_test_suite() {
     color="$shifu_red"
     percent_passed=$((n_passed * 100 / n_tests))
   fi
-  printf "====================%s %3s%% tests passed %s====================\n" \
+  printf "======================%s %3s%% tests passed %s======================\n" \
   "$color" "$percent_passed" "$shifu_reset"
   exit $n_failed
 }

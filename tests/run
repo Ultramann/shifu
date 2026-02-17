@@ -26,27 +26,33 @@ run_cmd() {
 
 run_tests() {
   shells="ash bash dash ksh zsh"
+  run_exit_code=0
   if [ -n "$image" ]; then
-    podman run --rm -t -v "$(pwd):/shifu" -w /shifu "$image" \
+    podman run --rm -t -v "$(pwd):/shifu" -w /shifu \
+      ${SHIFU_TEST_GREY:+-e SHIFU_TEST_GREY} "$image" \
       tests/run $verbose $set_x -t "$timeout" "$shell" "$@"
-    return
+    return $?
   elif [ "$shell" = "all" ]; then
-    for s in $shells; do run_tests_in_shell "$s" "$@"; done
+    for s in $shells; do
+      run_tests_in_shell "$s" "$@" || run_exit_code=1
+    done
   else
-    run_tests_in_shell "$shell" "$@"
+    run_tests_in_shell "$shell" "$@" || run_exit_code=1
   fi
   echo
+  return $run_exit_code
 }
 
 run_tests_in_shell() {
   test_shell="$1"; shift
   len=${#test_shell}
   pad=$(( (6 - len) / 2 ))
-  printf "\n=========================%*s %-*s ==========================\n" $pad "" $((6 - pad)) "$test_shell"
+  printf "\n===========================%*s %-*s=============================\n" \
+         $pad "" $((6 - pad)) "$test_shell"
   if command -v "$test_shell" >/dev/null 2>&1; then
     eval "timeout $timeout $test_shell tests/test_shifu.sh $verbose $set_x $@"
   else
-    printf "==================== %s Shell not found %s ====================\n" "$yellow" "$reset"
+    printf "====================== %s Shell not found %s ======================\n" "$yellow" "$reset"
   fi
 }
 
