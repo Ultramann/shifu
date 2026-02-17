@@ -647,6 +647,13 @@ test_shifu_complete_single_dash_shows_only_double_dash_options() {
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
+test_shifu_complete_single_dash_with_config_shows_all_options() {
+  shifu_complete_single_dash_options=true
+  expected="-f -a -d --option-bin --option-req --option-def -F --flag-option-bin -A --flag-option-req -D --flag-option-def"
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
 test_shifu_complete_options_only_when_word_starts_with_dash() {
   expected="positional arg one"
   actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete "")
