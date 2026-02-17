@@ -906,7 +906,7 @@ shifu_run_test_suite() {
     color="$shifu_red"
     percent_passed=$((n_passed * 100 / n_tests))
   fi
-  printf "====================%s %3s%% tests passed %s====================\n" \
+  printf "======================%s %3s%% tests passed %s======================\n" \
   "$color" "$percent_passed" "$shifu_reset"
   exit $n_failed
 }
