@@ -647,6 +647,12 @@ test_shifu_complete_single_dash_shows_only_double_dash_options() {
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
+test_shifu_complete_options_only_when_word_starts_with_dash() {
+  expected="positional arg one"
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete "")
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
 test_shifu_complete_global_option_names() {
   expected="--global-bin --global-def"
   actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --global sub-one leaf-one)
