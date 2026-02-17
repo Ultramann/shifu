@@ -3,7 +3,7 @@
   <img src="./assets/banner-light.svg#gh-light-mode-only" width="65%">
 </p>
 
-**SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework that makes creating powerful clis from shell scripts simple. Shifu has the following features:
+**SH**ell **I**nterface **F**ramework **U**tility, shifu, is a framework that makes creating powerful clis from shell scripts simple. Shifu has the following features:
 
 * declarative argument parsing
 * subcommand dispatching
@@ -120,17 +120,17 @@ sub_func() {
 shifu_run root_cmd "$@"
 ```
 
-Below is an example cli, [`examples/quick`](/examples/quick), with two subcommands, `hello` and `start`, each with their own arguments.
+Below is an example cli, [`examples/dispatch`](/examples/dispatch), with two subcommands, `hello` and `echo`, each with their own arguments.
 
-![Quickstart](/assets/quick_demo.gif)
+![Quickstart](/assets/dispatch_demo.gif)
 
 <details>
 
 <summary>Static output</summary>
 
 ```txt
-$ examples/quick -h
-A quick shifu example
+$ examples/dispatch -h
+A dispatch shifu example
 
 An example shifu cli demonstrating
   * subcommand dispatch
@@ -138,17 +138,17 @@ An example shifu cli demonstrating
   * scoped help generation
 
 Subcommands
+  echo
+    An echo subcommand
   hello
     A hello world subcommand
-  start
-    A quick subcommand
 
 Options
   -h, --help
     Show this help
-$ examples/quick hello
+$ examples/dispatch hello
 Hello, mysterious user!
-$ examples/quick hello -h
+$ examples/dispatch hello -h
 A hello world subcommand
 
 A subcommand that prints greeting with arguments
@@ -162,16 +162,16 @@ Options
     Default: false, set: true
   -h, --help
     Show this help
-$ examples/quick hello -g -n World
+$ examples/dispatch hello -g -n World
 🌐 Hello, World!
 
-$ examples/quick start -h
-A quick subcommand
+$ examples/dispatch echo -h
+An echo subcommand
 
 A subcommand that prints results of parsed arguments
 
 Usage
-  start [OPTIONS] [POSITIONAL]
+  echo [OPTIONS] [POSITIONAL]
 
 Arguments
   POSITIONAL
@@ -189,12 +189,12 @@ Options
     Default: false, set: true
   -h, --help
     Show this help
-$ examples/quick start --required 'provided' example
+$ examples/dispatch echo --required 'provided' example
 Global binary option: false
 Required option:      provided
 Option w/ default:    default
 Positional argument:  example
-$ examples/quick start -g --required 'provided' \
+$ examples/dispatch echo -g --required 'provided' \
 > -d 'not default' example
 Global binary option: true
 Required option:      provided
@@ -210,7 +210,7 @@ Positional argument:  example
 
 Note, this example calls `shifu_less` after sourcing `shifu` to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
 
-[`examples/quick`](/examples/quick)
+[`examples/dispatch`](/examples/dispatch)
 
 ```sh
 #! /bin/sh
@@ -219,13 +219,13 @@ Note, this example calls `shifu_less` after sourcing `shifu` to provide a versio
 . "${0%/*}"/shifu && shifu_less || exit 1
 
 # Write root command
-quick_cmd() {
+dispatch_cmd() {
   # Name the command
-  cmd_name quick
+  cmd_name dispatch
   # Add subcommands
-  cmd_subs hello_cmd start_cmd
+  cmd_subs hello_cmd echo_cmd
   # Add help for the command
-  cmd_help "A quick shifu example"
+  cmd_help "A dispatch shifu example"
   # Add long help for the command
   cmd_long "An example shifu cli demonstrating
   * subcommand dispatch
@@ -239,7 +239,7 @@ quick_cmd() {
 hello_cmd() {
   cmd_name hello
   # Add target function
-  cmd_func quick_hello
+  cmd_func dispatch_hello
   cmd_help "A hello world subcommand"
   cmd_long "A subcommand that prints greeting with arguments"
   # Add argument, will populate variable `NAME` when parsing cli args
@@ -248,16 +248,16 @@ hello_cmd() {
 }
 
 # Write first subcommand target function
-quick_hello() {
+dispatch_hello() {
   [ "$GLOBAL" = true ] && message="🌐 " || message=""
   echo "${message}Hello, $NAME!"
 }
 
 # Write second subcommand, referenced in `cmd_subs` above
-start_cmd() {
-  cmd_name start
-  cmd_func quick_start
-  cmd_help "A quick subcommand"
+echo_cmd() {
+  cmd_name echo
+  cmd_func dispatch_echo
+  cmd_help "An echo subcommand"
   cmd_long "A subcommand that prints results of parsed arguments"
 
   # Add arguments, will populate variables when parsing cli args
@@ -267,8 +267,8 @@ start_cmd() {
 }
 
 # Write second subcommand target function
-quick_start() {
-  # Use variables populated by `cmd_arg` in `start_cmd` and `quick_cmd`
+dispatch_echo() {
+  # Use variables populated by `cmd_arg` in `echo_cmd` and `dispatch_cmd`
   echo "Global binary option: $GLOBAL"
   echo "Required option:      $REQUIRED"
   echo "Option w/ default:    $DEFAULT"
@@ -276,22 +276,22 @@ quick_start() {
 }
 
 # Run root command passing all script arguments
-shifu_run quick_cmd "$@"
+shifu_run dispatch_cmd "$@"
 ```
 
-The diagram below shows how shifu is connecting together this cli script to print the value `🌐 Hello, World!` in `quick_hello`.
+The diagram below shows how shifu is connecting together this cli script to print the value `🌐 Hello, World!` in `dispatch_hello`.
 
 ```
 ┌─────────── sets to ─────────┐
 │ ┌────────── true ──────────┐│
 │ │                          ▼│
-│ │     examples/quick hello -g --name World ────────────────────────┐
+│ │     examples/dispatch hello -g --name World ────────────────────────┐
 │ │                ▲     ▲         ▲                                 │
 │ │                │     │         └───────────────────────────────┐ │
 │ │                └───┐ └─────────────────────────────────┐       │ │
-│ │ quick_cmd() {      │            ┌─► hello_cmd() {      │       │ │
-│ │   cmd_name quick ──┘            │     cmd_name hello ──┘       │ │
-│ │   cmd_subs start_cmd hello_cmd ─┘     cmd_func quick_hello     │ │
+│ │ dispatch_cmd() {   │            ┌─► hello_cmd() {      │       │ │
+│ │   cmd_name dispatch┘            │     cmd_name hello ──┘       │ │
+│ │   cmd_subs echo_cmd hello_cmd ──┘     cmd_func dispatch_hello  │ │
 │ └── cmd_arg -g --global -- \            cmd_arg -n --name -- \ ──┘ │
 └─────► GLOBAL false true \          ┌──► NAME "mysterious user" \   │
         "Global binary option"       │    "Name to greet"            │
