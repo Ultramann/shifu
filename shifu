@@ -468,7 +468,7 @@ _shifu_complete() {
   done
   shifu_comp_option_names="${shifu_comp_global_option_names:-}"
   _shifu_set_completing_option
-  if [ "$shifu_completing_option" = true -a -n "${shifu_cmd_func:-}" ]; then
+  if [ "$shifu_completing_option" = true ]; then
     _shifu_complete_option_names
   elif [ "$shifu_completing_option" = false -a -n "${shifu_cmd_func:-}" ]; then
     _shifu_complete_func_args false "$shifu_cmd" "$@"
