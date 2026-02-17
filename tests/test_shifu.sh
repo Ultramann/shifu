@@ -659,6 +659,11 @@ test_shifu_complete_global_option_names_no_func() {
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
+test_shifu_complete_local_option_names_on_subcommand() {
+  expected="--local-test"
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --local sub-two)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
 
 test_shifu_complete_global_option_values() {
   expected="global_one global_two global_three"
