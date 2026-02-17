@@ -613,6 +613,7 @@ _shifu_handle_comp_arg_global() {
 
 _shifu_filter_matching_options() {
   shifu_filter_current_word="$1"; shift
+  [ "$shifu_filter_current_word" = "-" ] && shifu_filter_current_word="--"
   for shifu_filter_option in "$@"; do
     case "$shifu_filter_option" in
       "$shifu_filter_current_word"*)
