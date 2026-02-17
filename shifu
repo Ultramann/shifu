@@ -2,6 +2,7 @@
 
 # config
 shifu_allow_options_anywhere=false
+shifu_complete_single_dash_options=false
 
 # modes
 shifu_mode_cmds_run=1
@@ -616,7 +617,8 @@ _shifu_handle_comp_arg_global() {
 
 _shifu_filter_matching_options() {
   shifu_filter_current_word="$1"; shift
-  [ "$shifu_filter_current_word" = "-" ] && shifu_filter_current_word="--"
+  [ "$shifu_complete_single_dash_options" = false ] && \
+    [ "$shifu_filter_current_word" = "-" ] && shifu_filter_current_word="--"
   for shifu_filter_option in "$@"; do
     case "$shifu_filter_option" in
       "$shifu_filter_current_word"*)
