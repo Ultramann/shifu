@@ -2,10 +2,10 @@
 
 . "${0%/*}"/shifu && shifu_less || exit 1
 
-quick_cmd() {
-  cmd_name quick
-  cmd_subs hello_cmd start_cmd
-  cmd_help "A quick shifu example"
+dispatch_cmd() {
+  cmd_name dispatch
+  cmd_subs hello_cmd echo_cmd
+  cmd_help "A dispatch shifu example"
   cmd_long "An example shifu cli demonstrating
   * subcommand dispatch
   * argument parsing
@@ -16,22 +16,22 @@ quick_cmd() {
 
 hello_cmd() {
   cmd_name hello
-  cmd_func quick_hello
+  cmd_func dispatch_hello
   cmd_help "A hello world subcommand"
   cmd_long "A subcommand that prints greeting with arguments"
 
   cmd_arg -n --name -- NAME "mysterious user" "Name to greet"
 }
 
-quick_hello() {
+dispatch_hello() {
   [ "$GLOBAL" = true ] && message="🌐 " || message=""
   echo "${message}Hello, $NAME!"
 }
 
-start_cmd() {
-  cmd_name start
-  cmd_func quick_start
-  cmd_help "A quick subcommand"
+echo_cmd() {
+  cmd_name echo
+  cmd_func dispatch_echo
+  cmd_help "An echo subcommand"
   cmd_long "A subcommand that prints results of parsed arguments"
 
   cmd_arg -r --required -- REQUIRED   "Example required option w/ argument"
@@ -39,11 +39,11 @@ start_cmd() {
   cmd_arg               -- POSITIONAL "Example positional argument"
 }
 
-quick_start() {
+dispatch_echo() {
   echo "Global binary option: $GLOBAL"
   echo "Required option:      $REQUIRED"
   echo "Option w/ default:    $DEFAULT"
   echo "Positional argument:  $POSITIONAL"
 }
 
-shifu_run quick_cmd "$@"
+shifu_run dispatch_cmd "$@"
