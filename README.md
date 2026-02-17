@@ -285,16 +285,16 @@ The diagram below shows how shifu is connecting together this cli script to prin
 ┌─────────── sets to ─────────┐
 │ ┌────────── true ──────────┐│
 │ │                          ▼│
-│ │     examples/dispatch hello -g --name World ────────────────────────┐
-│ │                ▲     ▲         ▲                                 │
-│ │                │     │         └───────────────────────────────┐ │
-│ │                └───┐ └─────────────────────────────────┐       │ │
-│ │ dispatch_cmd() {   │            ┌─► hello_cmd() {      │       │ │
-│ │   cmd_name dispatch┘            │     cmd_name hello ──┘       │ │
-│ │   cmd_subs echo_cmd hello_cmd ──┘     cmd_func dispatch_hello  │ │
-│ └── cmd_arg -g --global -- \            cmd_arg -n --name -- \ ──┘ │
-└─────► GLOBAL false true \          ┌──► NAME "mysterious user" \   │
-        "Global binary option"       │    "Name to greet"            │
+│ │  examples/dispatch hello -g --name World ────────────────────────┐
+│ │                ▲      ▲        ▲                                 │
+│ │                │      │        └───────────────────────────────┐ │
+│ │                └────┐ └─────────────────────────────────┐      │ │
+│ │ dispatch_cmd() {    │            ┌─► hello_cmd() {      │      │ │
+│ │   cmd_name dispatch ┘            │     cmd_name hello ──┘      │ │
+│ │   cmd_subs echo_cmd hello_cmd ───┘     cmd_func dispatch_hello │ │
+│ └── cmd_arg -g --global -- \             cmd_arg -n --name -- \ ─┘ │
+└─────► GLOBAL false true \          ┌──►  NAME "mysterious user" \  │
+        "Global binary option"       │     "Name to greet"           │
     }                                │ }                             │
                                      └───────────────────────────────┘
 ```
