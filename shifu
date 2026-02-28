@@ -187,8 +187,11 @@ _shifu_parse_args() {
   _shifu_append_on_new_line shifu_case_stmt "    break;;"
   _shifu_append_on_new_line shifu_case_stmt "esac"
   _shifu_args_parsed=0
+  _shifu_n_args=$#
   while [ $# -ne 0 ]; do
-    eval "$shifu_case_stmt"
+    eval "$shifu_case_stmt" || _shifu_case_eval_error
+    [ $# -eq $_shifu_n_args ] && _shifu_case_loop_error
+    _shifu_n_args=$#
   done
   if [ "$shifu_parse_local" = true ]; then
     _shifu_set_for_looping shifu_req_variables shifu_required_variables_local
@@ -543,8 +546,11 @@ ${shifu_global_comp_case:-}"
     _shifu_append_on_new_line shifu_case_stmt "    break ;;"
   fi
   _shifu_append_on_new_line shifu_case_stmt "esac"
+  _shifu_n_args=$#
   while true; do
-    eval "$shifu_case_stmt"
+    eval "$shifu_case_stmt" || _shifu_case_eval_error
+    [ $# -eq $_shifu_n_args ] && _shifu_case_loop_error
+    _shifu_n_args=$#
   done
 }
 
@@ -681,6 +687,25 @@ _shifu_error_if_invalid_arg_order() {
 
 _shifu_error() {
   echo "$1"
+  exit 1
+}
+
+_shifu_case_loop_error() {
+  echo "shifu: case statement loop detected (no progress made)"
+  echo "A case pattern is missing 'shift' or 'break'. Check your argument definitions."
+  [ "${SHIFU_DEBUG_CASE:-0}" = 1 ] && {
+    echo "Case statement:"
+    printf '%s\n' "$shifu_case_stmt"
+  } || echo "Set SHIFU_DEBUG_CASE=1 to see the case statement"
+  exit 1
+}
+
+_shifu_case_eval_error() {
+  echo "shifu: case statement syntax error"
+  [ "${SHIFU_DEBUG_CASE:-0}" = 1 ] && {
+    echo "Case statement:"
+    printf '%s\n' "$shifu_case_stmt"
+  } || echo "Set SHIFU_DEBUG_CASE=1 to see the case statement"
   exit 1
 }
 

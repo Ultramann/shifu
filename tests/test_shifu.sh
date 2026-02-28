@@ -778,6 +778,36 @@ test_shifu_set_variable() {
     bad-var bad-var 1 "Invalid variable name: bad-var"
 }
 
+test_shifu_case_loop_error() {
+  shifu_case_stmt="case \"\$1\" in *) ;; esac"
+  actual=$(_shifu_case_loop_error 2>&1)
+  exit_code=$?
+  shifu_assert_non_zero exit_code $exit_code
+  shifu_assert_string_contains message "$actual" "case statement loop detected"
+  shifu_assert_string_contains hint "$actual" "SHIFU_DEBUG_CASE=1"
+}
+
+test_shifu_case_loop_error_with_debug() {
+  shifu_case_stmt="case \"\$1\" in test-pattern) ;; esac"
+  actual=$(SHIFU_DEBUG_CASE=1 _shifu_case_loop_error 2>&1)
+  shifu_assert_string_contains case_stmt "$actual" "test-pattern"
+}
+
+test_shifu_case_eval_error() {
+  shifu_case_stmt="case \"\$1\" in bad-syntax"
+  actual=$(_shifu_case_eval_error 2>&1)
+  exit_code=$?
+  shifu_assert_non_zero exit_code $exit_code
+  shifu_assert_string_contains message "$actual" "case statement syntax error"
+  shifu_assert_string_contains hint "$actual" "SHIFU_DEBUG_CASE=1"
+}
+
+test_shifu_case_eval_error_with_debug() {
+  shifu_case_stmt="case \"\$1\" in test-syntax-pattern"
+  actual=$(SHIFU_DEBUG_CASE=1 _shifu_case_eval_error 2>&1)
+  shifu_assert_string_contains case_stmt "$actual" "test-syntax-pattern"
+}
+
 # Testing utilities
 shifu_parameterize_test() {
   # 1: name of test function to run, 2: number of arguments the function accepts
