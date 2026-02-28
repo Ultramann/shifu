@@ -1,6 +1,7 @@
-. ./shifu
-
 set -u
+SHIFU_DEBUG_CASE=1
+
+. ./shifu
 
 # to see more color options run:
 #   for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
@@ -780,7 +781,7 @@ test_shifu_set_variable() {
 
 test_shifu_case_loop_error() {
   shifu_case_stmt="case \"\$1\" in *) ;; esac"
-  actual=$(_shifu_case_loop_error 2>&1)
+  actual=$(SHIFU_DEBUG_CASE=0 _shifu_case_loop_error 2>&1)
   exit_code=$?
   shifu_assert_non_zero exit_code $exit_code
   shifu_assert_string_contains message "$actual" "case statement loop detected"
@@ -795,7 +796,7 @@ test_shifu_case_loop_error_with_debug() {
 
 test_shifu_case_eval_error() {
   shifu_case_stmt="case \"\$1\" in bad-syntax"
-  actual=$(_shifu_case_eval_error 2>&1)
+  actual=$(SHIFU_DEBUG_CASE=0 _shifu_case_eval_error 2>&1)
   exit_code=$?
   shifu_assert_non_zero exit_code $exit_code
   shifu_assert_string_contains message "$actual" "case statement syntax error"
