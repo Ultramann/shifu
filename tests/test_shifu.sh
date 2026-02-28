@@ -809,15 +809,8 @@ test_shifu_case_eval_error_with_debug() {
   shifu_assert_string_contains case_stmt "$actual" "test-syntax-pattern"
 }
 
-shifu_test_global_only_parent_cmd() {
-  shifu_cmd_name global-only-parent
-  shifu_cmd_subs shifu_test_leaf_one_cmd
-
-  shifu_cmd_arg -g --global -- GLOBAL global_default "Global arg"
-}
-
 test_shifu_complete_bad_case_stmt_exits_silently() {
-  actual=$(_shifu_complete shifu_test_global_only_parent_cmd --shifu-complete "" -g 2>&1)
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" -g 2>&1)
   exit_code=$?
   shifu_assert_non_zero exit_code $exit_code
   shifu_assert_empty output "$actual"
