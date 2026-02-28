@@ -548,8 +548,8 @@ ${shifu_global_comp_case:-}"
   _shifu_append_on_new_line shifu_case_stmt "esac"
   _shifu_n_args=$#
   while true; do
-    eval "$shifu_case_stmt" || _shifu_case_eval_error
-    [ $# -eq $_shifu_n_args ] && _shifu_case_loop_error
+    eval "$shifu_case_stmt" 2>/dev/null || exit 1
+    [ $# -eq $_shifu_n_args ] && exit 1
     _shifu_n_args=$#
   done
 }
