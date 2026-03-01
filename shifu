@@ -187,8 +187,11 @@ _shifu_parse_args() {
   _shifu_append_on_new_line shifu_case_stmt "    break;;"
   _shifu_append_on_new_line shifu_case_stmt "esac"
   _shifu_args_parsed=0
+  _shifu_n_args=$#
   while [ $# -ne 0 ]; do
-    eval "$shifu_case_stmt"
+    eval "$shifu_case_stmt" || _shifu_case_eval_error
+    [ $# -eq $_shifu_n_args ] && _shifu_case_loop_error
+    _shifu_n_args=$#
   done
   if [ "$shifu_parse_local" = true ]; then
     _shifu_set_for_looping shifu_req_variables shifu_required_variables_local
@@ -543,8 +546,11 @@ ${shifu_global_comp_case:-}"
     _shifu_append_on_new_line shifu_case_stmt "    break ;;"
   fi
   _shifu_append_on_new_line shifu_case_stmt "esac"
+  _shifu_n_args=$#
   while true; do
-    eval "$shifu_case_stmt"
+    eval "$shifu_case_stmt" 2>/dev/null || exit 1
+    [ $# -eq $_shifu_n_args ] && exit 1
+    _shifu_n_args=$#
   done
 }
 
@@ -681,6 +687,18 @@ _shifu_error_if_invalid_arg_order() {
 
 _shifu_error() {
   echo "$1"
+  exit 1
+}
+
+_shifu_case_loop_error() {
+  echo "Internal error"
+  [ "${SHIFU_DEBUG_CASE:-0}" = 1 ] && printf '%s\n' "$shifu_case_stmt"
+  exit 1
+}
+
+_shifu_case_eval_error() {
+  echo "Internal error"
+  [ "${SHIFU_DEBUG_CASE:-0}" = 1 ] && printf '%s\n' "$shifu_case_stmt"
   exit 1
 }
 

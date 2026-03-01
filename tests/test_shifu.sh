@@ -1,6 +1,7 @@
-. ./shifu
-
 set -u
+SHIFU_DEBUG_CASE=1
+
+. ./shifu
 
 # to see more color options run:
 #   for c in {0..15}; do tput setaf $c; tput setaf $c | echo $c: text; done
@@ -776,6 +777,39 @@ test_shifu_set_variable() {
     run_test 3 \
     good-var good_var 0 "" \
     bad-var bad-var 1 "Invalid variable name: bad-var"
+}
+
+test_shifu_case_loop_error() {
+  shifu_case_stmt="case \"\$1\" in *) ;; esac"
+  actual=$(SHIFU_DEBUG_CASE=0 _shifu_case_loop_error 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_strings_equal message "Internal error" "$actual"
+}
+
+test_shifu_case_loop_error_with_debug() {
+  shifu_case_stmt='case "$1" in test-pattern) ;; esac'
+  actual=$(_shifu_case_loop_error 2>&1)
+  shifu_assert_string_contains output "$actual" 'case "$1" in test-pattern) ;; esac'
+}
+
+test_shifu_case_eval_error() {
+  shifu_case_stmt="case \"\$1\" in bad-syntax"
+  actual=$(SHIFU_DEBUG_CASE=0 _shifu_case_eval_error 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_strings_equal message "Internal error" "$actual"
+}
+
+test_shifu_case_eval_error_with_debug() {
+  shifu_case_stmt='case "$1" in test-syntax-pattern'
+  actual=$(_shifu_case_eval_error 2>&1)
+  shifu_assert_string_contains output "$actual" 'case "$1" in test-syntax-pattern'
+}
+
+test_shifu_complete_bad_case_stmt_exits_silently() {
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" -g 2>&1)
+  exit_code=$?
+  shifu_assert_non_zero exit_code $exit_code
+  shifu_assert_empty output "$actual"
 }
 
 # Testing utilities
