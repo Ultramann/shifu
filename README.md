@@ -282,13 +282,13 @@ shifu_run dispatch_cmd "$@"
 The diagram below shows how shifu is connecting together this cli script to print the value `🌐 Hello, World!` in `dispatch_hello`.
 
 ```
-┌─────────── sets to ─────────┐
-│ ┌────────── true ──────────┐│
-│ │                          ▼│
-│ │  examples/dispatch hello -g --name World ────────────────────────┐
-│ │                ▲      ▲        ▲                                 │
-│ │                │      │        └───────────────────────────────┐ │
-│ │                └────┐ └─────────────────────────────────┐      │ │
+┌───────────── sets to ────────────┐
+│ ┌──────────── true ─────────────┐│
+│ │                               ▼│
+│ │       examples/dispatch hello -g --name World ───────────────────┐
+│ │                     ▲      ▲        ▲                            │
+│ │                     │      │        └──────────────────────────┐ │
+│ │                     │      └────────────────────────────┐      │ │
 │ │ dispatch_cmd() {    │            ┌─► hello_cmd() {      │      │ │
 │ │   cmd_name dispatch ┘            │     cmd_name hello ──┘      │ │
 │ │   cmd_subs echo_cmd hello_cmd ───┘     cmd_func dispatch_hello │ │
