@@ -83,17 +83,21 @@ Options
 The diagram below shows how shifu is connecting together this cli script to print the value `shifu` in `intro_function`.
 
 ```
-    examples/intro -a shifu ────────────┐ 
-               ▲    ▲                   │ 
-               │    └────────────┐      │ 
-               └─────────┐       │      │ 
-intro_cmd() {            │       │      │ 
-  shifu_cmd_name intro ──┘       │      │ 
-  shifu_cmd_func intro_function  │      │ 
-  shifu_cmd_arg -a --arg -- \ ───┘      │ 
-    ARG none "Example argument to echo" │ 
-}    ▲                                  │ 
-     └──────────────────────────────────┘ 
+       examples/intro -a shifu ──────────────┐ 
+                  ▲    ▲                     │ 
+                  │    └─────────────┐       │ 
+                  └──────────┐       │       │ 
+    intro_cmd() {            │       │       │ 
+┌──── shifu_cmd_name intro ──┘       │       │ 
+│     shifu_cmd_func intro_function  │       │ 
+│     shifu_cmd_arg -a --arg -- \ ───┘       │ 
+│       ARG none "Example argument to echo"  │ 
+│  }     ▲                                   │ 
+│        └───────────────────────────────────┘ 
+│                                             
+└─► intro_function() {                        
+      echo "$ARG"                             
+    }     
 ```
 
 ## Subcommand dispatch
@@ -291,12 +295,17 @@ The diagram below shows how shifu is connecting together this cli script to prin
 │ │                     │      └────────────────────────────┐      │ │
 │ │ dispatch_cmd() {    │            ┌─► hello_cmd() {      │      │ │
 │ │   cmd_name dispatch ┘            │     cmd_name hello ──┘      │ │
-│ │   cmd_subs echo_cmd hello_cmd ───┘     cmd_func dispatch_hello │ │
-│ └── cmd_arg -g --global -- \             cmd_arg -n --name -- \ ─┘ │
-└─────► GLOBAL false true \          ┌──►  NAME "mysterious user" \  │
-        "Global binary option"       │     "Name to greet"           │
-    }                                │ }                             │
-                                     └───────────────────────────────┘
+│ │   cmd_subs echo_cmd hello__cmd ──┘ ┌── cmd_func dispatch_hello │ │
+│ └── cmd_arg -g --global -- \    ┌────┘   cmd_arg -n --name -- \ ─┘ │
+└─────► GLOBAL false true \       │  ┌──►  NAME "mysterious user" \  │
+        "Global binary option"    │  │     "Name to greet"           │
+    }                             │  │ }                             │
+      ┌───────────────────────────┘  └───────────────────────────────┘
+      │   
+      └─► quick_hello() {
+            [ "$GLOBAL" = true ] && message="🌐 " || message=""
+            echo "${message}Hello, $NAME!"
+          }
 ```
 
 </details>
