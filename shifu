@@ -691,21 +691,14 @@ _shifu_error() {
 }
 
 _shifu_case_loop_error() {
-  echo "shifu: case statement loop detected (no progress made)"
-  echo "A case pattern is missing 'shift' or 'break'. Check your argument definitions."
-  [ "${SHIFU_DEBUG_CASE:-0}" = 1 ] && {
-    echo "Case statement:"
-    printf '%s\n' "$shifu_case_stmt"
-  } || echo "Set SHIFU_DEBUG_CASE=1 to see the case statement"
+  echo "Internal error"
+  [ "${SHIFU_DEBUG_CASE:-0}" = 1 ] && printf '%s\n' "$shifu_case_stmt"
   exit 1
 }
 
 _shifu_case_eval_error() {
-  echo "shifu: case statement syntax error"
-  [ "${SHIFU_DEBUG_CASE:-0}" = 1 ] && {
-    echo "Case statement:"
-    printf '%s\n' "$shifu_case_stmt"
-  } || echo "Set SHIFU_DEBUG_CASE=1 to see the case statement"
+  echo "Internal error"
+  [ "${SHIFU_DEBUG_CASE:-0}" = 1 ] && printf '%s\n' "$shifu_case_stmt"
   exit 1
 }
 
