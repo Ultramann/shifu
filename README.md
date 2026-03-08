@@ -6,7 +6,7 @@
 **SH**ell **I**nterface **F**ramework **U**tility, shifu, is a framework that makes creating powerful clis from shell scripts simple. Shifu has the following features:
 
 * declarative argument parsing
-* subcommand dispatching
+* subcommands
 * scoped help generation
 * tab completion code generation for interactive shells
 * implemented 100% in POSIX-compliant shell script
@@ -19,7 +19,7 @@ Shell scripts are great for gluing commands together. But when you need to make 
 
 * [Installation](#installation)
 * [Quickstart](#quickstart)
-* [Subcommand dispatch](#subcommand-dispatch)
+* [Subcommands](#subcommands)
 * [Tab completion](#tab-completion)
 * [FAQ](#faq)
 * [API](#api)
@@ -100,7 +100,7 @@ The diagram below shows how shifu is connecting together this cli script to prin
     }     
 ```
 
-## Subcommand dispatch
+## Subcommands
 
 Shifu supports nested subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. Arguments declared in parent commands are automatically inherited by descendants. Here's what the minimal structure a subcommnd cli looks like (a complete example can be found below):
 
@@ -137,7 +137,7 @@ $ examples/dispatch -h
 A dispatch shifu example
 
 An example shifu cli demonstrating
-  * subcommand dispatch
+  * subcommands
   * argument parsing
   * scoped help generation
 
@@ -232,7 +232,7 @@ dispatch_cmd() {
   cmd_help "A dispatch shifu example"
   # Add long help for the command
   cmd_long "An example shifu cli demonstrating
-  * subcommand dispatch
+  * subcommands
   * argument parsing
   * scoped help generation"
   # Add global argument
