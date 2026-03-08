@@ -126,7 +126,7 @@ shifu_run root_cmd "$@"
 
 Invoking this script:
 
-```sh
+```txt
 $ root sub
 Hello from sub_func
 ```
