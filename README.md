@@ -3,26 +3,34 @@
   <img src="./assets/banner-light.svg#gh-light-mode-only" width="65%">
 </p>
 
-**SH**ell **I**nterface **F**ramework **U**tility, or shifu, is a framework that makes creating powerful clis from shell scripts simple. Shifu has the following qualities:
+**SH**ell **I**nterface **F**ramework **U**tility, shifu, is a framework that makes creating powerful clis from shell scripts simple. Shifu has the following features:
 
 * declarative argument parsing
-* subcommand dispatching
+* subcommand dispatch
 * scoped help generation
 * tab completion code generation for interactive shells
 * implemented 100% in POSIX-compliant shell script
 * compatibility with POSIX-based shells; tested with: 
   * ash, bash, dash, ksh, zsh
 
-Shell scripts make gluing together functionality from different command line programs pretty easy. However, if you want to extend the script's capabilities to have advanced cli features: related but distinct entry points, aka subcommands, nested subcommands, distinct command line options for those subcommands, subcommand specific help strings; shell languages can quickly turn from helpful glue to a messy kindergarten project: cute, but with value that's mostly of the sentimental variety. Shifu aims to address this difficulty and make creating a configurable and intuitive cli from a shell script declarative and maintainable.
+Shell scripts are great for gluing commands together. But when you need to make and maintain subcommands, with scoped options, and help strings, things can get messy fast. Shifu handles the cli boilerplate so you can focus on functionality.
 
 ## Table of contents
 
-* [Quickstart](#quickstart)
 * [Installation](#installation)
-* [Import](#import)
+* [Quickstart](#quickstart)
+* [Subcommands](#subcommands)
 * [Tab completion](#tab-completion)
 * [FAQ](#faq)
 * [API](#api)
+
+## Installation
+
+Since shifu is just a single POSIX-compatible script, all you need to do is get a copy of it and either put it in a location on your `PATH` or in the same directory as your cli script.
+
+```sh
+curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
+```
 
 ## Quickstart
 
@@ -51,7 +59,7 @@ intro_function() {
 shifu_run intro_cmd "$@"
 ```
 
-Calling this cli, we can see how it parses the argument we declare into the variable `ARG` and also automatically generates help strings.
+Calling this cli, we can see how it parses `-a shifu` into the variable `ARG` when provided, and also automatically generates help strings.
 
 ```txt
 $ examples/intro
@@ -75,106 +83,65 @@ Options
 The diagram below shows how shifu is connecting together this cli script to print the value `shifu` in `intro_function`.
 
 ```
-    examples/intro -a shifu ────────────┐ 
-               ▲    ▲                   │ 
-               │    └────────────┐      │ 
-               └─────────┐       │      │ 
-intro_cmd() {            │       │      │ 
-  shifu_cmd_name intro ──┘       │      │ 
-  shifu_cmd_func intro_function  │      │ 
-  shifu_cmd_arg -a --arg -- \ ───┘      │ 
-    ARG none "Example argument to echo" │ 
-}    ▲                                  │ 
-     └──────────────────────────────────┘ 
+       examples/intro -a shifu ──────────────┐ 
+                  ▲    ▲                     │ 
+                  │    └─────────────┐       │ 
+                  └──────────┐       │       │ 
+    intro_cmd() {            │       │       │ 
+      shifu_cmd_name intro ──┘       │       │ 
+┌──── shifu_cmd_func intro_function  │       │ 
+│     shifu_cmd_arg -a --arg -- \ ───┘       │ 
+│       ARG none "Example argument to echo"  │ 
+│  }     ▲                                   │ 
+│        └───────────────────────────────────┘ 
+│                                             
+└─► intro_function() {                        
+      echo "$ARG"                             
+    }     
 ```
 
-Let's take a look at a more complicated example cli, [`examples/quick`](/examples/quick). This demo cli has two named subcommands, `hello` and `start`, each with their own arguments. First we'll see a gif interaction with the cli followed by the cli's annotated source.
+## Subcommands
 
-![Quickstart](/assets/quick_demo.gif)
+Shifu supports nested subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. Arguments declared in parent commands are automatically inherited by descendants. Here's what the minimal structure a subcommnd cli looks like (a complete example can be found below):
+
+```sh
+root_cmd() {
+  shifu_cmd_name root
+  shifu_cmd_subs sub_cmd
+}
+
+# referenced by name in root_cmd -> shifu_cmd_subs
+sub_cmd() {
+  shifu_cmd_name sub
+  shifu_cmd_func sub_func
+}
+
+# referenced by name in sub_cmd -> shifu_cmd_func
+sub_func() {
+  echo "Hello from sub_func"
+}
+
+shifu_run root_cmd "$@"
+```
+
+Invoking this script:
+
+```txt
+$ root sub
+Hello from sub_func
+```
+
+Below is an example cli, [`examples/dispatch`](/examples/dispatch), with two subcommands, `hello` and `echo`, each with their own arguments.
+
+![Quickstart](/assets/dispatch_demo.gif)
 
 <details>
 
-<summary>Static Output</summary>
-
-```txt
-$ examples/quick -h
-A quick shifu example
-
-An example shifu cli demonstrating
-  * subcommand dispatch
-  * argument parsing
-  * scoped help generation
-
-Subcommands
-  hello
-    A hello world subcommand
-  start
-    A quick subcommand
-
-Options
-  -h, --help
-    Show this help
-$ examples/quick hello
-Hello, mysterious user!
-$ examples/quick hello -h
-A hello world subcommand
-
-A subcommand that prints greeting with arguments
-
-Options
-  -n, --name [NAME]
-    Name to greet
-    Default: mysterious user
-  -g, --global
-    Global binary option
-    Default: false, set: true
-  -h, --help
-    Show this help
-$ examples/quick hello -g -n World
-🌐 Hello, World!
-
-$ examples/quick start -h
-A quick subcommand
-
-A subcommand that prints results of parsed arguments
-
-Usage
-  start [OPTIONS] [POSITIONAL]
-
-Arguments
-  POSITIONAL
-    Example positional argument
-
-Options
-  -r, --required [REQUIRED]
-    Example required option w/ argument
-    Required
-  -d, --default [DEFAULT]
-    Example option w/ argument
-    Default: default
-  -g, --global
-    Global binary option
-    Default: false, set: true
-  -h, --help
-    Show this help
-$ examples/quick start --required 'provided' example
-Global binary option: false
-Required option:      provided
-Option w/ default:    default
-Positional argument:  example
-$ examples/quick start -g --required 'provided' \
-> -d 'not default' example
-Global binary option: true
-Required option:      provided
-Option w/ default:    not default
-Positional argument:  example
-```
-
-</details>
+<summary><b>Source code</b></summary>
 
 Note, this example calls `shifu_less` after sourcing `shifu` to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
 
-[`examples/quick`](/examples/quick)
+[`examples/dispatch`](/examples/dispatch)
 
 ```sh
 #! /bin/sh
@@ -183,16 +150,16 @@ Note, this example calls `shifu_less` after sourcing `shifu` to provide a versio
 . "${0%/*}"/shifu && shifu_less || exit 1
 
 # Write root command
-quick_cmd() {
+dispatch_cmd() {
   # Name the command
-  cmd_name quick
+  cmd_name dispatch
   # Add subcommands
-  cmd_subs hello_cmd start_cmd
+  cmd_subs hello_cmd echo_cmd
   # Add help for the command
-  cmd_help "A quick shifu example"
+  cmd_help "A dispatch shifu example"
   # Add long help for the command
   cmd_long "An example shifu cli demonstrating
-  * subcommand dispatch
+  * subcommands
   * argument parsing
   * scoped help generation"
   # Add global argument
@@ -203,7 +170,7 @@ quick_cmd() {
 hello_cmd() {
   cmd_name hello
   # Add target function
-  cmd_func quick_hello
+  cmd_func dispatch_hello
   cmd_help "A hello world subcommand"
   cmd_long "A subcommand that prints greeting with arguments"
   # Add argument, will populate variable `NAME` when parsing cli args
@@ -212,16 +179,16 @@ hello_cmd() {
 }
 
 # Write first subcommand target function
-quick_hello() {
+dispatch_hello() {
   [ "$GLOBAL" = true ] && message="🌐 " || message=""
   echo "${message}Hello, $NAME!"
 }
 
 # Write second subcommand, referenced in `cmd_subs` above
-start_cmd() {
-  cmd_name start
-  cmd_func quick_start
-  cmd_help "A quick subcommand"
+echo_cmd() {
+  cmd_name echo
+  cmd_func dispatch_echo
+  cmd_help "An echo subcommand"
   cmd_long "A subcommand that prints results of parsed arguments"
 
   # Add arguments, will populate variables when parsing cli args
@@ -231,8 +198,8 @@ start_cmd() {
 }
 
 # Write second subcommand target function
-quick_start() {
-  # Use variables populated by `cmd_arg` in `start_cmd` and `quick_cmd`
+dispatch_echo() {
+  # Use variables populated by `cmd_arg` in `echo_cmd` and `dispatch_cmd`
   echo "Global binary option: $GLOBAL"
   echo "Required option:      $REQUIRED"
   echo "Option w/ default:    $DEFAULT"
@@ -240,50 +207,35 @@ quick_start() {
 }
 
 # Run root command passing all script arguments
-shifu_run quick_cmd "$@"
+shifu_run dispatch_cmd "$@"
 ```
 
-The diagram below shows how shifu is connecting together this cli script to print the value `🌐 Hello, World!` in `quick_hello`.
+The diagram below shows how shifu is connecting together this cli script to print the value `🌐 Hello, World!` in `dispatch_hello`.
 
 ```
-┌─────────── sets to ─────────┐                                      
-│ ┌────────── true ──────────┐│                                      
-│ │                          ▼│                                      
-│ │     examples/quick hello -g --name World ────────────────────────┐
-│ │                ▲     ▲         ▲                                 │
-│ │                │     │         └───────────────────────────────┐ │
-│ │                └───┐ └─────────────────────────────────┐       │ │
-│ │ quick_cmd() {      │            ┌─► hello_cmd() {      │       │ │
-│ │   cmd_name quick ──┘            │     cmd_name hello ──┘       │ │
-│ │   cmd_subs start_cmd hello_cmd ─┘     cmd_func quick_hello     │ │
-│ └── cmd_arg -g --global -- \            cmd_arg -n --name -- \ ──┘ │
-└─────► GLOBAL false true \          ┌──► NAME "mysterious user" \   │
-        "Global binary option"       │    "Name to greet"            │
-    }                                │ }                             │
-                                     └───────────────────────────────┘
+┌───────────── sets to ────────────┐
+│ ┌──────────── true ─────────────┐│
+│ │                               ▼│
+│ │       examples/dispatch hello -g --name World ───────────────────┐
+│ │                     ▲      ▲        ▲                            │
+│ │                     │      │        └──────────────────────────┐ │
+│ │                     │      └────────────────────────────┐      │ │
+│ │ dispatch_cmd() {    │            ┌─► hello_cmd() {      │      │ │
+│ │   cmd_name dispatch ┘            │     cmd_name hello ──┘      │ │
+│ │   cmd_subs echo_cmd hello__cmd ──┘ ┌── cmd_func dispatch_hello │ │
+│ └── cmd_arg -g --global -- \    ┌────┘   cmd_arg -n --name -- \ ─┘ │
+└─────► GLOBAL false true \       │  ┌──►  NAME "mysterious user" \  │
+        "Global binary option"    │  │     "Name to greet"           │
+    }                             │  │ }                             │
+      ┌───────────────────────────┘  └───────────────────────────────┘
+      │   
+      └─► quick_hello() {
+            [ "$GLOBAL" = true ] && message="🌐 " || message=""
+            echo "${message}Hello, $NAME!"
+          }
 ```
 
-## Installation
-
-Since shifu is just a single POSIX-compatible script, all you need to do is get a copy of it and either put it in a location on your `PATH` or in the same directory as your cli script.
-
-```sh
-curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
-```
-
-## Import
-
-To "import" shifu you simply need to source its file path. If you've installed shifu to a location on your `PATH` you can include the following at the top of your script.
-
-```sh
-. shifu || exit 1
-```
-
-If you'd like not to assume that shifu is on the `PATH`, you can instead make sure shifu is in the same directory as the calling script and use the following.
-
-```sh
-. "${0%/*}"/shifu || exit 1
-```
+</details>
 
 ## Tab completion
 
@@ -296,7 +248,13 @@ By default, subcommand and option names can be tab completed. If you'd like to a
 
 These functions can optionally be used after `shifu_cmd_arg` and instruct shifu what the completions for the preceding argument value should be.
 
-Below is a small shifu cli script demonstrating tab completion capabilities.
+Below is an example cli, [`examples/tab`](/examples/tab), demonstrating tab completion capabilities.
+
+![Tab completion](/assets/tab_demo.gif)
+
+<details>
+
+<summary><b>Source code</b></summary>
 
 [`examples/tab`](/examples/tab)
 
@@ -347,19 +305,23 @@ no_op() { :; }
 shifu_run tab_cmd "$@"
 ```
 
-Below is a gif showing the tab completions working for this cli. If you'd like to test the tab completion from this example you can easily from a bash or zsh (requires autoloading `compinit`) terminal by running
+If you'd like to test the tab completion from this example you can easily from a bash or zsh (requires autoloading `compinit`) terminal by running
+
 ```sh
 export PATH="$PATH:$(pwd)/examples"
 ```
+
 so your shell can find the example `tab` cli, and
+
 ```sh
 eval "$(examples/tab --tab-completion bash)"
 # or, choose for your shell
 eval "$(examples/tab --tab-completion zsh)"
 ```
+
 then tabbing along to the beat.
 
-![Tab completion](/assets/tab_demo.gif)
+</details>
 
 ### Enable
 
@@ -392,6 +354,12 @@ These instructions can also be found by running
 * How does shifu name its variables/functions, will they collide with those in my script?
   * Shifu takes special care to prefix all variables/functions with `shifu` or `_shifu`
   * Calling `shifu_less` after sourcing shifu will create versions of all the [`cmd` functions](#cmd-functions) without the `shifu` prefix. This makes command code less busy, but adds function names that are more likely to cause a collision with those in your script
+
+* What's with the `. "${0%/*}"/shifu || exit 1`?
+  * `.` is the POSIX source command - it executes a file in the current shell, making shifu's functions available to your script, akin to importing
+  * `"${0%/*}"` is parameter expansion that strips the filename from `$0` (the script path), leaving just the directory. This lets your script find shifu relative to itself rather than relying on `PATH`
+  * `|| exit 1` exits the script if sourcing fails (e.g., shifu not found), preventing cryptic errors later
+  * If shifu is on your `PATH`, you can simply use `. shifu || exit 1`
 
 ## API
 
