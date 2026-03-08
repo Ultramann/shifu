@@ -6,7 +6,7 @@
 **SH**ell **I**nterface **F**ramework **U**tility, shifu, is a framework that makes creating powerful clis from shell scripts simple. Shifu has the following features:
 
 * declarative argument parsing
-* subcommands
+* subcommand dispatch
 * scoped help generation
 * tab completion code generation for interactive shells
 * implemented 100% in POSIX-compliant shell script
