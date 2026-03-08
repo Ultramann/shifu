@@ -13,7 +13,7 @@
 * compatibility with POSIX-based shells; tested with: 
   * ash, bash, dash, ksh, zsh
 
-Shell scripts are great for gluing commands together. But when you need to make and maintain subcommands, nested commands, scoped options, and help strings, things get messy fast. Shifu handles the boilerplate so you can focus on functionality.
+Shell scripts are great for gluing commands together. But when you need to make and maintain subcommands, with scoped options, and help strings, things get messy fast. Shifu handles the cli boilerplate so you can focus on functionality.
 
 ## Table of contents
 
@@ -88,8 +88,8 @@ The diagram below shows how shifu is connecting together this cli script to prin
                   │    └─────────────┐       │ 
                   └──────────┐       │       │ 
     intro_cmd() {            │       │       │ 
-┌──── shifu_cmd_name intro ──┘       │       │ 
-│     shifu_cmd_func intro_function  │       │ 
+      shifu_cmd_name intro ──┘       │       │ 
+┌──── shifu_cmd_func intro_function  │       │ 
 │     shifu_cmd_arg -a --arg -- \ ───┘       │ 
 │       ARG none "Example argument to echo"  │ 
 │  }     ▲                                   │ 
@@ -130,89 +130,9 @@ Below is an example cli, [`examples/dispatch`](/examples/dispatch), with two sub
 
 <details>
 
-<summary>Static output</summary>
-
-```txt
-$ examples/dispatch -h
-A dispatch shifu example
-
-An example shifu cli demonstrating
-  * subcommands
-  * argument parsing
-  * scoped help generation
-
-Subcommands
-  echo
-    An echo subcommand
-  hello
-    A hello world subcommand
-
-Options
-  -h, --help
-    Show this help
-$ examples/dispatch hello
-Hello, mysterious user!
-$ examples/dispatch hello -h
-A hello world subcommand
-
-A subcommand that prints greeting with arguments
-
-Options
-  -n, --name [NAME]
-    Name to greet
-    Default: mysterious user
-  -g, --global
-    Global binary option
-    Default: false, set: true
-  -h, --help
-    Show this help
-$ examples/dispatch hello -g -n World
-🌐 Hello, World!
-
-$ examples/dispatch echo -h
-An echo subcommand
-
-A subcommand that prints results of parsed arguments
-
-Usage
-  echo [OPTIONS] [POSITIONAL]
-
-Arguments
-  POSITIONAL
-    Example positional argument
-
-Options
-  -r, --required [REQUIRED]
-    Example required option w/ argument
-    Required
-  -d, --default [DEFAULT]
-    Example option w/ argument
-    Default: default
-  -g, --global
-    Global binary option
-    Default: false, set: true
-  -h, --help
-    Show this help
-$ examples/dispatch echo --required 'provided' example
-Global binary option: false
-Required option:      provided
-Option w/ default:    default
-Positional argument:  example
-$ examples/dispatch echo -g --required 'provided' \
-> -d 'not default' example
-Global binary option: true
-Required option:      provided
-Option w/ default:    not default
-Positional argument:  example
-```
-
-</details>
-
-<details>
-
 <summary>Source code</summary>
 
-Note, this example calls `shifu_less` after sourcing `shifu` to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
+Note, this example calls `shifu_less` after sourcing `shifu` to provide a version of the `shifu_cmd` functions without the `shifu__ prefixes.
 
 [`examples/dispatch`](/examples/dispatch)
 
