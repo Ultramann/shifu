@@ -26,7 +26,7 @@ auth_set_cmd() {
   cmd_func auth_set
   cmd_help "Set token for authentication"
 
-  cmd_arg -- PAT "Personal access token, documentation:
+  cmd_argr PAT "Personal access token, documentation:
       https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens"
 }
 
@@ -49,7 +49,7 @@ issue_cmd() {
   cmd_subs issue_list_cmd issue_get_cmd
   cmd_help "Commands for interacting with github repository issues"
 
-  cmd_arg -R --repo -- REPO "current repo" "Github repository in OWNER/REPO format"
+  cmd_optd :defer: -R --repo -- REPO "current repo" "Github repository in OWNER/REPO format"
 }
 
 issue_list_cmd() {
@@ -57,7 +57,7 @@ issue_list_cmd() {
   cmd_func issue_list
   cmd_help "List issues in a GitHub repository"
 
-  cmd_arg -n --number -- NUMBER 10 "Max number of results"
+  cmd_optd -n --number -- NUMBER 10 "Max number of results"
 }
 
 issue_list() {
@@ -76,7 +76,7 @@ issue_get_cmd() {
   cmd_func issue_get
   cmd_help "Get issue in a GitHub repository"
 
-  cmd_arg -- ISSUE_NUMBER "Issue number to get"
+  cmd_argr ISSUE_NUMBER "Issue number to get"
 }
 
 issue_get() {
@@ -98,7 +98,7 @@ pr_cmd() {
   cmd_subs pr_list_cmd pr_get_cmd
   cmd_help "Commands for interacting with github repository pull requests"
 
-  cmd_arg -R --repo -- REPO "current repo" "Github repository in OWNER/REPO format"
+  cmd_optd :defer: -R --repo -- REPO "current repo" "Github repository in OWNER/REPO format"
 }
 
 pr_list_cmd() {
@@ -106,8 +106,8 @@ pr_list_cmd() {
   cmd_func pr_list
   cmd_help "List pull requests in a GitHub repository"
 
-  cmd_arg -s --state  -- STATE open "State of PR: open, closed, all"
-  cmd_arg -n --number -- NUMBER 10  "Max number of results"
+  cmd_optd -s --state  -- STATE open "State of PR: open, closed, all"
+  cmd_optd -n --number -- NUMBER 10  "Max number of results"
 }
 
 pr_list() {
@@ -124,7 +124,7 @@ pr_get_cmd() {
   cmd_func pr_get
   cmd_help "Get pr in a GitHub repository"
 
-  cmd_arg -- PR_NUMBER "Pull request number to get"
+  cmd_argr PR_NUMBER "Pull request number to get"
 }
 
 pr_get() {
