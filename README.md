@@ -13,7 +13,7 @@
 * compatibility with POSIX-based shells; tested with: 
   * ash, bash, dash, ksh, zsh
 
-Shell scripts are great for gluing commands together. But when you need to make and maintain subcommands, with scoped options, and help strings, things get messy fast. Shifu handles the cli boilerplate so you can focus on functionality.
+Shell scripts are great for gluing commands together. But when you need to make and maintain subcommands, with scoped options, and help strings, things can get messy fast. Shifu handles the cli boilerplate so you can focus on functionality.
 
 ## Table of contents
 
@@ -59,7 +59,7 @@ intro_function() {
 shifu_run intro_cmd "$@"
 ```
 
-Calling this cli, we can see how it parses the argument we declare into the variable `ARG` and also automatically generates help strings.
+Calling this cli, we can see how it parses `-a shifu` into the variable `ARG` when provided, and also automatically generates help strings.
 
 ```txt
 $ examples/intro
@@ -118,10 +118,17 @@ sub_cmd() {
 
 # referenced by name in sub_cmd -> shifu_cmd_func
 sub_func() {
-  echo "in subcommand"
+  echo "Hello from sub_func"
 }
 
 shifu_run root_cmd "$@"
+```
+
+Invoking this script:
+
+```sh
+$ root sub
+Hello from sub_func
 ```
 
 Below is an example cli, [`examples/dispatch`](/examples/dispatch), with two subcommands, `hello` and `echo`, each with their own arguments.
