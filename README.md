@@ -132,7 +132,7 @@ Below is an example cli, [`examples/dispatch`](/examples/dispatch), with two sub
 
 <summary><b>Source code</b></summary>
 
-Note, this example calls `shifu_less` after sourcing `shifu` to provide a version of the `shifu_cmd` functions without the `shifu__ prefixes.
+Note, this example calls `shifu_less` after sourcing `shifu` to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
 
 [`examples/dispatch`](/examples/dispatch)
 
