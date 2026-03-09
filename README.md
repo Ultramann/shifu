@@ -59,7 +59,7 @@ intro_function() {
 shifu_run intro_cmd "$@"
 ```
 
-Calling this cli, we can see how it parses `-─a shifu` into the variable `ARG` when provided, and also automatically generates help strings.
+Calling this cli, we can see how it parses `-a shifu` into the variable `ARG` when provided, and also automatically generates help strings.
 
 ```txt
 $ examples/intro
