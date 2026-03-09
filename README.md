@@ -34,7 +34,7 @@ curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
 
 ## Quickstart
 
-Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ contains calls to shifu `cmd` functions. Shifu `cmd` functions provide a dsl which shifu uses to wire together your cli. Commands are passed to shifu's command runner, `shifu_run`, or referenced as subcommands.
+Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ contains calls to shifu `cmd` or `cmp` functions. Shifu `cmd` and `cmp` functions provide a DSL which shifu uses to wire together your cli. Commands are passed to shifu's command runner, `shifu_run`, or referenced as subcommands.
 
 Below is a very minimal, introduction shifu cli script.
 
@@ -49,7 +49,7 @@ intro_cmd() {
   shifu_cmd_help "An introduction shifu cli"
   shifu_cmd_long "This command function will invoke intro_function which prints an argument
 provided by '-a' or '--arg' or none if no argument is provided"
-  shifu_cmd_arg -a --arg -- ARG none "Example argument to echo"
+  shifu_cmd_optd -a --arg -- ARG none "Example argument to echo"
 }
 
 intro_function() {
@@ -59,7 +59,7 @@ intro_function() {
 shifu_run intro_cmd "$@"
 ```
 
-Calling this cli, we can see how it parses `-a shifu` into the variable `ARG` when provided, and also automatically generates help strings.
+Calling this cli, we can see how it parses `-─a shifu` into the variable `ARG` when provided, and also automatically generates help strings.
 
 ```txt
 $ examples/intro
@@ -89,9 +89,9 @@ The diagram below shows how shifu is connecting together this cli script to prin
                   └──────────┐       │       │ 
     intro_cmd() {            │       │       │ 
       shifu_cmd_name intro ──┘       │       │ 
-┌──── shifu_cmd_func intro_function  │       │ 
-│     shifu_cmd_arg -a --arg -- \ ───┘       │ 
-│       ARG none "Example argument to echo"  │ 
+┌──── shifu_cmd_func intro_function  │       │
+│     shifu_cmd_optd -a --arg -- \ ──┘       │
+│       ARG none "Example argument to echo"  │
 │  }     ▲                                   │ 
 │        └───────────────────────────────────┘ 
 │                                             
@@ -102,7 +102,7 @@ The diagram below shows how shifu is connecting together this cli script to prin
 
 ## Subcommands
 
-Shifu supports nested subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. Arguments declared in parent commands are automatically inherited by descendants. Here's what the minimal structure a subcommnd cli looks like (a complete example can be found below):
+Shifu supports subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. Options in non-leaf commands (those with `shifu_cmd_subs`) require a mode annotation — `:defer:` to inherit the option to subcommands, or `:eager:` to parse it locally before subcommand dispatch. Here's what the minimal structure of a subcommand cli looks like (a complete example can be found below):
 
 ```sh
 root_cmd() {
@@ -139,7 +139,7 @@ Below is an example cli, [`examples/dispatch`](/examples/dispatch), with two sub
 
 <summary><b>Source code</b></summary>
 
-Note, this example calls `shifu_less` after sourcing `shifu` to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
+Note, this example calls `shifu_less` after sourcing `shifu` to provide a version of the `shifu_cmd` and `shifu_cmp` functions without the `shifu_` prefixes.
 
 [`examples/dispatch`](/examples/dispatch)
 
@@ -159,11 +159,11 @@ dispatch_cmd() {
   cmd_help "A dispatch shifu example"
   # Add long help for the command
   cmd_long "An example shifu cli demonstrating
-  * subcommands
+  * subcommand dispatch
   * argument parsing
   * scoped help generation"
-  # Add global argument
-  cmd_arg -g --global -- GLOBAL false true "Global binary option"
+  # Add deferred binary option, inherited by subcommands
+  cmd_optb :defer: -g --global -- GLOBAL false true "Global binary option"
 }
 
 # Write first subcommand, referenced in `cmd_subs` above
@@ -173,9 +173,9 @@ hello_cmd() {
   cmd_func dispatch_hello
   cmd_help "A hello world subcommand"
   cmd_long "A subcommand that prints greeting with arguments"
-  # Add argument, will populate variable `NAME` when parsing cli args
+  # Add option, will populate variable `NAME` when parsing cli args
   # NAME defaults to 'mysterious user' if -n/--name aren't provided
-  cmd_arg -n --name -- NAME "mysterious user" "Name to greet"
+  cmd_optd -n --name -- NAME "mysterious user" "Name to greet"
 }
 
 # Write first subcommand target function
@@ -191,15 +191,15 @@ echo_cmd() {
   cmd_help "An echo subcommand"
   cmd_long "A subcommand that prints results of parsed arguments"
 
-  # Add arguments, will populate variables when parsing cli args
-  cmd_arg -r --required -- REQUIRED   "Example required option w/ argument"
-  cmd_arg -d --default  -- DEFAULT    "default" "Example option w/ argument"
-  cmd_arg               -- POSITIONAL "Example positional argument"
+  # Add options and positional argument
+  cmd_optr -r --required -- REQUIRED   "Example required option w/ argument"
+  cmd_optd -d --default  -- DEFAULT    "default" "Example option w/ argument"
+  cmd_argr                  POSITIONAL "Example positional argument"
 }
 
 # Write second subcommand target function
 dispatch_echo() {
-  # Use variables populated by `cmd_arg` in `echo_cmd` and `dispatch_cmd`
+  # Use variables populated by option/argument functions
   echo "Global binary option: $GLOBAL"
   echo "Required option:      $REQUIRED"
   echo "Option w/ default:    $DEFAULT"
@@ -213,23 +213,23 @@ shifu_run dispatch_cmd "$@"
 The diagram below shows how shifu is connecting together this cli script to print the value `🌐 Hello, World!` in `dispatch_hello`.
 
 ```
-┌───────────── sets to ────────────┐
-│ ┌──────────── true ─────────────┐│
-│ │                               ▼│
-│ │       examples/dispatch hello -g --name World ───────────────────┐
-│ │                     ▲      ▲        ▲                            │
-│ │                     │      │        └──────────────────────────┐ │
-│ │                     │      └────────────────────────────┐      │ │
-│ │ dispatch_cmd() {    │            ┌─► hello_cmd() {      │      │ │
-│ │   cmd_name dispatch ┘            │     cmd_name hello ──┘      │ │
-│ │   cmd_subs echo_cmd hello__cmd ──┘ ┌── cmd_func dispatch_hello │ │
-│ └── cmd_arg -g --global -- \    ┌────┘   cmd_arg -n --name -- \ ─┘ │
-└─────► GLOBAL false true \       │  ┌──►  NAME "mysterious user" \  │
-        "Global binary option"    │  │     "Name to greet"           │
-    }                             │  │ }                             │
-      ┌───────────────────────────┘  └───────────────────────────────┘
-      │   
-      └─► quick_hello() {
+┌───────────── sets to ─────────────┐
+│ ┌──────────── true ──────────────┐│
+│ │                                ▼│
+│ │        examples/dispatch hello -g --name World ─────────────────────┐
+│ │                     ▲      ▲         ▲                              │
+│ │                     │      │         └────────────────────────────┐ │
+│ │                     │      └───────────────────────────────┐      │ │
+│ │ dispatch_cmd() {    │              ┌─► hello_cmd() {       │      │ │
+│ │   cmd_name dispatch ┘              │     cmd_name hello ───┘      │ │
+│ │   cmd_subs hello_cmd echo_cmd ─────┘ ┌── cmd_func dispatch_hello  │ │
+│ └── cmd_optb :defer: -g --global \ ┌───┘   cmd_optd -n --name \ ────┘ │
+└────►  -- GLOBAL false true \       │ ┌──►    -- NAME "mysterious \    │
+        "Global binary option"       │ │       user" "Name to greet"    │
+    }                                │ │ }                              │
+      ┌──────────────────────────────┘ └────────────────────────────────┘
+      │
+      └─► dispatch_hello() {
             [ "$GLOBAL" = true ] && message="🌐 " || message=""
             echo "${message}Hello, $NAME!"
           }
@@ -241,12 +241,12 @@ The diagram below shows how shifu is connecting together this cli script to prin
 
 Since shifu knows all about the structure of your cli it can generate tab completion code for interactive shells that support it, bash and zsh. 
 
-By default, subcommand and option names can be tab completed. If you'd like to add tab completion for option values and positions/remaining arguments shifu provides three `cmd` functions
-* `shifu_cmd_arg_comp_enum`: static list of completions
-* `shifu_cmd_arg_comp_func`: function to generate list of completions. Completions are added with the shifu function `shifu_add_completions`
-* `shifu_cmd_arg_comp_path`: ties into your shell completion framework to enable easy path completions for directories and files
+By default, subcommand and option names can be tab completed. If you'd like to add tab completion for option values and positional/remaining arguments shifu provides three `cmp` functions
+* `shifu_cmp_enum`: static list of completions
+* `shifu_cmp_func`: function to generate list of completions. Completions are added with the shifu function `shifu_add_cmps`
+* `shifu_cmp_path`: ties into your shell completion framework to enable easy path completions for directories and files
 
-These functions can optionally be used after `shifu_cmd_arg` and instruct shifu what the completions for the preceding argument value should be.
+These functions can be called after an option or argument declaration to instruct shifu what the completions for the preceding argument value should be.
 
 Below is an example cli, [`examples/tab`](/examples/tab), demonstrating tab completion capabilities.
 
@@ -281,17 +281,17 @@ completion_cmd() {
   cmd_help "Main command with example options and tab completion capabilities"
   cmd_func no_op
 
-  cmd_arg -e --enum -- ENUM_COMP enum_comp "Enum completion"
-  cmd_arg_comp_enum magic value
-  cmd_arg -f --func -- FUNC_COMP func_comp "Function completion, file extensions"
-  cmd_arg_comp_func file_extension_completions
-  cmd_arg           -- PATH_COMP "Path completion"
-  cmd_arg_comp_path
+  cmd_optd -e --enum -- ENUM_COMP enum_comp "Enum completion"
+  cmp_enum magic value
+  cmd_optd -f --func -- FUNC_COMP func_comp "Function completion, file extensions"
+  cmp_func file_extension_completions
+  cmd_argr              PATH_COMP "Path completion"
+  cmp_path
 }
 
 file_extension_completions() {
   # dynamically complete with extensions from files in current directory
-  shifu_add_completions "$(ls -1 | grep '\.' | sed 's/.*\.//' | sort -u)"
+  shifu_add_cmps "$(ls -1 | grep '\.' | sed 's/.*\.//' | sort -u)"
 }
 
 demo_cmd() {
@@ -353,7 +353,7 @@ These instructions can also be found by running
 
 * How does shifu name its variables/functions, will they collide with those in my script?
   * Shifu takes special care to prefix all variables/functions with `shifu` or `_shifu`
-  * Calling `shifu_less` after sourcing shifu will create versions of all the [`cmd` functions](#cmd-functions) without the `shifu` prefix. This makes command code less busy, but adds function names that are more likely to cause a collision with those in your script
+  * Calling `shifu_less` after sourcing shifu will create versions of all the `cmd` and `cmp` functions without the `shifu` prefix. This makes command code less busy, but adds function names that are more likely to cause a collision with those in your script
 
 * What's with the `. "${0%/*}"/shifu || exit 1`?
   * `.` is the POSIX source command - it executes a file in the current shell, making shifu's functions available to your script, akin to importing
@@ -370,14 +370,14 @@ These instructions can also be found by running
 * Takes the name of a command function, those ones that end in `_cmd` by convention, and all script arguments, `"$@"`
 * Dispatches call by parsing arguments in `"$@"` based on information in command function
 * Parses arguments that match subcommand names until the subcommand specifies a function to call with `shifu_cmd_func`
-* Parses all unparsed arguments into variables declared in `shifu_cmd_arg` calls
+* Parses all unparsed arguments into variables declared in option and argument function calls
 * Calls the function in `shifu_cmd_func` passing any still unparsed arguments
 * Example
   ```sh
   shifu_run root_cmd "$@"
   ```
 
-### `cmd` functions
+### Command definition functions
 
 #### `shifu_cmd_name`
 * Name used to reference command from command line arguments
@@ -420,46 +420,132 @@ These instructions can also be found by running
   shifu_cmd_long "Verbose string to really help users"
   ```
 
-#### `shifu_cmd_arg`
-* Configuration to parse command line arguments to variables, optionally setting defaults for those variables
-* Arguments are passed in two parts separated by a required double dash, `--`:
+### Option and argument functions
+
+There are five option and argument declaration functions:
+
+| Type     | Function           | Declares                     |
+|----------|--------------------|------------------------------|
+| Option   | `shifu_cmd_optb`   | Binary option                |
+| Option   | `shifu_cmd_optd`   | Option with default          |
+| Option   | `shifu_cmd_optr`   | Required option              |
+| Argument | `shifu_cmd_argr`   | Required positional argument |
+| Argument | `shifu_cmd_args`   | Remaining arguments          |
+
+Option functions (`shifu_cmd_optb`, `shifu_cmd_optd`, `shifu_cmd_optr`) parse flagged arguments into variables. They take one or more flags (e.g. `-v`, `--verbose`) before a required `--` separator, followed by parsing configuration. Argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) parse positional arguments by order of declaration.
+
+All option and argument functions accept a `variable` argument — the shell variable name that will be set when parsing, and a `help` string used in auto-generated help output.
+
+In **leaf commands** (those using `shifu_cmd_func`), no mode prefix is needed:
+```sh
+shifu_cmd_optd -o --output -- OUTPUT "default" "Output file"
+```
+
+In **non-leaf commands** (those using `shifu_cmd_subs`), option functions require a mode as the first argument:
+* `:defer:` — option specification and parsing is deferred until the leaf command options
+* `:eager:` — option parsing is done eagerly, before subcommand dispatch
+
+```sh
+shifu_cmd_optb :defer: -v --verbose -- VERBOSE false true "Verbose output"
+shifu_cmd_optd :eager: -c --config  -- CONFIG "default" "Config file"
+```
+
+Positional and remaining argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) can only be used in leaf commands.
+
+The option and argument declaration order in a command function matters:
+1. Help is generated in declaration order
+1. Positional arguments are parsed in declaration order
+1. Options must be declared before any positional arguments, and positional arguments before remaining arguments
+
+#### `shifu_cmd_optb`
+* Binary option
+* Variable is assigned a value depending on whether or not the option flag is set
+* Signature
   ```sh
-  shifu_cmd_arg [matching patterns] -- [parsing configuration]
+  shifu_cmd_optb <flags> -- <variable> <default> <set_value> <help>
   ```
-* Matching patterns are literal flag/option strings, e.g. `-v`, `--verbose`
-  * Any number can be provided before the double dash
-    ```sh
-    shifu_cmd_arg -v --verbose -- ...
-    ```
-* Parses arguments depending on patterns being provided and the number of arguments after the double dash
-  | Kind               | Description/Structure/Example                           | 
-  |--------------------|---------------------------------------------------------|
-  | Option: binary     | variable is assigned a value depending on whether or not the option is set |
-  |                    | `[patterns] -- [variable] [default] [set value] "help"` |
-  |                    | `-v --verbose -- VERBOSE false true "help"`             |
-  | Option: default    | variable has a default value which can be overwritten with an option and following argument |
-  |                    | `[patterns] -- [variable] [default] "help"`             |
-  |                    | `-o --output -- OUTPUT "out" "help"`                    |
-  | Option: required   | variable must be set with an option and following argument, error if not set |
-  |                    | `[patterns] -- [variable] "help"`                       |
-  |                    | `-m --mode -- MODE "help"`                         |
-  | Positional         | variable set with required value from argument          |
-  |                    | `           -- [variable] "help"`                       |
-  |                    | `-- TARGET "help"`                                      |
-  | Remaining          | zero or more arguments passed to target function via "$@" |
-  |                    | `           -- "help"`                                  |
-  |                    | `-- "help"`                                             |
-
-* The order that multiple calls to `shifu_cmd_arg` occurs in a command function matters in a few ways
-  1. The help string generated from the arguments will match the order of the calls
-  1. Positional arguments are parsed from the command line arguments in the order they are declared in the command function
-  1. No options can be declared after any positional or remaining argument declaration
-* If used in a command with subcommands, all descendent subcommands will inherit the configuration
-
-#### `shifu_cmd_arg_loc`
-* Local argument configuration
-* Same purpose and usage as `shifu_cmd_arg` except subcommands do not inherit configuration
-* Instead option arguments will be parsed greedily when parsing subcommand names allowing usage like
+* Example
   ```sh
-  cli root --local sub --args
+  shifu_cmd_optb -v --verbose -- VERBOSE false true "Verbose output"
+  ```
+
+#### `shifu_cmd_optd`
+* Option with default
+* Variable has a default value which can be overwritten with the option flag and a following argument
+* Signature
+  ```sh
+  shifu_cmd_optd <flags> -- <variable> <default> <help>
+  ```
+* Example
+  ```sh
+  shifu_cmd_optd -o --output -- OUTPUT "out" "Output file"
+  ```
+
+#### `shifu_cmd_optr`
+* Required option
+* Variable must be set with the option flag and a following argument, error if not provided
+* Signature
+  ```sh
+  shifu_cmd_optr <flags> -- <variable> <help>
+  ```
+* Example
+  ```sh
+  shifu_cmd_optr -m --mode -- MODE "Operating mode"
+  ```
+
+#### `shifu_cmd_argr`
+* Required positional argument
+* Variable is set from the next unparsed argument
+* Leaf commands only
+* Signature
+  ```sh
+  shifu_cmd_argr <variable> <help>
+  ```
+* Example
+  ```sh
+  shifu_cmd_argr TARGET "Target to process"
+  ```
+
+#### `shifu_cmd_args`
+* Remaining arguments
+* Zero or more unparsed arguments passed to the target function via `$@`
+* Leaf commands only
+* Signature
+  ```sh
+  shifu_cmd_args <help>
+  ```
+* Example
+  ```sh
+  shifu_cmd_args "Additional arguments"
+  ```
+
+### Completion functions
+
+#### `shifu_cmp_enum`
+* Enumeration completion
+* Static list of tab completions for the preceding option or argument
+* Example
+  ```sh
+  shifu_cmp_enum debug info warn error
+  ```
+
+#### `shifu_cmp_func`
+* Function completion
+* Function to dynamically generate tab completions for the preceding option or argument
+* The function should call `shifu_add_cmps` to register completions
+* Example
+  ```sh
+  shifu_cmp_func file_ext_completions
+
+  file_ext_completions() {
+    shifu_add_cmps "$(ls -1 | sed 's/.*\.//' | sort -u)"
+  }
+  ```
+
+#### `shifu_cmp_path`
+* Path completion
+* Enable path completions (directories and files) for the preceding option or argument
+* Example
+  ```sh
+  shifu_cmp_path
   ```
