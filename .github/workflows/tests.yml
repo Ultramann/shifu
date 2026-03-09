@@ -16,20 +16,20 @@ jobs:
         uses: actions/cache@v4
         id: cache-image
         with:
-          path: /tmp/shifu-shells.tar
-          key: shifu-shells-${{ hashFiles('tests/Containerfile.test') }}
+          path: /tmp/shifu-test-shells.tar
+          key: shifu-test-shells-${{ hashFiles('tests/Containerfile.test') }}
 
       - name: Load cached image
         if: steps.cache-image.outputs.cache-hit == 'true'
-        run: podman load -i /tmp/shifu-shells.tar
+        run: podman load -i /tmp/shifu-test-shells.tar
 
       - name: Build test container
         if: steps.cache-image.outputs.cache-hit != 'true'
         run: |
-          podman build -t shifu-shells -f tests/Containerfile.test .
-          podman save -o /tmp/shifu-shells.tar shifu-shells
+          podman build -t shifu-test-shells -f tests/Containerfile.test .
+          podman save -o /tmp/shifu-test-shells.tar shifu-test-shells
 
       - name: Run tests
-        run: tests/run --image shifu-shells all
+        run: tests/run --image shifu-test-shells all
         env:
           SHIFU_TEST_GREY: 7
