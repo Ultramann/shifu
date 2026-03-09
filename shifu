@@ -79,15 +79,24 @@ shifu_cmp_path() {
   shifu_arg_completion_set=true
 }
 
+_shifu_validate_flag() {
+  case "$1" in
+    -*) ;;
+    *) _shifu_error "Option flags must start with - or --, got: $1" ;;
+  esac
+}
+
 _shifu_opt_build() {
   shifu_build_var="$1"
   shifu_build_prefix="$2"
   shifu_build_sep="$3"
   shift 3
+  _shifu_validate_flag "$1"
   eval "$shifu_build_var=\"\${$shifu_build_var:-}$shifu_build_prefix\$1\""
   shifu_opt_count=2
   shift
   while [ $# -gt 0 ] && [ "$1" != -- ]; do
+    _shifu_validate_flag "$1"
     eval "$shifu_build_var=\"\$$shifu_build_var$shifu_build_sep\$1\""
     shifu_opt_count=$((shifu_opt_count + 1))
     shift
@@ -450,6 +459,7 @@ _shifu_clear_cmd_vars() {
 
 _shifu_help() {
   shifu_mode=$shifu_mode_cmds_run
+  _shifu_clear_cmd_vars
   "$1"
   _shifu_make_subcmd_help
   shifu_mode=$shifu_mode_help_run
@@ -582,7 +592,7 @@ _shifu_complete() {
 
 _shifu_set_completing_option() {
   case "${shifu_current_word:-}" in
-    -*|--*) shifu_completing_option=true ;;
+    -*) shifu_completing_option=true ;;
     *) shifu_completing_option=false ;;
   esac
 }
@@ -626,7 +636,7 @@ ${shifu_defer_comp_case:-}"
   shifu_last_arg_is_eager=true
   "$shifu_cmd"
   case "${shifu_current_word:-}" in
-    -*|--*) return 0 ;;
+    -*) return 0 ;;
   esac
   if [ $shifu_parse_stage -eq 0 -a $shifu_arg_completion_set = false ]; then
     shifu_case_stmt="$shifu_case_stmt shift ;;"
@@ -663,7 +673,7 @@ _shifu_filter_matching_options() {
 
 _shifu_update_case_stmt_invalid_option() {
   shifu_case_stmt="$shifu_case_stmt
-  -*|--*) echo \"Invalid option: \$1\"; _shifu_help \"\$shifu_cmd\" 1 ;;
+  -*) echo \"Invalid option: \$1\"; _shifu_help \"\$shifu_cmd\" 1 ;;
   *)"
 }
 
@@ -675,7 +685,7 @@ $2\""
 _shifu_error_if_options() {
   while [ $# -gt 0 ]; do
     case "$1" in
-      -*|--*) echo "No options allowed after any positional argument: $1"; return 1 ;;
+      -*) echo "No options allowed after any positional argument: $1"; return 1 ;;
     esac
     shift
   done

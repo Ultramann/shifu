@@ -481,6 +481,34 @@ test_shifu_run_bad_positional_local_arg_cmd() {
   shifu_assert_strings_equal error_message "$expected" "$actual"
 }
 
+shifu_test_bad_missing_mode_cmd() {
+  shifu_cmd_name bad-mode
+  shifu_cmd_subs does not matter
+
+  shifu_cmd_optd -o --opt -- OPT default "Missing mode"
+}
+
+test_shifu_run_bad_missing_mode() {
+  expected="Mode :eager: or :defer: required in non-leaf commands"
+  actual=$(shifu_run shifu_test_bad_missing_mode_cmd does not matter 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_strings_equal error_message "$expected" "$actual"
+}
+
+shifu_test_bad_flag_format_cmd() {
+  shifu_cmd_name bad-flag
+  shifu_cmd_func does_not_matter
+
+  shifu_cmd_optd oops -- OPT default "Flag without dash"
+}
+
+test_shifu_run_bad_flag_format() {
+  expected="Option flags must start with - or --, got: oops"
+  actual=$(shifu_run shifu_test_bad_flag_format_cmd 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_strings_equal error_message "$expected" "$actual"
+}
+
 test_shifu_help() {
   expected='Test cmd all help
 
