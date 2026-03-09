@@ -8,7 +8,7 @@ intro_cmd() {
   shifu_cmd_help "An introduction shifu cli"
   shifu_cmd_long "This command function will invoke intro_function which prints an argument
 provided by '-a' or '--arg' or none if no argument is provided"
-  shifu_cmd_arg -a --arg -- ARG none "Example argument to echo"
+  shifu_cmd_optd -a --arg -- ARG none "Example argument to echo"
 }
 
 intro_function() {

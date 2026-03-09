@@ -15,9 +15,9 @@ shifu_test_root_cmd() {
   shifu_cmd_help "Test root cmd help"
   shifu_cmd_subs shifu_test_sub_one_cmd shifu_test_sub_two_cmd
 
-  shifu_cmd_arg -g --global-bin -- GLOBAL_BIN false true "A test global bin cmd arg"
-  shifu_cmd_arg -G --global-def -- GLOBAL_DEF global_def "A test global def cmd arg"
-  shifu_cmd_arg_comp_enum global_one global_two global_three
+  shifu_cmd_optb :defer: -g --global-bin -- GLOBAL_BIN false true "A test global bin cmd arg"
+  shifu_cmd_optd :defer: -G --global-def -- GLOBAL_DEF global_def "A test global def cmd arg"
+  shifu_cmp_enum global_one global_two global_three
 }
 
 shifu_test_sub_one_cmd() {
@@ -25,8 +25,8 @@ shifu_test_sub_one_cmd() {
   shifu_cmd_help "Test sub one cmd help"
   shifu_cmd_subs shifu_test_leaf_one_cmd shifu_test_leaf_two_cmd
 
-  shifu_cmd_arg -S --sub-global -- SUB_GLOBAL sub_global "A test sub-one global arg"
-  shifu_cmd_arg_comp_func make_fake_sub_global_completions
+  shifu_cmd_optd :defer: -S --sub-global -- SUB_GLOBAL sub_global "A test sub-one global arg"
+  shifu_cmp_func make_fake_sub_global_completions
 }
 
 shifu_test_sub_two_cmd() {
@@ -34,8 +34,8 @@ shifu_test_sub_two_cmd() {
   shifu_cmd_help "Test sub two cmd help"
   shifu_cmd_subs shifu_test_leaf_three_cmd shifu_test_leaf_four_cmd
 
-  shifu_cmd_arg_loc -l --local-test -- LOCAL_TEST local-test "A test local cmd arg"
-  shifu_cmd_arg_comp_enum local option test
+  shifu_cmd_optd :eager: -l --local-test -- LOCAL_TEST local-test "A test local cmd arg"
+  shifu_cmp_enum local option test
 }
 
 shifu_test_leaf_one_cmd() {
@@ -61,10 +61,10 @@ shifu_test_leaf_four_cmd() {
   shifu_cmd_help "Test leaf four cmd help"
   shifu_cmd_func shifu_test_leaf_func_four
 
-  shifu_cmd_arg -f --fake-arg -- FAKE_ARG fake_default "fake argument help"
-  shifu_cmd_arg -t --test-arg -- TEST_ARG test_default "test argument help"
-  shifu_cmd_arg               -- POSITIONAL_ARG "positional argument help"
-  shifu_cmd_arg               -- "remaining argument help"
+  shifu_cmd_optd -f --fake-arg -- FAKE_ARG fake_default "fake argument help"
+  shifu_cmd_optd -t --test-arg -- TEST_ARG test_default "test argument help"
+  shifu_cmd_argr POSITIONAL_ARG "positional argument help"
+  shifu_cmd_args "remaining argument help"
 }
 
 shifu_test_leaf_func_one() {
@@ -89,42 +89,42 @@ shifu_test_all_options_cmd() {
   shifu_cmd_long "These are all the fancy things you can do with the all command"
   shifu_cmd_func no_op
 
-  shifu_cmd_arg -f -- FLAG_BIN 0 1      "binary flag help"
-  shifu_cmd_arg -a -- FLAG_REQ          "required flag help"
-  shifu_cmd_arg -d -- FLAG_DEF def_flag "default argument flag help"
-  shifu_cmd_arg --option-bin -- OPTION_BIN 0 1     "binary option help"
-  shifu_cmd_arg --option-req -- OPTION_REQ         "required option help"
-  shifu_cmd_arg --option-def -- OPTION_DEF def_opt "default argument option help"
-  shifu_cmd_arg -F --flag-option-bin -- FLAG_OPTION_BIN 0 1 "binary flag/option help"
-  shifu_cmd_arg -A --flag-option-req -- FLAG_OPTION_REQ     "required flag/option help"
-  shifu_cmd_arg_comp_enum flag option arg
-  shifu_cmd_arg -D --flag-option-def -- FLAG_OPTION_DEF def_flag_opt \
+  shifu_cmd_optb -f -- FLAG_BIN 0 1      "binary flag help"
+  shifu_cmd_optr -a -- FLAG_REQ          "required flag help"
+  shifu_cmd_optd -d -- FLAG_DEF def_flag "default argument flag help"
+  shifu_cmd_optb --option-bin -- OPTION_BIN 0 1     "binary option help"
+  shifu_cmd_optr --option-req -- OPTION_REQ         "required option help"
+  shifu_cmd_optd --option-def -- OPTION_DEF def_opt "default argument option help"
+  shifu_cmd_optb -F --flag-option-bin -- FLAG_OPTION_BIN 0 1 "binary flag/option help"
+  shifu_cmd_optr -A --flag-option-req -- FLAG_OPTION_REQ     "required flag/option help"
+  shifu_cmp_enum flag option arg
+  shifu_cmd_optd -D --flag-option-def -- FLAG_OPTION_DEF def_flag_opt \
                                     "default argument flag/option help"
-  shifu_cmd_arg_comp_func make_fake_option_completions
-  shifu_cmd_arg                      -- POSITIONAL_ARG_1 "positional argument one help"
-  shifu_cmd_arg_comp_enum positional arg one
-  shifu_cmd_arg                      -- POSITIONAL_ARG_2 "positional argument two help"
-  shifu_cmd_arg_comp_func make_fake_positional_completions
-  shifu_cmd_arg                      --                  "remaining arguments help"
-  shifu_cmd_arg_comp_func make_fake_remaining_completions
+  shifu_cmp_func make_fake_option_completions
+  shifu_cmd_argr POSITIONAL_ARG_1 "positional argument one help"
+  shifu_cmp_enum positional arg one
+  shifu_cmd_argr POSITIONAL_ARG_2 "positional argument two help"
+  shifu_cmp_func make_fake_positional_completions
+  shifu_cmd_args "remaining arguments help"
+  shifu_cmp_func make_fake_remaining_completions
 }
 
 no_op() { :; }
 
 make_fake_option_completions() {
-  shifu_add_completions flag option default
+  shifu_add_cmps flag option default
 }
 
 make_fake_positional_completions() {
-  shifu_add_completions positional arg two
+  shifu_add_cmps positional arg two
 }
 
 make_fake_remaining_completions() {
-  shifu_add_completions remaining args
+  shifu_add_cmps remaining args
 }
 
 make_fake_sub_global_completions() {
-  shifu_add_completions sub_global_a sub_global_b sub_global_c
+  shifu_add_cmps sub_global_a sub_global_b sub_global_c
 }
 
 test_shifu_run_good() {
@@ -223,8 +223,8 @@ shifu_test_required_options_cmd() {
   shifu_cmd_name required-options
   shifu_cmd_subs shifu_test_leaf_three_cmd
 
-  shifu_cmd_arg_loc -l --local -- LOCAL_TEST "A test required local cmd arg"
-  shifu_cmd_arg -g --global -- GLOBAL_TEST "A test required global cmd arg"
+  shifu_cmd_optr :eager: -l --local -- LOCAL_TEST "A test required local cmd arg"
+  shifu_cmd_optr :defer: -g --global -- GLOBAL_TEST "A test required global cmd arg"
 }
 
 test_shifu_run_required_local_and_global_options() {
@@ -247,8 +247,8 @@ shifu_test_option_missing_value_cmd() {
   shifu_cmd_help "Test cmd for option without value"
   shifu_cmd_func no_op
 
-  shifu_cmd_arg -o --option-with-value -- OPTION_VALUE default_value "Option that requires a value"
-  shifu_cmd_arg -t --test-opt -- TEST_OPT test_default "Test option with value"
+  shifu_cmd_optd -o --option-with-value -- OPTION_VALUE default_value "Option that requires a value"
+  shifu_cmd_optd -t --test-opt -- TEST_OPT test_default "Test option with value"
 }
 
 test_shifu_run_option_missing_value() {
@@ -457,11 +457,11 @@ shifu_test_bad_positional_global_arg_cmd() {
   shifu_cmd_name bad-global
   shifu_cmd_subs does not matter
 
-  shifu_cmd_arg -- bad_positional "Bad help"
+  shifu_cmd_argr bad_positional "Bad help"
 }
 
 test_shifu_run_bad_positional_global_arg_cmd() {
-  expected="Positional arguments cannot be global: bad_positional"
+  expected="Positional arguments can only be used in leaf commands"
   actual=$(shifu_run shifu_test_bad_positional_global_arg_cmd does not matter 2>&1)
   shifu_assert_non_zero exit_code $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
@@ -471,12 +471,40 @@ shifu_test_bad_positional_local_arg_cmd() {
   shifu_cmd_name bad-local
   shifu_cmd_subs does not matter
 
-  shifu_cmd_arg_loc -- bad_positional "Bad help"
+  shifu_cmd_argr bad_positional "Bad help"
 }
 
 test_shifu_run_bad_positional_local_arg_cmd() {
-  expected="Positional arguments cannot be local: bad_positional"
+  expected="Positional arguments can only be used in leaf commands"
   actual=$(shifu_run shifu_test_bad_positional_local_arg_cmd does not matter 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_strings_equal error_message "$expected" "$actual"
+}
+
+shifu_test_bad_missing_mode_cmd() {
+  shifu_cmd_name bad-mode
+  shifu_cmd_subs does not matter
+
+  shifu_cmd_optd -o --opt -- OPT default "Missing mode"
+}
+
+test_shifu_run_bad_missing_mode() {
+  expected="Mode :eager: or :defer: required in non-leaf commands"
+  actual=$(shifu_run shifu_test_bad_missing_mode_cmd does not matter 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_strings_equal error_message "$expected" "$actual"
+}
+
+shifu_test_bad_flag_format_cmd() {
+  shifu_cmd_name bad-flag
+  shifu_cmd_func does_not_matter
+
+  shifu_cmd_optd oops -- OPT default "Flag without dash"
+}
+
+test_shifu_run_bad_flag_format() {
+  expected="Option flags must start with - or --, got: oops"
+  actual=$(shifu_run shifu_test_bad_flag_format_cmd 2>&1)
   shifu_assert_non_zero exit_code $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
 }
@@ -713,10 +741,10 @@ shifu_test_path_completion_cmd() {
   shifu_cmd_name path-comp
   shifu_cmd_func no_op
 
-  shifu_cmd_arg -f --file -- FILE_ARG file_default "File argument"
-  shifu_cmd_arg_comp_path
-  shifu_cmd_arg -- PATH_ARG "Path argument"
-  shifu_cmd_arg_comp_path
+  shifu_cmd_optd -f --file -- FILE_ARG file_default "File argument"
+  shifu_cmp_path
+  shifu_cmd_argr PATH_ARG "Path argument"
+  shifu_cmp_path
 }
 
 test_shifu_complete_path_option() {
@@ -735,8 +763,8 @@ shifu_test_global_path_completion_cmd() {
   shifu_cmd_name global-path
   shifu_cmd_subs shifu_test_leaf_one_cmd
 
-  shifu_cmd_arg -c --config -- CONFIG config_default "Config file"
-  shifu_cmd_arg_comp_path
+  shifu_cmd_optd :defer: -c --config -- CONFIG config_default "Config file"
+  shifu_cmp_path
 }
 
 test_shifu_complete_global_path() {
@@ -755,9 +783,9 @@ shifu_test_bad_multiple_completions_single_arg_cmd() {
   shifu_cmd_name bad-multi-arg-completion
   shifu_cmd_func no_op
 
-  shifu_cmd_arg -- positional "Bad help"
-  shifu_cmd_arg_comp_enum one two
-  shifu_cmd_arg_comp_func make_fake_positional_completions
+  shifu_cmd_argr positional "Bad help"
+  shifu_cmp_enum one two
+  shifu_cmp_func make_fake_positional_completions
 }
 
 test_shifu_bad_multiple_cmd_args_complete_calls() {
