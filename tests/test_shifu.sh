@@ -709,74 +709,85 @@ test_shifu_complete_global_option_func_values_no_func() {
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
-shifu_test_path_completion_cmd() {
-  shifu_cmd_name path-comp
+shifu_test_path_files_cmd() {
+  shifu_cmd_name path-files
   shifu_cmd_func no_op
-
   shifu_cmd_arg -f --file -- FILE_ARG file_default "File argument"
   shifu_cmd_arg_comp_path :files:
   shifu_cmd_arg -- PATH_ARG "Path argument"
   shifu_cmd_arg_comp_path :files:
 }
 
-test_shifu_complete_path_option() {
-  expected="SHIFU_COMP_PATH_FILES"
-  actual=$(_shifu_complete shifu_test_path_completion_cmd --shifu-complete cur_word -f)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_path_positional() {
-  expected="SHIFU_COMP_PATH_FILES"
-  actual=$(_shifu_complete shifu_test_path_completion_cmd --shifu-complete cur_word -f filled)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-shifu_test_path_dirs_completion_cmd() {
+shifu_test_path_dirs_cmd() {
   shifu_cmd_name path-dirs
   shifu_cmd_func no_op
-
   shifu_cmd_arg -d --dir -- DIR_ARG dir_default "Directory argument"
   shifu_cmd_arg_comp_path :dirs:
 }
 
-test_shifu_complete_path_dirs() {
-  expected="SHIFU_COMP_PATH_DIRS"
-  actual=$(_shifu_complete shifu_test_path_dirs_completion_cmd --shifu-complete cur_word -d)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-shifu_test_path_glob_completion_cmd() {
+shifu_test_path_glob_cmd() {
   shifu_cmd_name path-glob
   shifu_cmd_func no_op
-
   shifu_cmd_arg -g --glob -- GLOB_ARG glob_default "Glob argument"
   shifu_cmd_arg_comp_path :glob: "*.txt"
 }
 
-test_shifu_complete_path_glob() {
-  expected="SHIFU_COMP_PATH_GLOB:*.txt"
-  actual=$(_shifu_complete shifu_test_path_glob_completion_cmd --shifu-complete cur_word -g)
-  shifu_assert_strings_equal completion "$expected" "$actual"
+shifu_test_path_glob_no_pattern_cmd() {
+  shifu_cmd_name path-glob-no-pattern
+  shifu_cmd_func no_op
+  shifu_cmd_arg -g --glob -- GLOB_ARG glob_default "Glob argument"
+  shifu_cmd_arg_comp_path :glob:
 }
 
-shifu_test_global_path_completion_cmd() {
-  shifu_cmd_name global-path
+shifu_test_global_path_files_cmd() {
+  shifu_cmd_name global-path-files
   shifu_cmd_subs shifu_test_leaf_one_cmd
-
-  shifu_cmd_arg -c --config -- CONFIG config_default "Config file"
+  shifu_cmd_arg -f --file -- FILE_ARG file_default "File argument"
   shifu_cmd_arg_comp_path :files:
 }
 
-test_shifu_complete_global_path() {
-  expected="SHIFU_COMP_PATH_FILES"
-  actual=$(_shifu_complete shifu_test_global_path_completion_cmd --shifu-complete cur_word leaf-one -c)
-  shifu_assert_strings_equal completion "$expected" "$actual"
+shifu_test_global_path_dirs_cmd() {
+  shifu_cmd_name global-path-dirs
+  shifu_cmd_subs shifu_test_leaf_one_cmd
+  shifu_cmd_arg -d --dir -- DIR_ARG dir_default "Directory argument"
+  shifu_cmd_arg_comp_path :dirs:
 }
 
-test_shifu_complete_global_path_no_func() {
-  expected=""
-  actual=$(_shifu_complete shifu_test_global_path_completion_cmd --shifu-complete cur_word -c)
-  shifu_assert_strings_equal completion "$expected" "$actual"
+shifu_test_global_path_glob_cmd() {
+  shifu_cmd_name global-path-glob
+  shifu_cmd_subs shifu_test_leaf_one_cmd
+  shifu_cmd_arg -g --glob -- GLOB_ARG glob_default "Glob argument"
+  shifu_cmd_arg_comp_path :glob: "*.txt"
+}
+
+shifu_test_global_path_glob_no_pattern_cmd() {
+  shifu_cmd_name global-path-glob-no-pattern
+  shifu_cmd_subs shifu_test_leaf_one_cmd
+  shifu_cmd_arg -g --glob -- GLOB_ARG glob_default "Glob argument"
+  shifu_cmd_arg_comp_path :glob:
+}
+
+test_shifu_complete_path() {
+  run_test() {
+    cmd=$1; complete_args="$2"; expected=$3
+    _shifu_set_for_looping complete_args complete_args
+    actual=$(_shifu_complete "$cmd" --shifu-complete cur_word $complete_args)
+    shifu_assert_strings_equal completion "$expected" "$actual"
+  }
+  shifu_parameterize_test \
+    run_test 3 \
+    local_files_option     shifu_test_path_files_cmd           "-f"           "SHIFU_COMP_PATH_FILES" \
+    local_files_positional shifu_test_path_files_cmd           "-f filled"    "SHIFU_COMP_PATH_FILES" \
+    local_dirs             shifu_test_path_dirs_cmd            "-d"           "SHIFU_COMP_PATH_DIRS" \
+    local_glob             shifu_test_path_glob_cmd            "-g"           "SHIFU_COMP_PATH_GLOB:*.txt" \
+    local_glob_no_pattern  shifu_test_path_glob_no_pattern_cmd "-g"           "" \
+    global_files           shifu_test_global_path_files_cmd    "leaf-one -f"  "SHIFU_COMP_PATH_FILES" \
+    global_files_no_sub    shifu_test_global_path_files_cmd    "-f"           "" \
+    global_dirs            shifu_test_global_path_dirs_cmd     "leaf-one -d"  "SHIFU_COMP_PATH_DIRS" \
+    global_dirs_no_sub     shifu_test_global_path_dirs_cmd     "-d"           "" \
+    global_glob            shifu_test_global_path_glob_cmd     "leaf-one -g"  "SHIFU_COMP_PATH_GLOB:*.txt" \
+    global_glob_no_sub     shifu_test_global_path_glob_cmd     "-g"           "" \
+    global_glob_no_pattern shifu_test_global_path_glob_no_pattern_cmd "leaf-one -g" ""
 }
 
 shifu_test_bad_multiple_completions_single_arg_cmd() {

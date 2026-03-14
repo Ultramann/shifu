@@ -83,7 +83,7 @@ shifu_cmd_arg_comp_path() {
   case ${1:-} in
     :files:) shifu_tmp_sentinel=SHIFU_COMP_PATH_FILES ;;
     :dirs:)  shifu_tmp_sentinel=SHIFU_COMP_PATH_DIRS ;;
-    :glob:)  shifu_tmp_sentinel="SHIFU_COMP_PATH_GLOB:$2" ;;
+    :glob:)  [ -z "${2:-}" ] && return; shifu_tmp_sentinel="SHIFU_COMP_PATH_GLOB:$2" ;;
     *) return ;;
   esac
   if [ "$shifu_last_arg_is_local" = true ]; then
