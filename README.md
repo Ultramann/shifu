@@ -47,34 +47,34 @@ intro_cmd() {
   shifu_cmd_name intro
   shifu_cmd_func intro_function
   shifu_cmd_help "An introduction shifu cli"
-  shifu_cmd_long "This command function will invoke intro_function which prints an argument
-provided by '-a' or '--arg' or none if no argument is provided"
-  shifu_cmd_optd -a --arg -- ARG none "Example argument to echo"
+  shifu_cmd_long "This command function will invoke intro_function which prints
+  an option value provided by '-o' or '--option', defaults to none"
+  shifu_cmd_optd -o --option -- OPTION none "Example option to echo"
 }
 
 intro_function() {
-  echo "$ARG"
+  echo "$OPTION"
 }
 
 shifu_run intro_cmd "$@"
 ```
 
-Calling this cli, we can see how it parses `-a shifu` into the variable `ARG` when provided, and also automatically generates help strings.
+Calling this cli, we can see how it parses `-o shifu` into the variable `OPTION` when provided, and also automatically generates help strings.
 
 ```txt
 $ examples/intro
 none
-$ examples/intro -a shifu
+$ examples/intro -o shifu
 shifu
 $ examples/intro --help
 An introduction shifu cli
 
 This command function will invoke intro_function which prints an argument
-provided by '-a' or '--arg' or none if no argument is provided
+provided by '-o' or '--option' or none if no argument is provided
 
 Options
-  -a, --arg [ARG]
-    Example argument to echo
+  -o, --option [OPTION]
+    Example option to echo
     Default: none
   -h, --help
     Show this help
@@ -83,21 +83,21 @@ Options
 The diagram below shows how shifu is connecting together this cli script to print the value `shifu` in `intro_function`.
 
 ```
-       examples/intro -a shifu ──────────────┐ 
-                  ▲    ▲                     │ 
-                  │    └─────────────┐       │ 
-                  └──────────┐       │       │ 
-    intro_cmd() {            │       │       │ 
-      shifu_cmd_name intro ──┘       │       │ 
-┌──── shifu_cmd_func intro_function  │       │
-│     shifu_cmd_optd -a --arg -- \ ──┘       │
-│       ARG none "Example argument to echo"  │
-│  }     ▲                                   │ 
-│        └───────────────────────────────────┘ 
-│                                             
-└─► intro_function() {                        
-      echo "$ARG"                             
-    }     
+       examples/intro -o shifu ───────────────┐
+                  ▲    ▲                      │
+                  │    └────────────────┐     │
+                  └──────────┐          │     │
+    intro_cmd() {            │          │     │
+      shifu_cmd_name intro ──┘          │     │
+┌──── shifu_cmd_func intro_function     │     │
+│     shifu_cmd_optd -o --option -- \ ──┘     │
+│       OPTION none "Example option to echo"  │
+│  }      ▲                                   │
+│         └───────────────────────────────────┘
+│
+└─► intro_function() {
+      echo "$OPTION"
+    }
 ```
 
 ## Subcommands
