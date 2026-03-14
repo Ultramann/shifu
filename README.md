@@ -244,7 +244,10 @@ Since shifu knows all about the structure of your cli it can generate tab comple
 By default, subcommand and option names can be tab completed. If you'd like to add tab completion for option values and positions/remaining arguments shifu provides three `cmd` functions
 * `shifu_cmd_arg_comp_enum`: static list of completions
 * `shifu_cmd_arg_comp_func`: function to generate list of completions. Completions are added with the shifu function `shifu_add_completions`
-* `shifu_cmd_arg_comp_path`: ties into your shell completion framework to enable easy path completions for directories and files
+* `shifu_cmd_arg_comp_path`: ties into your shell completion framework to enable path completions. Takes a required mode argument:
+  * `:files:` — complete files and directories
+  * `:dirs:` — complete directories only. Note: in zsh, after navigating into a directory with no subdirectories, the completion system falls back to showing files. This is standard zsh behavior and differs from bash, which strictly shows only directories.
+  * `:glob: "pattern"` — complete files matching a glob pattern, e.g. `"*.txt"`
 
 These functions can optionally be used after `shifu_cmd_arg` and instruct shifu what the completions for the preceding argument value should be.
 
@@ -286,7 +289,7 @@ completion_cmd() {
   cmd_arg -f --func -- FUNC_COMP func_comp "Function completion, file extensions"
   cmd_arg_comp_func file_extension_completions
   cmd_arg           -- PATH_COMP "Path completion"
-  cmd_arg_comp_path
+  cmd_arg_comp_path :files:
 }
 
 file_extension_completions() {
