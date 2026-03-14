@@ -25,7 +25,7 @@ completion_cmd() {
   cmd_arg -f --func -- FUNC_COMP func_comp "Function completion, file extensions"
   cmd_arg_comp_func file_extension_completions
   cmd_arg           -- PATH_COMP "Path completion"
-  cmd_arg_comp_path
+  cmd_arg_comp_path :files:
 }
 
 file_extension_completions() {

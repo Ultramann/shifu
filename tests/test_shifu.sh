@@ -731,6 +731,20 @@ test_shifu_complete_path_positional() {
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
+shifu_test_path_dirs_completion_cmd() {
+  shifu_cmd_name path-dirs
+  shifu_cmd_func no_op
+
+  shifu_cmd_arg -d --dir -- DIR_ARG dir_default "Directory argument"
+  shifu_cmd_arg_comp_path :dirs:
+}
+
+test_shifu_complete_path_dirs() {
+  expected="SHIFU_COMP_PATH_DIRS"
+  actual=$(_shifu_complete shifu_test_path_dirs_completion_cmd --shifu-complete cur_word -d)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
 shifu_test_global_path_completion_cmd() {
   shifu_cmd_name global-path
   shifu_cmd_subs shifu_test_leaf_one_cmd
