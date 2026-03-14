@@ -720,13 +720,13 @@ shifu_test_path_completion_cmd() {
 }
 
 test_shifu_complete_path_option() {
-  expected="SHIFU_COMP_PATH"
+  expected="SHIFU_COMP_PATH_FILES"
   actual=$(_shifu_complete shifu_test_path_completion_cmd --shifu-complete cur_word -f)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
 test_shifu_complete_path_positional() {
-  expected="SHIFU_COMP_PATH"
+  expected="SHIFU_COMP_PATH_FILES"
   actual=$(_shifu_complete shifu_test_path_completion_cmd --shifu-complete cur_word -f filled)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
@@ -768,7 +768,7 @@ shifu_test_global_path_completion_cmd() {
 }
 
 test_shifu_complete_global_path() {
-  expected="SHIFU_COMP_PATH"
+  expected="SHIFU_COMP_PATH_FILES"
   actual=$(_shifu_complete shifu_test_global_path_completion_cmd --shifu-complete cur_word leaf-one -c)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
