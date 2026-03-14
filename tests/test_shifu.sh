@@ -745,6 +745,20 @@ test_shifu_complete_path_dirs() {
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
+shifu_test_path_glob_completion_cmd() {
+  shifu_cmd_name path-glob
+  shifu_cmd_func no_op
+
+  shifu_cmd_arg -g --glob -- GLOB_ARG glob_default "Glob argument"
+  shifu_cmd_arg_comp_path :glob: "*.txt"
+}
+
+test_shifu_complete_path_glob() {
+  expected="SHIFU_COMP_PATH_GLOB:*.txt"
+  actual=$(_shifu_complete shifu_test_path_glob_completion_cmd --shifu-complete cur_word -g)
+  shifu_assert_strings_equal completion "$expected" "$actual"
+}
+
 shifu_test_global_path_completion_cmd() {
   shifu_cmd_name global-path
   shifu_cmd_subs shifu_test_leaf_one_cmd
