@@ -17,7 +17,7 @@ shifu_test_root_cmd() {
 
   shifu_cmd_optb :defer: -g --global-bin -- GLOBAL_BIN false true "A test global bin cmd arg"
   shifu_cmd_optd :defer: -G --global-def -- GLOBAL_DEF global_def "A test global def cmd arg"
-  shifu_cmp_enum global_one global_two global_three
+  shifu_cmd_cpte global_one global_two global_three
 }
 
 shifu_test_sub_one_cmd() {
@@ -26,7 +26,7 @@ shifu_test_sub_one_cmd() {
   shifu_cmd_subs shifu_test_leaf_one_cmd shifu_test_leaf_two_cmd
 
   shifu_cmd_optd :defer: -S --sub-global -- SUB_GLOBAL sub_global "A test sub-one global arg"
-  shifu_cmp_func make_fake_sub_global_completions
+  shifu_cmd_cptf make_fake_sub_global_completions
 }
 
 shifu_test_sub_two_cmd() {
@@ -35,7 +35,7 @@ shifu_test_sub_two_cmd() {
   shifu_cmd_subs shifu_test_leaf_three_cmd shifu_test_leaf_four_cmd
 
   shifu_cmd_optd :eager: -l --local-test -- LOCAL_TEST local-test "A test local cmd arg"
-  shifu_cmp_enum local option test
+  shifu_cmd_cpte local option test
 }
 
 shifu_test_leaf_one_cmd() {
@@ -97,34 +97,34 @@ shifu_test_all_options_cmd() {
   shifu_cmd_optd --option-def -- OPTION_DEF def_opt "default argument option help"
   shifu_cmd_optb -F --flag-option-bin -- FLAG_OPTION_BIN 0 1 "binary flag/option help"
   shifu_cmd_optr -A --flag-option-req -- FLAG_OPTION_REQ     "required flag/option help"
-  shifu_cmp_enum flag option arg
+  shifu_cmd_cpte flag option arg
   shifu_cmd_optd -D --flag-option-def -- FLAG_OPTION_DEF def_flag_opt \
                                     "default argument flag/option help"
-  shifu_cmp_func make_fake_option_completions
+  shifu_cmd_cptf make_fake_option_completions
   shifu_cmd_argr POSITIONAL_ARG_1 "positional argument one help"
-  shifu_cmp_enum positional arg one
+  shifu_cmd_cpte positional arg one
   shifu_cmd_argr POSITIONAL_ARG_2 "positional argument two help"
-  shifu_cmp_func make_fake_positional_completions
+  shifu_cmd_cptf make_fake_positional_completions
   shifu_cmd_args "remaining arguments help"
-  shifu_cmp_func make_fake_remaining_completions
+  shifu_cmd_cptf make_fake_remaining_completions
 }
 
 no_op() { :; }
 
 make_fake_option_completions() {
-  shifu_add_cmps flag option default
+  shifu_add_cpts flag option default
 }
 
 make_fake_positional_completions() {
-  shifu_add_cmps positional arg two
+  shifu_add_cpts positional arg two
 }
 
 make_fake_remaining_completions() {
-  shifu_add_cmps remaining args
+  shifu_add_cpts remaining args
 }
 
 make_fake_sub_global_completions() {
-  shifu_add_cmps sub_global_a sub_global_b sub_global_c
+  shifu_add_cpts sub_global_a sub_global_b sub_global_c
 }
 
 test_shifu_run_good() {
@@ -741,58 +741,58 @@ shifu_test_path_files_cmd() {
   shifu_cmd_name path-files
   shifu_cmd_func no_op
   shifu_cmd_optd -f --file -- FILE_ARG file_default "File argument"
-  shifu_cmp_path :files:
+  shifu_cmd_cptp :files:
   shifu_cmd_argr PATH_ARG "Path argument"
-  shifu_cmp_path :files:
+  shifu_cmd_cptp :files:
 }
 
 shifu_test_path_dirs_cmd() {
   shifu_cmd_name path-dirs
   shifu_cmd_func no_op
   shifu_cmd_optd -d --dir -- DIR_ARG dir_default "Directory argument"
-  shifu_cmp_path :dirs:
+  shifu_cmd_cptp :dirs:
 }
 
 shifu_test_path_glob_cmd() {
   shifu_cmd_name path-glob
   shifu_cmd_func no_op
   shifu_cmd_optd -g --glob -- GLOB_ARG glob_default "Glob argument"
-  shifu_cmp_path :glob: "*.txt"
+  shifu_cmd_cptp :glob: "*.txt"
 }
 
 shifu_test_path_glob_no_pattern_cmd() {
   shifu_cmd_name path-glob-no-pattern
   shifu_cmd_func no_op
   shifu_cmd_optd -g --glob -- GLOB_ARG glob_default "Glob argument"
-  shifu_cmp_path :glob:
+  shifu_cmd_cptp :glob:
 }
 
 shifu_test_global_path_files_cmd() {
   shifu_cmd_name global-path-files
   shifu_cmd_subs shifu_test_leaf_one_cmd
   shifu_cmd_optd :defer: -c --config -- CONFIG config_default "Config file"
-  shifu_cmp_path :files:
+  shifu_cmd_cptp :files:
 }
 
 shifu_test_global_path_dirs_cmd() {
   shifu_cmd_name global-path-dirs
   shifu_cmd_subs shifu_test_leaf_one_cmd
   shifu_cmd_optd :defer: -d --dir -- DIR_ARG dir_default "Directory argument"
-  shifu_cmp_path :dirs:
+  shifu_cmd_cptp :dirs:
 }
 
 shifu_test_global_path_glob_cmd() {
   shifu_cmd_name global-path-glob
   shifu_cmd_subs shifu_test_leaf_one_cmd
   shifu_cmd_optd :defer: -g --glob -- GLOB_ARG glob_default "Glob argument"
-  shifu_cmp_path :glob: "*.txt"
+  shifu_cmd_cptp :glob: "*.txt"
 }
 
 shifu_test_global_path_glob_no_pattern_cmd() {
   shifu_cmd_name global-path-glob-no-pattern
   shifu_cmd_subs shifu_test_leaf_one_cmd
   shifu_cmd_optd :defer: -g --glob -- GLOB_ARG glob_default "Glob argument"
-  shifu_cmp_path :glob:
+  shifu_cmd_cptp :glob:
 }
 
 test_shifu_complete_path() {
@@ -823,8 +823,8 @@ shifu_test_bad_multiple_completions_single_arg_cmd() {
   shifu_cmd_func no_op
 
   shifu_cmd_argr positional "Bad help"
-  shifu_cmp_enum one two
-  shifu_cmp_func make_fake_positional_completions
+  shifu_cmd_cpte one two
+  shifu_cmd_cptf make_fake_positional_completions
 }
 
 test_shifu_bad_multiple_cmd_args_complete_calls() {

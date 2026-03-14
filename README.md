@@ -34,7 +34,7 @@ curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
 
 ## Quickstart
 
-Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ contains calls to shifu `cmd` or `cmp` functions. Shifu `cmd` and `cmp` functions provide a DSL which shifu uses to wire together your cli. Commands are passed to shifu's command runner, `shifu_run`, or referenced as subcommands.
+Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ contains calls to shifu `cmd` functions. Shifu `cmd` functions provide a DSL which shifu uses to wire together your cli. Commands are passed to shifu's command runner, `shifu_run`, or referenced as subcommands.
 
 Below is a very minimal, introduction shifu cli script.
 
@@ -139,7 +139,7 @@ Below is an example cli, [`examples/dispatch`](/examples/dispatch), with two sub
 
 <summary><b>Source code</b></summary>
 
-Note, this example calls `shifu_less` after sourcing `shifu` to provide a version of the `shifu_cmd` and `shifu_cmp` functions without the `shifu_` prefixes.
+Note, this example calls `shifu_less` after sourcing `shifu` to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
 
 [`examples/dispatch`](/examples/dispatch)
 
@@ -241,15 +241,7 @@ The diagram below shows how shifu is connecting together this cli script to prin
 
 Since shifu knows all about the structure of your cli it can generate tab completion code for interactive shells that support it, bash and zsh. 
 
-By default, subcommand and option names can be tab completed. If you'd like to add tab completion for option values and positional/remaining arguments shifu provides three `cmp` functions
-* `shifu_cmp_enum`: static list of completions
-* `shifu_cmp_func`: function to generate list of completions. Completions are added with the shifu function `shifu_add_cmps`
-* `shifu_cmp_path`: ties into your shell completion framework to enable path completions. Takes a required mode argument:
-  * `:files:` — complete files and directories
-  * `:dirs:` — complete directories only. Note: in zsh, after navigating into a directory with no subdirectories, the completion system falls back to showing files. This is standard zsh behavior and differs from bash, which strictly shows only directories.
-  * `:glob: "pattern"` — complete files matching a glob pattern, e.g. `"*.txt"`
-
-These functions can be called after an option or argument declaration to instruct shifu what the completions for the preceding argument value should be.
+By default, subcommand and option names can be tab completed. Shifu also provides `cpt` functions for completing option values and positional arguments with static enumerations, dynamic functions, or file system paths — see the [Completion functions](#completion-functions) API section for details.
 
 Below is an example cli, [`examples/tab`](/examples/tab), demonstrating tab completion capabilities.
 
@@ -285,16 +277,16 @@ completion_cmd() {
   cmd_func no_op
 
   cmd_optd -e --enum -- ENUM_COMP enum_comp "Enum completion"
-  cmp_enum magic value
+  cmd_cpte magic value
   cmd_optd -f --func -- FUNC_COMP func_comp "Function completion, file extensions"
-  cmp_func file_extension_completions
+  cmd_cptf file_extension_completions
   cmd_argr              PATH_COMP "Path completion"
-  cmp_path :files:
+  cmd_cptp :files:
 }
 
 file_extension_completions() {
   # dynamically complete with extensions from files in current directory
-  shifu_add_cmps "$(ls -1 | grep '\.' | sed 's/.*\.//' | sort -u)"
+  shifu_add_cpts "$(ls -1 | grep '\.' | sed 's/.*\.//' | sort -u)"
 }
 
 demo_cmd() {
@@ -356,7 +348,7 @@ These instructions can also be found by running
 
 * How does shifu name its variables/functions, will they collide with those in my script?
   * Shifu takes special care to prefix all variables/functions with `shifu` or `_shifu`
-  * Calling `shifu_less` after sourcing shifu will create versions of all the `cmd` and `cmp` functions without the `shifu` prefix. This makes command code less busy, but adds function names that are more likely to cause a collision with those in your script
+  * Calling `shifu_less` after sourcing shifu will create versions of all the `cmd` functions without the `shifu` prefix. This makes command code less busy, but adds function names that are more likely to cause a collision with those in your script
 
 * What's with the `. "${0%/*}"/shifu || exit 1`?
   * `.` is the POSIX source command - it executes a file in the current shell, making shifu's functions available to your script, akin to importing
@@ -524,28 +516,28 @@ The option and argument declaration order in a command function matters:
 
 ### Completion functions
 
-#### `shifu_cmp_enum`
+#### `shifu_cmd_cpte`
 * Enumeration completion
 * Static list of tab completions for the preceding option or argument
 * Example
   ```sh
-  shifu_cmp_enum debug info warn error
+  shifu_cmd_cpte debug info warn error
   ```
 
-#### `shifu_cmp_func`
+#### `shifu_cmd_cptf`
 * Function completion
 * Function to dynamically generate tab completions for the preceding option or argument
-* The function should call `shifu_add_cmps` to register completions
+* The function should call `shifu_add_cpts` to register completions
 * Example
   ```sh
-  shifu_cmp_func file_ext_completions
+  shifu_cmd_cptf file_ext_completions
 
   file_ext_completions() {
-    shifu_add_cmps "$(ls -1 | sed 's/.*\.//' | sort -u)"
+    shifu_add_cpts "$(ls -1 | sed 's/.*\.//' | sort -u)"
   }
   ```
 
-#### `shifu_cmp_path`
+#### `shifu_cmd_cptp`
 * Path completion
 * Enable path completions for the preceding option or argument
 * Takes a required mode argument:
@@ -554,7 +546,7 @@ The option and argument declaration order in a command function matters:
   * `:glob: "pattern"` — complete files matching a glob pattern
 * Examples
   ```sh
-  shifu_cmp_path :files:
-  shifu_cmp_path :dirs:
-  shifu_cmp_path :glob: "*.txt"
+  shifu_cmd_cptp :files:
+  shifu_cmd_cptp :dirs:
+  shifu_cmd_cptp :glob: "*.txt"
   ```

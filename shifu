@@ -34,22 +34,22 @@ shifu_cmd_func() {
   [ ${shifu_mode:-0} -ne $shifu_mode_args_run ] && shifu_cmd_func="$@"
 }
 
-shifu_cmp_enum() {
+shifu_cmd_cpte() {
   [ ${shifu_mode:-0} -ne $shifu_mode_args_comp ] && return
   [ "$shifu_arg_completion_set" = true ] && _shifu_error "Can only add one completion per argument"
   if [ "$shifu_last_arg_is_eager" = true ]; then
     _shifu_append_on_new_line shifu_case_stmt '    [ \$# -ne 0 ] && shift'
-    shifu_case_stmt="$shifu_case_stmt || { shifu_add_cmps $@; break; }"
+    shifu_case_stmt="$shifu_case_stmt || { shifu_add_cpts $@; break; }"
     [ ${shifu_parse_stage:-0} -ne 0 ] && shifu_tmp=";" || shifu_tmp=" ;;"
     shifu_case_stmt="$shifu_case_stmt$shifu_tmp"
   else
     shifu_defer_comp_case="${shifu_defer_comp_case:-}
-    [ \$# -ne 0 ] && shift || { shifu_add_cmps $@; break; } ;;"
+    [ \$# -ne 0 ] && shift || { shifu_add_cpts $@; break; } ;;"
   fi
   shifu_arg_completion_set=true
 }
 
-shifu_cmp_func() {
+shifu_cmd_cptf() {
   [ ${shifu_mode:-0} -ne $shifu_mode_args_comp ] && return
   [ "$shifu_arg_completion_set" = true ] && _shifu_error "Can only add one completion per argument"
   if [ "$shifu_last_arg_is_eager" = true ]; then
@@ -64,7 +64,7 @@ shifu_cmp_func() {
   shifu_arg_completion_set=true
 }
 
-shifu_cmp_path() {
+shifu_cmd_cptp() {
   [ ${shifu_mode:-0} -ne $shifu_mode_args_comp ] && return
   [ "$shifu_arg_completion_set" = true ] && _shifu_error "Can only add one completion per argument"
   case ${1:-} in
@@ -75,12 +75,12 @@ shifu_cmp_path() {
   esac
   if [ "$shifu_last_arg_is_eager" = true ]; then
     _shifu_append_on_new_line shifu_case_stmt '    [ \$# -ne 0 ] && shift'
-    shifu_case_stmt="$shifu_case_stmt || { shifu_add_cmps \"$shifu_tmp_sentinel\"; break; }"
+    shifu_case_stmt="$shifu_case_stmt || { shifu_add_cpts \"$shifu_tmp_sentinel\"; break; }"
     [ ${shifu_parse_stage:-0} -ne 0 ] && shifu_tmp=";" || shifu_tmp=" ;;"
     shifu_case_stmt="$shifu_case_stmt$shifu_tmp"
   else
     shifu_defer_comp_case="${shifu_defer_comp_case:-}
-    [ \$# -ne 0 ] && shift || { shifu_add_cmps \"$shifu_tmp_sentinel\"; break; } ;;"
+    [ \$# -ne 0 ] && shift || { shifu_add_cpts \"$shifu_tmp_sentinel\"; break; } ;;"
   fi
   shifu_arg_completion_set=true
 }
@@ -338,7 +338,7 @@ shifu_cmd_optr() { _shifu_cmd_opt_dispatch _shifu_cmd_optr "$@"; }
 shifu_cmd_argr() { _shifu_cmd_arg_dispatch _shifu_cmd_argr "$@"; }
 shifu_cmd_args() { _shifu_cmd_arg_dispatch _shifu_cmd_args "$@"; }
 
-shifu_add_cmps() {
+shifu_add_cpts() {
   for completion in "$@"; do
     _shifu_list_append shifu_completions "$completion"
   done
@@ -355,10 +355,10 @@ shifu_less() {
   cmd_optr() { shifu_cmd_optr "$@"; }
   cmd_argr() { shifu_cmd_argr "$@"; }
   cmd_args() { shifu_cmd_args "$@"; }
-  cmp_enum() { shifu_cmp_enum "$@"; }
-  cmp_func() { shifu_cmp_func "$@"; }
-  cmp_path() { shifu_cmp_path "$@"; }
-  add_cmps() { shifu_add_cmps "$@"; }
+  cmd_cpte() { shifu_cmd_cpte "$@"; }
+  cmd_cptf() { shifu_cmd_cptf "$@"; }
+  cmd_cptp() { shifu_cmd_cptp "$@"; }
+  add_cpts() { shifu_add_cpts "$@"; }
 }
 
 shifu_run() {
