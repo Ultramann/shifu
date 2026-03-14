@@ -244,7 +244,10 @@ Since shifu knows all about the structure of your cli it can generate tab comple
 By default, subcommand and option names can be tab completed. If you'd like to add tab completion for option values and positional/remaining arguments shifu provides three `cmp` functions
 * `shifu_cmp_enum`: static list of completions
 * `shifu_cmp_func`: function to generate list of completions. Completions are added with the shifu function `shifu_add_cmps`
-* `shifu_cmp_path`: ties into your shell completion framework to enable easy path completions for directories and files
+* `shifu_cmp_path`: ties into your shell completion framework to enable path completions. Takes a required mode argument:
+  * `:files:` — complete files and directories
+  * `:dirs:` — complete directories only. Note: in zsh, after navigating into a directory with no subdirectories, the completion system falls back to showing files. This is standard zsh behavior and differs from bash, which strictly shows only directories.
+  * `:glob: "pattern"` — complete files matching a glob pattern, e.g. `"*.txt"`
 
 These functions can be called after an option or argument declaration to instruct shifu what the completions for the preceding argument value should be.
 
@@ -286,7 +289,7 @@ completion_cmd() {
   cmd_optd -f --func -- FUNC_COMP func_comp "Function completion, file extensions"
   cmp_func file_extension_completions
   cmd_argr              PATH_COMP "Path completion"
-  cmp_path
+  cmp_path :files:
 }
 
 file_extension_completions() {
@@ -544,8 +547,14 @@ The option and argument declaration order in a command function matters:
 
 #### `shifu_cmp_path`
 * Path completion
-* Enable path completions (directories and files) for the preceding option or argument
-* Example
+* Enable path completions for the preceding option or argument
+* Takes a required mode argument:
+  * `:files:` — complete files and directories
+  * `:dirs:` — complete directories only. Note: in zsh, after navigating into a directory with no subdirectories, the completion system falls back to showing files. This is standard zsh behavior and differs from bash, which strictly shows only directories.
+  * `:glob: "pattern"` — complete files matching a glob pattern
+* Examples
   ```sh
-  shifu_cmp_path
+  shifu_cmp_path :files:
+  shifu_cmp_path :dirs:
+  shifu_cmp_path :glob: "*.txt"
   ```

@@ -25,7 +25,7 @@ completion_cmd() {
   cmd_optd -f --func -- FUNC_COMP func_comp "Function completion, file extensions"
   cmp_func file_extension_completions
   cmd_argr              PATH_COMP "Path completion"
-  cmp_path
+  cmp_path :files:
 }
 
 file_extension_completions() {
