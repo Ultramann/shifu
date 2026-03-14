@@ -80,14 +80,18 @@ shifu_cmd_arg_comp_func() {
 shifu_cmd_arg_comp_path() {
   [ ${shifu_mode:-0} -ne $shifu_mode_args_comp ] && return
   [ "$shifu_arg_completion_set" = true ] && _shifu_error "Can only add one completion per argument"
+  case ${1:-} in
+    :files:) shifu_tmp_sentinel=SHIFU_COMP_PATH ;;
+    *) return ;;
+  esac
   if [ "$shifu_last_arg_is_local" = true ]; then
     _shifu_append_on_new_line shifu_case_stmt '    [ \$# -ne 0 ] && shift'
-    shifu_case_stmt="$shifu_case_stmt || { shifu_add_completions SHIFU_COMP_PATH; break; }"
+    shifu_case_stmt="$shifu_case_stmt || { shifu_add_completions $shifu_tmp_sentinel; break; }"
     [ ${shifu_parse_stage:-0} -ne 0 ] && shifu_tmp=";" || shifu_tmp=" ;;"
     shifu_case_stmt="$shifu_case_stmt$shifu_tmp"
   else
     shifu_global_comp_case="${shifu_global_comp_case:-}
-    [ \$# -ne 0 ] && shift || { shifu_add_completions SHIFU_COMP_PATH; break; } ;;"
+    [ \$# -ne 0 ] && shift || { shifu_add_completions $shifu_tmp_sentinel; break; } ;;"
   fi
   shifu_arg_completion_set=true
 }

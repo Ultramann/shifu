@@ -714,9 +714,9 @@ shifu_test_path_completion_cmd() {
   shifu_cmd_func no_op
 
   shifu_cmd_arg -f --file -- FILE_ARG file_default "File argument"
-  shifu_cmd_arg_comp_path
+  shifu_cmd_arg_comp_path :files:
   shifu_cmd_arg -- PATH_ARG "Path argument"
-  shifu_cmd_arg_comp_path
+  shifu_cmd_arg_comp_path :files:
 }
 
 test_shifu_complete_path_option() {
@@ -736,7 +736,7 @@ shifu_test_global_path_completion_cmd() {
   shifu_cmd_subs shifu_test_leaf_one_cmd
 
   shifu_cmd_arg -c --config -- CONFIG config_default "Config file"
-  shifu_cmd_arg_comp_path
+  shifu_cmd_arg_comp_path :files:
 }
 
 test_shifu_complete_global_path() {
