@@ -245,7 +245,7 @@ By default, subcommand and option names can be tab completed. If you'd like to a
 * `shifu_cmd_arg_comp_enum`: static list of completions
 * `shifu_cmd_arg_comp_func`: function to generate list of completions. Completions are added with the shifu function `shifu_add_completions`
 * `shifu_cmd_arg_comp_path`: ties into your shell completion framework to enable path completions. Takes a required mode argument:
-  * `:files:` — complete files and directories
+  * `:files:` — complete file paths
   * `:dirs:` — complete directories only. Note: in zsh, after navigating into a directory with no subdirectories, the completion system falls back to showing files. This is standard zsh behavior and differs from bash, which strictly shows only directories.
   * `:glob: "pattern"` — complete files matching a glob pattern, e.g. `"*.txt"`
 
