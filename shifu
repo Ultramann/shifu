@@ -82,6 +82,7 @@ shifu_cmd_arg_comp_path() {
   [ "$shifu_arg_completion_set" = true ] && _shifu_error "Can only add one completion per argument"
   case ${1:-} in
     :files:) shifu_tmp_sentinel=SHIFU_COMP_PATH ;;
+    :dirs:)  shifu_tmp_sentinel=SHIFU_COMP_PATH_DIRS ;;
     *) return ;;
   esac
   if [ "$shifu_last_arg_is_local" = true ]; then
@@ -429,6 +430,7 @@ _shifu_generate_bash_tab_completion() {
   completions=\$($shifu_cmd_name --shifu-complete \"\$current\" \"\${full_words[@]}\")
   case \"\$completions\" in
     SHIFU_COMP_PATH) COMPREPLY=( \$(compgen -f -- \"\$current\") ) ;;
+    SHIFU_COMP_PATH_DIRS) COMPREPLY=( \$(compgen -d -- \"\$current\") ) ;;
     *) COMPREPLY=( \$(compgen -W \"\$completions\" -- \"\$current\") )
        compopt +o filenames 2>/dev/null ;;
   esac
@@ -443,6 +445,7 @@ _shifu_generate_zsh_tab_completion() {
   completions=\$($shifu_cmd_name --shifu-complete \"\$current\" \"\${full_words[@]}\")
   case \"\$completions\" in
     SHIFU_COMP_PATH) _files ;;
+    SHIFU_COMP_PATH_DIRS) _files -/ ;;
     *) compadd -q -- \${=completions} ;;
   esac
 }
