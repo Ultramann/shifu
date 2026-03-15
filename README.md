@@ -351,7 +351,7 @@ These instructions can also be found by running
   * Calling `shifu_less` after sourcing shifu will create versions of all the `cmd` functions without the `shifu` prefix. This makes command code less busy, but adds function names that are more likely to cause a collision with those in your script
 
 * What's with the `. "${0%/*}"/shifu || exit 1`?
-  * `.` is the POSIX source command - it executes a file in the current shell, making shifu's functions available to your script, akin to importing
+  * `.` is the POSIX source command; it executes a file in the current shell, making shifu's functions available to your script, akin to importing
   * `"${0%/*}"` is parameter expansion that strips the filename from `$0` (the script path), leaving just the directory. This lets your script find shifu relative to itself rather than relying on `PATH`
   * `|| exit 1` exits the script if sourcing fails (e.g., shifu not found), preventing cryptic errors later
   * If shifu is on your `PATH`, you can simply use `. shifu || exit 1`
@@ -429,7 +429,7 @@ There are five option and argument declaration functions:
 
 Option functions (`shifu_cmd_optb`, `shifu_cmd_optd`, `shifu_cmd_optr`) parse flagged arguments into variables. They take one or more flags (e.g. `-v`, `--verbose`) before a required `--` separator, followed by parsing configuration. Argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) parse positional arguments by order of declaration.
 
-All option and argument functions accept a `variable` argument — the shell variable name that will be set when parsing, and a `help` string used in auto-generated help output.
+All option and argument functions accept a `variable` argument, the shell variable name that will be set when parsing, and a `help` string used in auto-generated help output.
 
 #### `shifu_cmd_optb`
 * Binary option
