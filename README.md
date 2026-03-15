@@ -3,7 +3,7 @@
   <img src="./assets/banner-light.svg#gh-light-mode-only" width="65%">
 </p>
 
-**SH**ell **I**nterface **F**ramework **U**tility, shifu, is a framework that makes creating powerful clis from shell scripts simple. Shifu has the following features:
+**SH**ell **I**nterface **F**ramework **U**tility, shifu, is a framework that makes creating powerful CLIs from shell scripts simple. Shifu has the following features:
 
 * declarative argument parsing
 * subcommand dispatch
@@ -476,7 +476,7 @@ All option and argument functions accept a `variable` argument — the shell var
   ```
   ```txt
   cli             # error: missing required option
-  cli --env dev   # MODE="dev"
+  cli --env dev   # ENV="dev"
   ```
 
 #### `shifu_cmd_argr`
@@ -513,9 +513,9 @@ All option and argument functions accept a `variable` argument — the shell var
 
 #### Notes
 
-The signatures and examples above are for **leaf commands** (those using `shifu_cmd_func`). When you have options that are shared across subcommands — like a `--verbose` flag — you can declare them once in a **parent command** (those using `shifu_cmd_subs`) instead of repeating them in every subcommand.
+The signatures and examples above are for **leaf commands** (those using `shifu_cmd_func`). When you have options that are shared across subcommands, like a `--verbose` flag, you can declare them once in a **parent command** (those using `shifu_cmd_subs`) instead of repeating them in every subcommand.
 
-Option functions called in a parent command require a mode as the first argument. The mode changes when the option will be parsed, aka when it will be provided by the CLI user. The two availble modes are:
+Option functions called in a parent command require a mode as the first argument. The mode changes when the option will be parsed, aka when it will be provided by the CLI user. The two available modes are:
 * `:defer:` — option parsing is deferred until the leaf command, so the option can be provided alongside subcommand options
   ```sh
   shifu_cmd_optb :defer: -v --verbose -- VERBOSE false true "Verbose output"
