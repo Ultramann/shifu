@@ -15,7 +15,6 @@ shifu_mode_opt_names_comp=7
 
 # api
 shifu_run() {
-  # TODO: add tests for 0 & 1 cases
   case $# in
     0) echo "shifu_run requires at least one argument, got 0"
        exit 1 ;;
