@@ -11,7 +11,7 @@ dispatch_cmd() {
   * argument parsing
   * scoped help generation"
 
-  cmd_arg -g --global -- GLOBAL false true "Global binary option"
+  cmd_optb :defer: -g --global -- GLOBAL false true "Global binary option"
 }
 
 hello_cmd() {
@@ -20,7 +20,7 @@ hello_cmd() {
   cmd_help "A hello world subcommand"
   cmd_long "A subcommand that prints greeting with arguments"
 
-  cmd_arg -n --name -- NAME "mysterious user" "Name to greet"
+  cmd_optd -n --name -- NAME "mysterious user" "Name to greet"
 }
 
 dispatch_hello() {
@@ -34,9 +34,9 @@ echo_cmd() {
   cmd_help "An echo subcommand"
   cmd_long "A subcommand that prints results of parsed arguments"
 
-  cmd_arg -r --required -- REQUIRED   "Example required option w/ argument"
-  cmd_arg -d --default  -- DEFAULT    "default" "Example option w/ argument"
-  cmd_arg               -- POSITIONAL "Example positional argument"
+  cmd_optr -r --required -- REQUIRED   "Example required option w/ argument"
+  cmd_optd -d --default  -- DEFAULT    "default" "Example option w/ argument"
+  cmd_argr                  POSITIONAL "Example positional argument"
 }
 
 dispatch_echo() {

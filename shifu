@@ -34,50 +34,37 @@ shifu_cmd_func() {
   [ ${shifu_mode:-0} -ne $shifu_mode_args_run ] && shifu_cmd_func="$@"
 }
 
-shifu_cmd_arg() {
-  case ${shifu_mode:-0} in
-    $shifu_mode_help_run)
-      _shifu_arg_help "$@" ;;
-    $shifu_mode_args_run)
-      [ -n "${shifu_cmd_func:-}" ] && _shifu_update_case_stmt "$@" || _shifu_handle_arg_global "$@" ;;
-    $shifu_mode_args_comp)
-      [ -n "${shifu_cmd_func:-}" ] && _shifu_update_comp_case_stmt "$@" || _shifu_handle_comp_arg_global "$@" ;;
-    $shifu_mode_opt_names_comp)
-      _shifu_collect_option_names "$@" ;;
-  esac
-}
-
-shifu_cmd_arg_comp_enum() {
+shifu_cmd_cpte() {
   [ ${shifu_mode:-0} -ne $shifu_mode_args_comp ] && return
   [ "$shifu_arg_completion_set" = true ] && _shifu_error "Can only add one completion per argument"
-  if [ "$shifu_last_arg_is_local" = true ]; then
+  if [ "$shifu_last_arg_is_eager" = true ]; then
     _shifu_append_on_new_line shifu_case_stmt '    [ \$# -ne 0 ] && shift'
-    shifu_case_stmt="$shifu_case_stmt || { shifu_add_completions $@; break; }"
+    shifu_case_stmt="$shifu_case_stmt || { shifu_add_cpts $@; break; }"
     [ ${shifu_parse_stage:-0} -ne 0 ] && shifu_tmp=";" || shifu_tmp=" ;;"
     shifu_case_stmt="$shifu_case_stmt$shifu_tmp"
   else
-    shifu_global_comp_case="${shifu_global_comp_case:-}
-    [ \$# -ne 0 ] && shift || { shifu_add_completions $@; break; } ;;"
+    shifu_defer_comp_case="${shifu_defer_comp_case:-}
+    [ \$# -ne 0 ] && shift || { shifu_add_cpts $@; break; } ;;"
   fi
   shifu_arg_completion_set=true
 }
 
-shifu_cmd_arg_comp_func() {
+shifu_cmd_cptf() {
   [ ${shifu_mode:-0} -ne $shifu_mode_args_comp ] && return
   [ "$shifu_arg_completion_set" = true ] && _shifu_error "Can only add one completion per argument"
-  if [ "$shifu_last_arg_is_local" = true ]; then
+  if [ "$shifu_last_arg_is_eager" = true ]; then
     _shifu_append_on_new_line shifu_case_stmt '    [ \$# -ne 0 ] && shift'
     shifu_case_stmt="$shifu_case_stmt || { $1; break; }"
     [ ${shifu_parse_stage:-0} -eq 0 ] && shifu_tmp=" ;;" || shifu_tmp=";"
     shifu_case_stmt="$shifu_case_stmt$shifu_tmp"
   else
-    shifu_global_comp_case="${shifu_global_comp_case:-}
+    shifu_defer_comp_case="${shifu_defer_comp_case:-}
     [ \$# -ne 0 ] && shift || { $1; break; } ;;"
   fi
   shifu_arg_completion_set=true
 }
 
-shifu_cmd_arg_comp_path() {
+shifu_cmd_cptp() {
   [ ${shifu_mode:-0} -ne $shifu_mode_args_comp ] && return
   [ "$shifu_arg_completion_set" = true ] && _shifu_error "Can only add one completion per argument"
   case ${1:-} in
@@ -86,45 +73,292 @@ shifu_cmd_arg_comp_path() {
     :glob:)  [ -z "${2:-}" ] && return; shifu_tmp_sentinel="SHIFU_COMP_PATH_GLOB:$2" ;;
     *) return ;;
   esac
-  if [ "$shifu_last_arg_is_local" = true ]; then
+  if [ "$shifu_last_arg_is_eager" = true ]; then
     _shifu_append_on_new_line shifu_case_stmt '    [ \$# -ne 0 ] && shift'
-    shifu_case_stmt="$shifu_case_stmt || { shifu_add_completions \"$shifu_tmp_sentinel\"; break; }"
+    shifu_case_stmt="$shifu_case_stmt || { shifu_add_cpts \"$shifu_tmp_sentinel\"; break; }"
     [ ${shifu_parse_stage:-0} -ne 0 ] && shifu_tmp=";" || shifu_tmp=" ;;"
     shifu_case_stmt="$shifu_case_stmt$shifu_tmp"
   else
-    shifu_global_comp_case="${shifu_global_comp_case:-}
-    [ \$# -ne 0 ] && shift || { shifu_add_completions \"$shifu_tmp_sentinel\"; break; } ;;"
+    shifu_defer_comp_case="${shifu_defer_comp_case:-}
+    [ \$# -ne 0 ] && shift || { shifu_add_cpts \"$shifu_tmp_sentinel\"; break; } ;;"
   fi
   shifu_arg_completion_set=true
 }
 
-shifu_cmd_arg_loc() {
-  case $shifu_mode in
-    $shifu_mode_help_run) _shifu_arg_help "$@" ;;
-    $shifu_mode_args_run) _shifu_update_case_stmt "$@" ;;
-    $shifu_mode_args_comp) _shifu_update_comp_case_stmt "$@" ;;
+_shifu_validate_flag() {
+  case "$1" in
+    -*) ;;
+    *) _shifu_error "Option flags must start with - or --, got: $1" ;;
+  esac
+}
+
+_shifu_opt_build() {
+  shifu_build_var="$1"
+  shifu_build_prefix="$2"
+  shifu_build_sep="$3"
+  shift 3
+  _shifu_validate_flag "$1"
+  eval "$shifu_build_var=\"\${$shifu_build_var:-}$shifu_build_prefix\$1\""
+  shifu_opt_count=2
+  shift
+  while [ $# -gt 0 ] && [ "$1" != -- ]; do
+    _shifu_validate_flag "$1"
+    eval "$shifu_build_var=\"\$$shifu_build_var$shifu_build_sep\$1\""
+    shifu_opt_count=$((shifu_opt_count + 1))
+    shift
+  done
+}
+
+_shifu_opt_help_parse() {
+  _shifu_opt_build shifu_help_options '\n  ' ', ' "$@"
+}
+
+_shifu_opt_case_parse() {
+  _shifu_opt_build shifu_case_stmt '
+  ' '|' "$@"
+}
+
+_shifu_opt_defer_parse() {
+  _shifu_opt_build shifu_defer_case '' '|' "$@"
+  _shifu_opt_build shifu_defer_help '\n  ' ', ' "$@"
+}
+
+_shifu_opt_comp_preamble() {
+  if [ "$shifu_arg_completion_set" = false ] && [ $shifu_parse_stage -eq 0 ]; then
+    shifu_case_stmt="$shifu_case_stmt shift ;;"
+  fi
+  shifu_arg_completion_set=false
+  shifu_last_arg_is_eager=true
+}
+
+_shifu_opt_comp_eager_parse() {
+  _shifu_opt_comp_preamble
+  _shifu_collect_option_names "$@"
+  _shifu_opt_case_parse "$@"
+}
+
+_shifu_opt_build_comp_defer_parse() {
+  shifu_arg_completion_set=false
+  shifu_last_arg_is_eager=false
+  _shifu_collect_option_names "$@"
+  _shifu_opt_build shifu_defer_comp_case '
+  ' '|' "$@"
+}
+
+_shifu_cmd_optb_help() {
+  _shifu_opt_help_parse "$@"
+  shift $shifu_opt_count
+  _shifu_error_if_invalid_arg_order "$1" $shifu_help_stage
+  shifu_help_options="$shifu_help_options\n    $4\n    Default: ${2:-empty}, set: $3"
+}
+
+_shifu_cmd_optb_build_now() {
+  _shifu_opt_case_parse "$@"
+  shift $shifu_opt_count
+  _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
+  _shifu_set_variable "$1" "$2"
+  shifu_case_stmt="$shifu_case_stmt) $1=$3; shift; _shifu_ack_arg ;;"
+}
+
+_shifu_cmd_optb_build_defer() {
+  _shifu_opt_defer_parse "$@"
+  shift $shifu_opt_count
+  _shifu_set_variable "$1" "$2"
+  shifu_defer_case="${shifu_defer_case:-}) $1=$3; shift; _shifu_ack_arg ;;"
+  shifu_defer_help="${shifu_defer_help:-}\n    $4\n    Default: $2, set: $3"
+}
+
+_shifu_cmd_optb_build_comp_now() {
+  _shifu_opt_comp_eager_parse "$@"
+  shift $shifu_opt_count
+  _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
+  shifu_case_stmt="$shifu_case_stmt)"
+}
+
+_shifu_cmd_optb_build_comp_defer() {
+  _shifu_opt_build_comp_defer_parse "$@"
+  shift $shifu_opt_count
+  shifu_defer_comp_case="${shifu_defer_comp_case:-}) shift ;;"
+}
+
+_shifu_cmd_optd_help() {
+  _shifu_opt_help_parse "$@"
+  shift $shifu_opt_count
+  _shifu_error_if_invalid_arg_order "$1" $shifu_help_stage
+  shifu_help_options="$shifu_help_options [$1]\n    $3\n    Default: $2"
+}
+
+_shifu_cmd_optd_build_now() {
+  _shifu_opt_case_parse "$@"
+  shift $shifu_opt_count
+  _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
+  _shifu_set_variable "$1" "$2"
+  _shifu_update_case_stmt_option_value_check
+  shifu_case_stmt="$shifu_case_stmt $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
+}
+
+_shifu_cmd_optd_build_defer() {
+  _shifu_opt_defer_parse "$@"
+  shift $shifu_opt_count
+  _shifu_set_variable "$1" "$2"
+  _shifu_update_case_stmt_option_value_check defer
+  shifu_defer_case="$shifu_defer_case $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
+  shifu_defer_help="${shifu_defer_help:-} [$1]\n    $3\n    Default: $2"
+}
+
+_shifu_cmd_optv_build_comp_now() {
+  _shifu_opt_comp_eager_parse "$@"
+  shift $shifu_opt_count
+  _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
+  shifu_case_stmt="$shifu_case_stmt) shift;"
+}
+
+_shifu_cmd_optv_build_comp_defer() {
+  _shifu_opt_build_comp_defer_parse "$@"
+  shift $shifu_opt_count
+  shifu_defer_comp_case="${shifu_defer_comp_case:-}) shift;"
+}
+
+_shifu_cmd_optr_help() {
+  _shifu_opt_help_parse "$@"
+  shift $shifu_opt_count
+  _shifu_error_if_invalid_arg_order "$1" $shifu_help_stage
+  shifu_help_options="$shifu_help_options [$1]\n    $2\n    Required"
+}
+
+_shifu_cmd_optr_build_now() {
+  _shifu_opt_case_parse "$@"
+  shift $shifu_opt_count
+  _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
+  _shifu_list_append shifu_required_variables "$1"
+  _shifu_update_case_stmt_option_value_check
+  shifu_case_stmt="$shifu_case_stmt $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
+}
+
+_shifu_cmd_optr_build_defer() {
+  _shifu_opt_defer_parse "$@"
+  shift $shifu_opt_count
+  _shifu_list_append shifu_required_variables "$1"
+  _shifu_update_case_stmt_option_value_check defer
+  shifu_defer_case="$shifu_defer_case $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
+  shifu_defer_help="${shifu_defer_help:-} [$1]\n    $2\n    Required"
+}
+
+_shifu_cmd_optd_build_comp_now() { _shifu_cmd_optv_build_comp_now "$@"; }
+_shifu_cmd_optd_build_comp_defer() { _shifu_cmd_optv_build_comp_defer "$@"; }
+_shifu_cmd_optr_build_comp_now() { _shifu_cmd_optv_build_comp_now "$@"; }
+_shifu_cmd_optr_build_comp_defer() { _shifu_cmd_optv_build_comp_defer "$@"; }
+
+_shifu_cmd_argr_help() {
+  if [ $shifu_help_stage -lt 1 ]; then
+    shifu_help_stage=1
+  elif [ $shifu_help_stage -gt 1 ]; then
+    _shifu_error "No arguments after remaining are declared: $1"
+  fi
+  shifu_help_usage="${shifu_help_usage:-} [$1]"
+  shifu_help_arguments="${shifu_help_arguments:-}\n  $1\n    $2"
+}
+
+_shifu_cmd_argr_build_now() {
+  if [ $shifu_parse_stage -eq 0 ]; then
+    shifu_parse_stage=1
+    _shifu_update_case_stmt_invalid_option
+  elif [ $shifu_parse_stage -gt 1 ]; then
+    _shifu_error "No arguments after remaining are declared: $1"
+  fi
+  _shifu_set_variable "$1" ""
+  _shifu_list_append shifu_required_positionals "$1"
+  _shifu_append_on_new_line shifu_case_stmt "    $1=\\\$1; shift; _shifu_ack_arg"
+}
+
+_shifu_cmd_argr_build_comp_now() {
+  _shifu_opt_comp_preamble
+  if [ $shifu_parse_stage -eq 0 ]; then
+    shifu_parse_stage=1
+    _shifu_append_on_new_line shifu_case_stmt "  *)"
+  elif [ $shifu_parse_stage -gt 1 ]; then
+    _shifu_error "No arguments after remaining are declared: $1"
+  fi
+}
+
+_shifu_cmd_args_help() {
+  shifu_help_stage=2
+  shifu_help_usage="$shifu_help_usage ...[REMAINING]"
+  shifu_help_arguments="$shifu_help_arguments\n  REMAINING\n    $1"
+}
+
+_shifu_cmd_args_build_now() {
+  [ $shifu_parse_stage -gt 1 ] && _shifu_error "Can only declare remaining arguments once: $1"
+  [ $shifu_parse_stage -eq 0 ] && _shifu_update_case_stmt_invalid_option
+  shifu_parse_stage=2
+}
+
+_shifu_cmd_args_build_comp_now() {
+  _shifu_opt_comp_preamble
+  [ $shifu_parse_stage -eq 2 ] && _shifu_error "Can only declare remaining arguments once: $1"
+  shifu_parse_stage=2
+}
+
+_shifu_cmd_opt_dispatch() {
+  shifu_dispatch_prefix="$1"; shift
+  if [ -n "${shifu_cmd_func:-}" ]; then
+    shifu_arg_scope=eager
+  elif [ "$1" = ":eager:" ]; then
+    shifu_arg_scope=eager; shift
+  elif [ "$1" = ":defer:" ]; then
+    shifu_arg_scope=defer; shift
+  else
+    _shifu_error "Mode :eager: or :defer: required in non-leaf commands"
+  fi
+  case ${shifu_mode:-0} in
+    $shifu_mode_help_run) "${shifu_dispatch_prefix}_help" "$@" ;;
+    $shifu_mode_args_run)
+      if [ "$shifu_arg_scope" = eager ]; then "${shifu_dispatch_prefix}_build_now" "$@"
+      else "${shifu_dispatch_prefix}_build_defer" "$@"; fi ;;
+    $shifu_mode_args_comp)
+      if [ "$shifu_arg_scope" = eager ]; then "${shifu_dispatch_prefix}_build_comp_now" "$@"
+      else "${shifu_dispatch_prefix}_build_comp_defer" "$@"; fi ;;
     $shifu_mode_opt_names_comp) _shifu_collect_option_names "$@" ;;
   esac
 }
 
-shifu_add_completions() {
+_shifu_cmd_arg_dispatch() {
+  shifu_dispatch_prefix="$1"; shift
+  [ -n "${shifu_cmd_func:-}" ] || _shifu_error "Positional arguments can only be used in leaf commands"
+  case ${shifu_mode:-0} in
+    $shifu_mode_help_run) "${shifu_dispatch_prefix}_help" "$@" ;;
+    $shifu_mode_args_run) "${shifu_dispatch_prefix}_build_now" "$@" ;;
+    $shifu_mode_args_comp) "${shifu_dispatch_prefix}_build_comp_now" "$@" ;;
+  esac
+}
+
+shifu_cmd_optb() { _shifu_cmd_opt_dispatch _shifu_cmd_optb "$@"; }
+shifu_cmd_optd() { _shifu_cmd_opt_dispatch _shifu_cmd_optd "$@"; }
+shifu_cmd_optr() { _shifu_cmd_opt_dispatch _shifu_cmd_optr "$@"; }
+shifu_cmd_argr() { _shifu_cmd_arg_dispatch _shifu_cmd_argr "$@"; }
+shifu_cmd_args() { _shifu_cmd_arg_dispatch _shifu_cmd_args "$@"; }
+
+shifu_add_cpts() {
   for completion in "$@"; do
     _shifu_list_append shifu_completions "$completion"
   done
 }
 
 shifu_less() {
-  cmd_name()          { shifu_cmd_name "$@"; }
-  cmd_help()          { shifu_cmd_help "$@"; }
-  cmd_long()          { shifu_cmd_long "$@"; }
-  cmd_subs()          { shifu_cmd_subs "$@"; }
-  cmd_func()          { shifu_cmd_func "$@"; }
-  cmd_arg()           { shifu_cmd_arg "$@"; }
-  cmd_arg_comp_enum() { shifu_cmd_arg_comp_enum "$@"; }
-  cmd_arg_comp_func() { shifu_cmd_arg_comp_func "$@"; }
-  cmd_arg_comp_path() { shifu_cmd_arg_comp_path "$@"; }
-  cmd_arg_loc()       { shifu_cmd_arg_loc "$@"; }
-  add_completions()   { shifu_add_completions "$@"; }
+  cmd_name() { shifu_cmd_name "$@"; }
+  cmd_help() { shifu_cmd_help "$@"; }
+  cmd_long() { shifu_cmd_long "$@"; }
+  cmd_subs() { shifu_cmd_subs "$@"; }
+  cmd_func() { shifu_cmd_func "$@"; }
+  cmd_optb() { shifu_cmd_optb "$@"; }
+  cmd_optd() { shifu_cmd_optd "$@"; }
+  cmd_optr() { shifu_cmd_optr "$@"; }
+  cmd_argr() { shifu_cmd_argr "$@"; }
+  cmd_args() { shifu_cmd_args "$@"; }
+  cmd_cpte() { shifu_cmd_cpte "$@"; }
+  cmd_cptf() { shifu_cmd_cptf "$@"; }
+  cmd_cptp() { shifu_cmd_cptp "$@"; }
+  add_cpts() { shifu_add_cpts "$@"; }
 }
 
 shifu_run() {
@@ -180,12 +414,12 @@ _shifu_run() {
 _shifu_parse_args() {
   shifu_mode=$shifu_mode_args_run
   shifu_parse_stage=0
-  shifu_parse_local="$1"; shifu_cmd="$2"; shift 2
-  [ "$shifu_parse_local" = true ] && shifu_required_variables_local=""
+  shifu_parse_eager="$1"; shifu_cmd="$2"; shift 2
+  [ "$shifu_parse_eager" = true ] && shifu_required_variables_eager=""
   shifu_required_positionals=""
   shifu_case_stmt="case \"\$1\" in"
-  if [ "$shifu_parse_local" = false -a -n "${shifu_global_case:-}" ]; then
-    _shifu_append_on_new_line shifu_case_stmt "  ${shifu_global_case:-}"
+  if [ "$shifu_parse_eager" = false -a -n "${shifu_defer_case:-}" ]; then
+    _shifu_append_on_new_line shifu_case_stmt "  ${shifu_defer_case:-}"
   fi
   _shifu_append_on_new_line shifu_case_stmt "  -h|--help) _shifu_help \"$shifu_cmd\" 0 ;; "
   "$shifu_cmd"
@@ -199,8 +433,8 @@ _shifu_parse_args() {
     [ $# -eq $_shifu_n_args ] && _shifu_case_loop_error
     _shifu_n_args=$#
   done
-  if [ "$shifu_parse_local" = true ]; then
-    _shifu_set_for_looping shifu_req_variables shifu_required_variables_local
+  if [ "$shifu_parse_eager" = true ]; then
+    _shifu_set_for_looping shifu_req_variables shifu_required_variables_eager
   else
     _shifu_set_for_looping shifu_req_variables shifu_required_variables
   fi
@@ -217,99 +451,8 @@ _shifu_parse_args() {
       _shifu_help \"$shifu_cmd\" 1
     fi"
   done
-  [ "$shifu_parse_local" = true -o $# -eq 0 -o "$shifu_allow_options_anywhere" != false ] && return
+  [ "$shifu_parse_eager" = true -o $# -eq 0 -o "$shifu_allow_options_anywhere" != false ] && return
   _shifu_error_if_options "$@"
-}
-
-_shifu_update_case_stmt() {
-  shifu_no_options=true
-  if [ "$1" != -- ]; then
-    shifu_no_options=false
-    _shifu_append_on_new_line shifu_case_stmt "  $1"
-    shift
-  fi
-  while [ $# -gt 1 -a "$1" != -- ]; do
-    shifu_case_stmt="${shifu_case_stmt}|$1"; shift
-  done; shift
-  # remaining
-  if [ $# -eq 1 ]; then
-    [ "$shifu_parse_local" = true ] && _shifu_error "Remaining arguments cannot be local: $1"
-    [ $shifu_parse_stage -gt 1 ] && _shifu_error "Can only declare remaining arguments once: $1"
-    [ $shifu_parse_stage -eq 0 ] && _shifu_update_case_stmt_invalid_option
-    shifu_parse_stage=2
-  # positional
-  elif [ "$shifu_no_options" = true ]; then
-    [ "$shifu_parse_local" = true ] && _shifu_error "Positional arguments cannot be local: $1"
-    if [ $shifu_parse_stage -eq 0 ]; then
-      shifu_parse_stage=1
-      _shifu_update_case_stmt_invalid_option
-    elif [ $shifu_parse_stage -gt 1 ]; then
-      _shifu_error "No arguments after remaining are declared: $1"
-    fi
-    _shifu_set_variable "$1" ""
-    _shifu_list_append shifu_required_positionals "$1"
-    _shifu_append_on_new_line shifu_case_stmt "    $1=\\\$1; shift; _shifu_ack_arg"
-  # option + argument, required
-  elif [ $# -eq 2 ]; then
-    _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
-    if [ "$shifu_parse_local" = true ]; then
-      _shifu_list_append shifu_required_variables_local "$1"
-    else
-      _shifu_list_append shifu_required_variables "$1"
-    fi
-    _shifu_update_case_stmt_option_value_check
-    shifu_case_stmt="$shifu_case_stmt $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
-  # option + argument, with default
-  elif [ $# -eq 3 ]; then
-    _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
-    _shifu_set_variable "$1" "$2"
-    _shifu_update_case_stmt_option_value_check
-    shifu_case_stmt="$shifu_case_stmt $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
-  # option no argument, binary: default/set
-  elif [ $# -eq 4 ]; then
-    _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
-    _shifu_set_variable "$1" "$2"
-    shifu_case_stmt="$shifu_case_stmt) $1=$3; shift; _shifu_ack_arg ;;"
-  fi
-}
-
-_shifu_handle_arg_global() {
-  shifu_no_options=true
-  if [ "$1" != -- ]; then
-    shifu_no_options=false
-    shifu_global_case="${shifu_global_case:-}$1"
-    shifu_global_help="${shifu_global_help:-}\n  $1"
-    shift
-  fi
-  while [ $# -gt 1 -a "$1" != -- ]; do
-    shifu_global_case="${shifu_global_case:-}|$1"
-    shifu_global_help="${shifu_global_help:-}, $1"
-    shift
-  done; shift
-  # remaining
-  if [ $# -eq 1 ]; then
-    _shifu_error "Remaining arguments cannot be global"
-  # positional
-  elif [ "$shifu_no_options" = true ]; then
-    _shifu_error "Positional arguments cannot be global: $1"
-  # option + argument, required
-  elif [ $# -eq 2 ]; then
-    _shifu_list_append shifu_required_variables "$1"
-    _shifu_update_case_stmt_option_value_check global
-    shifu_global_case="$shifu_global_case $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
-    shifu_global_help="${shifu_global_help:-} [$1]\n    $2\n    Required"
-  # option + argument, with default
-  elif [ $# -eq 3 ]; then
-    _shifu_set_variable "$1" "$2"
-    _shifu_update_case_stmt_option_value_check global
-    shifu_global_case="$shifu_global_case $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
-    shifu_global_help="${shifu_global_help:-} [$1]\n    $3\n    Default: $2"
-  # option no argument, binary: default/set
-  elif [ $# -eq 4 ]; then
-    _shifu_set_variable "$1" "$2"
-    shifu_global_case="${shifu_global_case:-}) $1=$3; shift; _shifu_ack_arg ;;"
-    shifu_global_help="${shifu_global_help:-}\n    $4\n    Default: $2, set: $3"
-  fi
 }
 
 _shifu_ack_arg() {
@@ -322,13 +465,14 @@ _shifu_clear_cmd_vars() {
 
 _shifu_help() {
   shifu_mode=$shifu_mode_cmds_run
+  _shifu_clear_cmd_vars
   "$1"
   _shifu_make_subcmd_help
   shifu_mode=$shifu_mode_help_run
   _shifu_clear_cmd_vars
   shifu_help_stage=0
   "$1"
-  [ -n "$shifu_cmd_func" ] && shifu_help_options="${shifu_help_options:-}${shifu_global_help:-}"
+  [ -n "$shifu_cmd_func" ] && shifu_help_options="${shifu_help_options:-}${shifu_defer_help:-}"
   shifu_help_options="${shifu_help_options:-}\n  -h, --help\n    Show this help"
   [ -n "${shifu_help_usage:-}" ] && shifu_help_usage="$shifu_cmd_name [OPTIONS]$shifu_help_usage"
   [ -n "$shifu_cmd_help" ] && _shifu_add_to_help_string "$shifu_cmd_help"
@@ -356,45 +500,6 @@ _shifu_make_subcmd_help() {
     shifu_subcmd_help="${shifu_subcmd_help:-}\n  $shifu_cmd_name"
     [ -n "${shifu_cmd_help:-}" ] && shifu_subcmd_help="${shifu_subcmd_help:-}\n    $shifu_cmd_help"
   done
-}
-
-_shifu_arg_help() {
-  shifu_no_options=true
-  if [ "$1" != -- ]; then
-    shifu_no_options=false
-    shifu_help_options="${shifu_help_options:-}\n  $1"
-    shift
-  fi
-  while [ $# -gt 1 -a "$1" != -- ]; do
-    shifu_help_options="$shifu_help_options, $1"; shift
-  done; shift
-  # remaining
-  if [ $# -eq 1 ]; then
-    shifu_help_stage=2
-    shifu_help_usage="$shifu_help_usage ...[REMAINING]"
-    shifu_help_arguments="$shifu_help_arguments\n  REMAINING\n    $1"
-  # positional
-  elif [ "$shifu_no_options" = true ]; then
-    if [ $shifu_help_stage -lt 1 ]; then
-      shifu_help_stage=1
-    elif [ $shifu_help_stage -gt 1 ]; then
-      _shifu_error "No arguments after remaining are declared: $1"
-    fi
-    shifu_help_usage="${shifu_help_usage:-} [$1]"
-    shifu_help_arguments="${shifu_help_arguments:-}\n  $1\n    $2"
-  # option + argument, required
-  elif [ $# -eq 2 ]; then
-    _shifu_error_if_invalid_arg_order "$1" $shifu_help_stage
-    shifu_help_options="$shifu_help_options [$1]\n    $2\n    Required"
-  # option + argument, with default
-  elif [ $# -eq 3 ]; then
-    _shifu_error_if_invalid_arg_order "$1" $shifu_help_stage
-    shifu_help_options="$shifu_help_options [$1]\n    $3\n    Default: $2"
-  # option no argument, binary: default/set
-  elif [ $# -eq 4 ]; then
-    _shifu_error_if_invalid_arg_order "$1" $shifu_help_stage
-    shifu_help_options="$shifu_help_options\n    $4\n    Default: ${2:-empty}, set: $3"
-  fi
 }
 
 _shifu_generate_tab_completion() {
@@ -463,7 +568,7 @@ _shifu_complete() {
   _shifu_set_for_looping shifu_cmds shifu_cmd_subs
   while [ $# -ne 0 -a -n "${shifu_cmd_subs:-}" ]; do
     _shifu_complete_func_args true "$shifu_parent" "$@"
-    shifu_comp_global_option_names="${shifu_comp_option_names:-}"
+    shifu_build_comp_defer_option_names="${shifu_comp_option_names:-}"
     shifu_mode=$shifu_mode_cmds_comp
     shifu_arg_matched=''
     for shifu_cmd in $shifu_cmds; do
@@ -480,7 +585,7 @@ _shifu_complete() {
     [ "$shifu_arg_matched" = true -a -n "$shifu_cmd_subs" ] && continue
     break
   done
-  shifu_comp_option_names="${shifu_comp_global_option_names:-}"
+  shifu_comp_option_names="${shifu_build_comp_defer_option_names:-}"
   _shifu_set_completing_option
   if [ "$shifu_completing_option" = true -a -n "${shifu_cmd_func:-}" ]; then
     _shifu_complete_option_names
@@ -497,7 +602,7 @@ _shifu_complete() {
 
 _shifu_set_completing_option() {
   case "${shifu_current_word:-}" in
-    -*|--*) shifu_completing_option=true ;;
+    -*) shifu_completing_option=true ;;
     *) shifu_completing_option=false ;;
   esac
 }
@@ -531,22 +636,22 @@ _shifu_complete_subcmd_names() {
 _shifu_complete_func_args() {
   shifu_mode=$shifu_mode_args_comp
   shifu_parse_stage=0
-  shifu_parse_local="$1"; shifu_cmd="$2"; shift 2
+  shifu_parse_eager="$1"; shifu_cmd="$2"; shift 2
   shifu_case_stmt="case \"\${1:-}\" in "
-  if [ "$shifu_parse_local" = false -a -n "${shifu_global_comp_case:-}" ]; then
+  if [ "$shifu_parse_eager" = false -a -n "${shifu_defer_comp_case:-}" ]; then
     shifu_case_stmt="${shifu_case_stmt}
-${shifu_global_comp_case:-}"
+${shifu_defer_comp_case:-}"
   fi
   shifu_arg_completion_set=true
-  shifu_last_arg_is_local=true
+  shifu_last_arg_is_eager=true
   "$shifu_cmd"
   case "${shifu_current_word:-}" in
-    -*|--*) return 0 ;;
+    -*) return 0 ;;
   esac
   if [ $shifu_parse_stage -eq 0 -a $shifu_arg_completion_set = false ]; then
     shifu_case_stmt="$shifu_case_stmt shift ;;"
   fi
-  if [ "$shifu_parse_local" = true ]; then
+  if [ "$shifu_parse_eager" = true ]; then
     _shifu_append_on_new_line shifu_case_stmt "  *) break ;;"
   elif [ $shifu_parse_stage -ne 0 ]; then
     _shifu_append_on_new_line shifu_case_stmt "    break ;;"
@@ -564,73 +669,6 @@ ${shifu_global_comp_case:-}"
   done
 }
 
-_shifu_update_comp_case_stmt() {
-  if [ "$shifu_arg_completion_set" = false -a $shifu_parse_stage -eq 0 ]; then
-    shifu_case_stmt="$shifu_case_stmt shift ;;"
-  fi
-  shifu_arg_completion_set=false
-  shifu_last_arg_is_local=true
-  _shifu_collect_option_names "$@"
-  shifu_no_options=true
-  if [ "$1" != -- ]; then
-    shifu_no_options=false
-    _shifu_append_on_new_line shifu_case_stmt "  $1"
-    shift
-  fi
-  while [ $# -gt 1 -a "$1" != -- ]; do
-    shifu_case_stmt="${shifu_case_stmt}|$1"
-    shift
-  done; shift
-  # remaining
-  if [ $# -eq 1 ]; then
-    [ "$shifu_parse_local" = true ] && _shifu_error "Remaining arguments cannot be local: $1"
-    [ $shifu_parse_stage -eq 2 ] && _shifu_error "Can only declare remaining arguments once: $1"
-    shifu_parse_stage=2
-  # positional
-  elif [ "$shifu_no_options" = true ]; then
-    [ "$shifu_parse_local" = true ] && _shifu_error "Positional arguments cannot be local: $1"
-    if [ $shifu_parse_stage -eq 0 ]; then
-      shifu_parse_stage=1
-      _shifu_append_on_new_line shifu_case_stmt "  *)"
-    elif [ $shifu_parse_stage -gt 1 ]; then
-      _shifu_error "No arguments after remaining are declared: $1"
-    fi
-  # option + argument, required
-  elif [ $# -eq 2 ]; then
-    _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
-    shifu_case_stmt="$shifu_case_stmt) shift;"
-  # option + argument with default
-  elif [ $# -eq 3 ]; then
-    _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
-    shifu_case_stmt="$shifu_case_stmt) shift;"
-  # option no argument, binary default/set
-  elif [ $# -eq 4 ]; then
-    _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
-    # has no value that could be completed
-    shifu_case_stmt="$shifu_case_stmt)"
-  fi
-}
-
-_shifu_handle_comp_arg_global() {
-  shifu_arg_completion_set=false
-  shifu_last_arg_is_local=false
-  _shifu_collect_option_names "$@"
-  shifu_no_options=true
-  if [ "$1" != -- ]; then
-    shifu_no_options=false
-    shifu_global_comp_case="${shifu_global_comp_case:-}
-  $1"
-    shift
-  fi
-  while [ $# -gt 1 -a "$1" != -- ]; do
-    shifu_global_comp_case="${shifu_global_comp_case:-}|$1"
-    shift
-  done; shift
-  [ $# -eq 1 ] || [ "$shifu_no_options" = true ] && return
-  [ $# -eq 4 ] && shifu_tmp=" shift ;;" || shifu_tmp=" shift;"
-  shifu_global_comp_case="${shifu_global_comp_case:-})$shifu_tmp"
-}
-
 _shifu_filter_matching_options() {
   shifu_filter_current_word="$1"; shift
   [ "$shifu_complete_single_dash_options" = false ] && \
@@ -645,7 +683,7 @@ _shifu_filter_matching_options() {
 
 _shifu_update_case_stmt_invalid_option() {
   shifu_case_stmt="$shifu_case_stmt
-  -*|--*) echo \"Invalid option: \$1\"; _shifu_help \"\$shifu_cmd\" 1 ;;
+  -*) echo \"Invalid option: \$1\"; _shifu_help \"\$shifu_cmd\" 1 ;;
   *)"
 }
 
@@ -657,15 +695,15 @@ $2\""
 _shifu_error_if_options() {
   while [ $# -gt 0 ]; do
     case "$1" in
-      -*|--*) echo "No options allowed after any positional argument: $1"; return 1 ;;
+      -*) echo "No options allowed after any positional argument: $1"; return 1 ;;
     esac
     shift
   done
 }
 
 _shifu_update_case_stmt_option_value_check() {
-  if [ "${1:-}" = "global" ]; then
-    shifu_global_case="${shifu_global_case:-}) [ \\\$# -lt 2 ] && { echo \\\"Option \\\$1 requires a value\\\"; _shifu_help \\\"\\\$shifu_cmd\\\" 1; };"
+  if [ "${1:-}" = "defer" ]; then
+    shifu_defer_case="${shifu_defer_case:-}) [ \\\$# -lt 2 ] && { echo \\\"Option \\\$1 requires a value\\\"; _shifu_help \\\"\\\$shifu_cmd\\\" 1; };"
   else
     shifu_case_stmt="$shifu_case_stmt) [ \$# -lt 2 ] && { echo \"Option \$1 requires a value\"; _shifu_help \"\$shifu_cmd\" 1; };"
   fi

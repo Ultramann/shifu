@@ -16,12 +16,12 @@ run_cmd() {
   cmd_func run_tests
   cmd_help "Run shifu tests"
 
-  cmd_arg -v --verbose -- verbose "" -v "Show status for each test, pass or fail"
-  cmd_arg -x           -- set_x   "" -x "Set execution tracing for each test"
-  cmd_arg -t --timeout -- timeout 1     "Timeout in seconds for each shell test suite"
-  cmd_arg -i --image   -- image   ""    "Docker image to run tests in"
-  cmd_arg              -- shell "Shell to run tests in. Options: all, ash, bash, dash, ksh, zsh"
-  cmd_arg              --         "Specific tests to run"
+  cmd_optb -v --verbose -- verbose "" -v "Show status for each test, pass or fail"
+  cmd_optb -x           -- set_x   "" -x "Set execution tracing for each test"
+  cmd_optd -t --timeout -- timeout 1     "Timeout in seconds for each shell test suite"
+  cmd_optd -i --image   -- image   ""    "Docker image to run tests in"
+  cmd_argr shell "Shell to run tests in. Options: all, ash, bash, dash, ksh, zsh"
+  cmd_args "Specific tests to run"
 }
 
 run_tests() {
