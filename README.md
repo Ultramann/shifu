@@ -80,7 +80,7 @@ Options
     Show this help
 ```
 
-The diagram below shows how shifu is connecting together this CLI script to print the value `shifu` in `intro_function`.
+The diagram below shows how shifu connects this CLI script to parse the command line arguments and print the value `shifu` in `intro_function`.
 
 ```
        examples/intro -o shifu ───────────────┐
