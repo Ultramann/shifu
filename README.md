@@ -48,7 +48,7 @@ intro_cmd() {
   shifu_cmd_func intro_function
   shifu_cmd_help "An introduction shifu cli"
   shifu_cmd_long "This command function will invoke intro_function which prints
-  an option value provided by '-o' or '--option', defaults to none"
+an option value provided by '-o' or '--option', defaults to none"
   shifu_cmd_optd -o --option -- OPTION none "Example option to echo"
 }
 
@@ -69,8 +69,8 @@ shifu
 $ examples/intro --help
 An introduction shifu cli
 
-This command function will invoke intro_function which prints an argument
-provided by '-o' or '--option' or none if no argument is provided
+This command function will invoke intro_function which prints
+an option value provided by '-o' or '--option', defaults to none
 
 Options
   -o, --option [OPTION]
@@ -92,7 +92,7 @@ The diagram below shows how shifu is connecting together this cli script to prin
 ┌──── shifu_cmd_func intro_function     │     │
 │     shifu_cmd_optd -o --option -- \ ──┘     │
 │       OPTION none "Example option to echo"  │
-│  }      ▲                                   │
+│   }     ▲                                   │
 │         └───────────────────────────────────┘
 │
 └─► intro_function() {
@@ -102,7 +102,7 @@ The diagram below shows how shifu is connecting together this cli script to prin
 
 ## Subcommands
 
-Shifu supports subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. Options in non-leaf commands (those with `shifu_cmd_subs`) require a mode annotation — `:defer:` to inherit the option to subcommands, or `:eager:` to parse it locally before subcommand dispatch. Here's what the minimal structure of a subcommand cli looks like (a complete example can be found below):
+Shifu supports subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. Options in parent commands (those with `shifu_cmd_subs`) require a mode annotation — `:defer:` to inherit the option to subcommands, or `:eager:` to parse it locally before subcommand dispatch. Here's what the minimal structure of a subcommand cli looks like (a complete example can be found below):
 
 ```sh
 root_cmd() {
@@ -241,7 +241,7 @@ The diagram below shows how shifu is connecting together this cli script to prin
 
 Since shifu knows all about the structure of your cli it can generate tab completion code for interactive shells that support it, bash and zsh. 
 
-By default, subcommand and option names can be tab completed. Shifu also provides `cpt` functions for completing option values and positional arguments with static enumerations, dynamic functions, or file system paths — see the [Completion functions](#completion-functions) API section for details.
+By default, subcommand and option names can be tab completed. Shifu also provides `cmd` functions for completing option values and positional arguments with static enumerations, dynamic functions, or file system paths — see the [Completion functions](#completion-functions) API section for details.
 
 Below is an example cli, [`examples/tab`](/examples/tab), demonstrating tab completion capabilities.
 
@@ -300,7 +300,7 @@ no_op() { :; }
 shifu_run tab_cmd "$@"
 ```
 
-If you'd like to test the tab completion from this example you can easily from a bash or zsh (requires autoloading `compinit`) terminal by running
+If you'd like to test the tab completion from this example you can easily do so from a bash or zsh (requires autoloading `compinit`) terminal by running
 
 ```sh
 export PATH="$PATH:$(pwd)/examples"
@@ -419,7 +419,7 @@ These instructions can also be found by running
 
 There are five option and argument declaration functions:
 
-| Type     | Function           | Declares                     |
+| Type     | Function           | Parses                       |
 |----------|--------------------|------------------------------|
 | Option   | `shifu_cmd_optb`   | Binary option                |
 | Option   | `shifu_cmd_optd`   | Option with default          |
@@ -431,27 +431,6 @@ Option functions (`shifu_cmd_optb`, `shifu_cmd_optd`, `shifu_cmd_optr`) parse fl
 
 All option and argument functions accept a `variable` argument — the shell variable name that will be set when parsing, and a `help` string used in auto-generated help output.
 
-In **leaf commands** (those using `shifu_cmd_func`), no mode prefix is needed:
-```sh
-shifu_cmd_optd -o --output -- OUTPUT "default" "Output file"
-```
-
-In **non-leaf commands** (those using `shifu_cmd_subs`), option functions require a mode as the first argument:
-* `:defer:` — option specification and parsing is deferred until the leaf command options
-* `:eager:` — option parsing is done eagerly, before subcommand dispatch
-
-```sh
-shifu_cmd_optb :defer: -v --verbose -- VERBOSE false true "Verbose output"
-shifu_cmd_optd :eager: -c --config  -- CONFIG "default" "Config file"
-```
-
-Positional and remaining argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) can only be used in leaf commands.
-
-The option and argument declaration order in a command function matters:
-1. Help is generated in declaration order
-1. Positional arguments are parsed in declaration order
-1. Options must be declared before any positional arguments, and positional arguments before remaining arguments
-
 #### `shifu_cmd_optb`
 * Binary option
 * Variable is assigned a value depending on whether or not the option flag is set
@@ -462,6 +441,10 @@ The option and argument declaration order in a command function matters:
 * Example
   ```sh
   shifu_cmd_optb -v --verbose -- VERBOSE false true "Verbose output"
+  ```
+  ```txt
+  cli             # VERBOSE=false
+  cli --verbose   # VERBOSE=true
   ```
 
 #### `shifu_cmd_optd`
@@ -475,6 +458,10 @@ The option and argument declaration order in a command function matters:
   ```sh
   shifu_cmd_optd -o --output -- OUTPUT "out" "Output file"
   ```
+  ```txt
+  cli                   # OUTPUT="out"
+  cli --output result   # OUTPUT="result"
+  ```
 
 #### `shifu_cmd_optr`
 * Required option
@@ -485,13 +472,16 @@ The option and argument declaration order in a command function matters:
   ```
 * Example
   ```sh
-  shifu_cmd_optr -m --mode -- MODE "Operating mode"
+  shifu_cmd_optr -e --env -- ENV "Operating environment"
+  ```
+  ```txt
+  cli             # error: missing required option
+  cli --env dev   # MODE="dev"
   ```
 
 #### `shifu_cmd_argr`
 * Required positional argument
 * Variable is set from the next unparsed argument
-* Leaf commands only
 * Signature
   ```sh
   shifu_cmd_argr <variable> <help>
@@ -500,11 +490,14 @@ The option and argument declaration order in a command function matters:
   ```sh
   shifu_cmd_argr TARGET "Target to process"
   ```
+  ```txt
+  cli              # error: missing required argument
+  cli myfile.txt   # TARGET="myfile.txt"
+  ```
 
 #### `shifu_cmd_args`
 * Remaining arguments
-* Zero or more unparsed arguments passed to the target function via `$@`
-* Leaf commands only
+* Zero or more unparsed arguments passed to the target function (specified by `shifu_cmd_func`) via `$@`
 * Signature
   ```sh
   shifu_cmd_args <help>
@@ -513,6 +506,37 @@ The option and argument declaration order in a command function matters:
   ```sh
   shifu_cmd_args "Additional arguments"
   ```
+  ```txt
+  cli                 # $@ is empty
+  cli one two three   # $@ = one two three
+  ```
+
+#### Notes
+
+The signatures and examples above are for **leaf commands** (those using `shifu_cmd_func`). When you have options that are shared across subcommands — like a `--verbose` flag — you can declare them once in a **parent command** (those using `shifu_cmd_subs`) instead of repeating them in every subcommand.
+
+Option functions called in a parent command require a mode as the first argument. The mode changes when the option will be parsed, aka when it will be provided by the cli user. The two availble modes are:
+* `:defer:` — option parsing is deferred until the leaf command, so the option can be provided alongside subcommand options
+  ```sh
+  shifu_cmd_optb :defer: -v --verbose -- VERBOSE false true "Verbose output"
+  ```
+  ```txt
+  cli sub --verbose
+  ```
+* `:eager:` — option parsing happens before subcommand dispatch, so the option must be provided before the subcommand name
+  ```sh
+  shifu_cmd_optd :eager: -c --config -- CONFIG "default" "Config file"
+  ```
+  ```txt
+  cli --config myconfig sub
+  ```
+
+Positional and remaining argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) can only be used in leaf commands.
+
+The option and argument declaration order in a command function matters:
+1. Help is generated in declaration order
+1. Positional arguments are parsed in declaration order
+1. Options must be declared before any positional arguments, and positional arguments before remaining arguments
 
 ### Completion functions
 
