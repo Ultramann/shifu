@@ -13,7 +13,7 @@
 * compatibility with POSIX-based shells; tested with: 
   * ash, bash, dash, ksh, zsh
 
-Shell scripts are great for gluing commands together. But when you need to make and maintain subcommands, with scoped options, and help strings, things can get messy fast. Shifu handles the cli boilerplate so you can focus on functionality.
+Shell scripts are great for gluing commands together. But when you need to make and maintain subcommands, with scoped options, and help strings, things can get messy fast. Shifu handles the CLI boilerplate so you can focus on functionality.
 
 ## Table of contents
 
@@ -26,7 +26,7 @@ Shell scripts are great for gluing commands together. But when you need to make 
 
 ## Installation
 
-Since shifu is just a single POSIX-compatible script, all you need to do is get a copy of it and either put it in a location on your `PATH` or in the same directory as your cli script.
+Since shifu is just a single POSIX-compatible script, all you need to do is get a copy of it and either put it in a location on your `PATH` or in the same directory as your CLI script.
 
 ```sh
 curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
@@ -34,9 +34,9 @@ curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
 
 ## Quickstart
 
-Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ contains calls to shifu `cmd` functions. Shifu `cmd` functions provide a DSL which shifu uses to wire together your cli. Commands are passed to shifu's command runner, `shifu_run`, or referenced as subcommands.
+Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ contains calls to shifu `cmd` functions. Shifu `cmd` functions provide a DSL which shifu uses to wire together your CLI. Commands are passed to shifu's command runner, `shifu_run`, or referenced as subcommands.
 
-Below is a very minimal, introduction shifu cli script.
+Below is a very minimal, introduction shifu CLI script.
 
 [`examples/intro`](/examples/intro)
 
@@ -59,7 +59,7 @@ intro_function() {
 shifu_run intro_cmd "$@"
 ```
 
-Calling this cli, we can see how it parses `-o shifu` into the variable `OPTION` when provided, and also automatically generates help strings.
+Calling this CLI, we can see how it parses `-o shifu` into the variable `OPTION` when provided, and also automatically generates help strings.
 
 ```txt
 $ examples/intro
@@ -80,7 +80,7 @@ Options
     Show this help
 ```
 
-The diagram below shows how shifu is connecting together this cli script to print the value `shifu` in `intro_function`.
+The diagram below shows how shifu is connecting together this CLI script to print the value `shifu` in `intro_function`.
 
 ```
        examples/intro -o shifu ───────────────┐
@@ -102,7 +102,7 @@ The diagram below shows how shifu is connecting together this cli script to prin
 
 ## Subcommands
 
-Shifu supports subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. Options in parent commands (those with `shifu_cmd_subs`) require a mode annotation — `:defer:` to inherit the option to subcommands, or `:eager:` to parse it locally before subcommand dispatch. Here's what the minimal structure of a subcommand cli looks like (a complete example can be found below):
+Shifu supports subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. Parent commands can also declare shared options that apply across their subcommands — see the [API](#notes) docs for details. Here's what the minimal structure of a subcommand CLI looks like (a complete example can be found below):
 
 ```sh
 root_cmd() {
@@ -131,7 +131,7 @@ $ root sub
 Hello from sub_func
 ```
 
-Below is an example cli, [`examples/dispatch`](/examples/dispatch), with two subcommands, `hello` and `echo`, each with their own arguments.
+Below is an example CLI, [`examples/dispatch`](/examples/dispatch), with two subcommands, `hello` and `echo`, each with their own arguments.
 
 ![Quickstart](/assets/dispatch_demo.gif)
 
@@ -210,7 +210,7 @@ dispatch_echo() {
 shifu_run dispatch_cmd "$@"
 ```
 
-The diagram below shows how shifu is connecting together this cli script to print the value `🌐 Hello, World!` in `dispatch_hello`.
+The diagram below shows how shifu is connecting together this CLI script to print the value `🌐 Hello, World!` in `dispatch_hello`.
 
 ```
 ┌───────────── sets to ─────────────┐
@@ -239,11 +239,11 @@ The diagram below shows how shifu is connecting together this cli script to prin
 
 ## Tab completion
 
-Since shifu knows all about the structure of your cli it can generate tab completion code for interactive shells that support it, bash and zsh. 
+Since shifu knows all about the structure of your CLI it can generate tab completion code for interactive shells that support it, bash and zsh. 
 
 By default, subcommand and option names can be tab completed. Shifu also provides `cmd` functions for completing option values and positional arguments with static enumerations, dynamic functions, or file system paths — see the [Completion functions](#completion-functions) API section for details.
 
-Below is an example cli, [`examples/tab`](/examples/tab), demonstrating tab completion capabilities.
+Below is an example CLI, [`examples/tab`](/examples/tab), demonstrating tab completion capabilities.
 
 ![Tab completion](/assets/tab_demo.gif)
 
@@ -306,7 +306,7 @@ If you'd like to test the tab completion from this example you can easily do so 
 export PATH="$PATH:$(pwd)/examples"
 ```
 
-so your shell can find the example `tab` cli, and
+so your shell can find the example `tab` CLI, and
 
 ```sh
 eval "$(examples/tab --tab-completion bash)"
@@ -320,10 +320,10 @@ then tabbing along to the beat.
 
 ### Enable
 
-1. Ensure your cli is in a directory on your shell's `PATH`
-1. Ensure your cli has access to shifu; either by putting shifu in the same `PATH` directory as your cli or adding shifu to another `PATH` directory
+1. Ensure your CLI is in a directory on your shell's `PATH`
+1. Ensure your CLI has access to shifu; either by putting shifu in the same `PATH` directory as your CLI or adding shifu to another `PATH` directory
 1. If you're using zsh, ensure that you've loaded and run `compinit` before the following eval call in your zshrc file
-1. Add the following line to your shell's rc file, replacing `<your-cli>` with the name of your cli and `<shell>` with a supported shell: bash or zsh
+1. Add the following line to your shell's rc file, replacing `<your-cli>` with the name of your CLI and `<shell>` with a supported shell: bash or zsh
    ```sh
    eval "$(<your-cli> --tab-completion <shell>)"
    ```
@@ -336,14 +336,14 @@ These instructions can also be found by running
 ## FAQ
 
 * Why? This isn't what shell scripts are for.
-  * Fair. However, sometimes a shell is all you want to require your users to have while still enabling a sophisticated cli ux; shifu can help deal with the cli boilerplate in those situations and let you focus on real functionality
+  * Fair. However, sometimes a shell is all you want to require your users to have while still enabling a sophisticated CLI UX; shifu can help deal with the CLI boilerplate in those situations and let you focus on real functionality
   * Plus. Consider the following quote
 
     > If you only do what you can do, then you will never be better than what you are.
     >
     > \- Master Shifu, Kung Fu Panda
     
-    Shifu gives cli shell scripts the opportunity to be better than they are
+    Shifu gives CLI shell scripts the opportunity to be better than they are
   * Finally. I want to use something like shifu, maybe others do too
 
 * How does shifu name its variables/functions, will they collide with those in my script?
@@ -361,7 +361,7 @@ These instructions can also be found by running
 ### Command runner
 
 #### `shifu_run`
-* Called at end of a cli script
+* Called at end of a CLI script
 * Takes the name of a command function, those ones that end in `_cmd` by convention, and all script arguments, `"$@"`
 * Dispatches call by parsing arguments in `"$@"` based on information in command function
 * Parses arguments that match subcommand names until the subcommand specifies a function to call with `shifu_cmd_func`
@@ -515,7 +515,7 @@ All option and argument functions accept a `variable` argument — the shell var
 
 The signatures and examples above are for **leaf commands** (those using `shifu_cmd_func`). When you have options that are shared across subcommands — like a `--verbose` flag — you can declare them once in a **parent command** (those using `shifu_cmd_subs`) instead of repeating them in every subcommand.
 
-Option functions called in a parent command require a mode as the first argument. The mode changes when the option will be parsed, aka when it will be provided by the cli user. The two availble modes are:
+Option functions called in a parent command require a mode as the first argument. The mode changes when the option will be parsed, aka when it will be provided by the CLI user. The two availble modes are:
 * `:defer:` — option parsing is deferred until the leaf command, so the option can be provided alongside subcommand options
   ```sh
   shifu_cmd_optb :defer: -v --verbose -- VERBOSE false true "Verbose output"
