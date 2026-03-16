@@ -80,7 +80,7 @@ Options
     Show this help
 ```
 
-The diagram below shows how shifu is connecting together this CLI script to print the value `shifu` in `intro_function`.
+The diagram below shows how shifu connects this CLI script to parse the command line arguments and print the value `shifu` in `intro_function`.
 
 ```
        examples/intro -o shifu ───────────────┐
@@ -131,13 +131,13 @@ $ root sub
 Hello from sub_func
 ```
 
-Below is an example CLI, [`examples/dispatch`](/examples/dispatch), with two subcommands, `hello` and `echo`, each with their own arguments.
+Below is a demo of [`examples/dispatch`](/examples/dispatch), a CLI with two subcommands, `hello` and `echo`, each with their own arguments. Annotated source code of the CLI can be found in the expandable section below the demo.
 
 ![Quickstart](/assets/dispatch_demo.gif)
 
 <details>
 
-<summary><b>Source code</b></summary>
+<summary><b>Source code and walkthrough</b></summary>
 
 Note, this example calls `shifu_less` after sourcing `shifu` to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
 
@@ -243,13 +243,13 @@ Since shifu knows all about the structure of your CLI it can generate tab comple
 
 By default, subcommand and option names can be tab completed. Shifu also provides `cmd` functions for completing option values and positional arguments with static enumerations, dynamic functions, or file system paths — see the [Completion functions](#completion-functions) API section for details.
 
-Below is an example CLI, [`examples/tab`](/examples/tab), demonstrating tab completion capabilities.
+Below is a demo of [`examples/tab`](/examples/tab) showing tab completion capabilities. Source code and instructions to run the example can be found in the expandable section below the demo.
 
 ![Tab completion](/assets/tab_demo.gif)
 
 <details>
 
-<summary><b>Source code</b></summary>
+<summary><b>Source code and running instructions</b></summary>
 
 [`examples/tab`](/examples/tab)
 
@@ -351,7 +351,7 @@ These instructions can also be found by running
   * Calling `shifu_less` after sourcing shifu will create versions of all the `cmd` functions without the `shifu` prefix. This makes command code less busy, but adds function names that are more likely to cause a collision with those in your script
 
 * What's with the `. "${0%/*}"/shifu || exit 1`?
-  * `.` is the POSIX source command - it executes a file in the current shell, making shifu's functions available to your script, akin to importing
+  * `.` is the POSIX source command; it executes a file in the current shell, making shifu's functions available to your script, akin to importing
   * `"${0%/*}"` is parameter expansion that strips the filename from `$0` (the script path), leaving just the directory. This lets your script find shifu relative to itself rather than relying on `PATH`
   * `|| exit 1` exits the script if sourcing fails (e.g., shifu not found), preventing cryptic errors later
   * If shifu is on your `PATH`, you can simply use `. shifu || exit 1`
@@ -429,7 +429,7 @@ There are five option and argument declaration functions:
 
 Option functions (`shifu_cmd_optb`, `shifu_cmd_optd`, `shifu_cmd_optr`) parse flagged arguments into variables. They take one or more flags (e.g. `-v`, `--verbose`) before a required `--` separator, followed by parsing configuration. Argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) parse positional arguments by order of declaration.
 
-All option and argument functions accept a `variable` argument — the shell variable name that will be set when parsing, and a `help` string used in auto-generated help output.
+All option and argument functions accept a `variable` argument, the shell variable name that will be set when parsing, and a `help` string used in auto-generated help output.
 
 #### `shifu_cmd_optb`
 * Binary option

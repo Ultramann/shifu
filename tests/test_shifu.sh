@@ -127,6 +127,20 @@ make_fake_sub_global_completions() {
   shifu_add_cpts sub_global_a sub_global_b sub_global_c
 }
 
+test_shifu_run_zero_args() {
+  expected="shifu_run requires at least one argument, got 0"
+  actual=$(shifu_run 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_strings_equal output "$expected" "$actual"
+}
+
+test_shifu_run_one_arg() {
+  expected="test_leaf_func_one 0"
+  actual=$(shifu_run shifu_test_leaf_one_cmd 2>&1)
+  shifu_assert_zero exit_code $?
+  shifu_assert_strings_equal output "$expected" "$actual"
+}
+
 test_shifu_run_good() {
   expected="test_leaf_func_one 2 one two"
   actual=$(shifu_run shifu_test_root_cmd sub-one leaf-one one two 2>&1)
