@@ -131,13 +131,13 @@ $ root sub
 Hello from sub_func
 ```
 
-Below is an example CLI, [`examples/dispatch`](/examples/dispatch), with two subcommands, `hello` and `echo`, each with their own arguments.
+Below is a demo of [`examples/dispatch`](/examples/dispatch), a CLI with two subcommands, `hello` and `echo`, each with their own arguments. Annotated source code of the CLI can be found in the expandable section below the demo.
 
 ![Quickstart](/assets/dispatch_demo.gif)
 
 <details>
 
-<summary><b>Source code</b></summary>
+<summary><b>Source code and walkthrough</b></summary>
 
 Note, this example calls `shifu_less` after sourcing `shifu` to provide a version of the `shifu_cmd` functions without the `shifu_` prefixes.
 
@@ -243,13 +243,13 @@ Since shifu knows all about the structure of your CLI it can generate tab comple
 
 By default, subcommand and option names can be tab completed. Shifu also provides `cmd` functions for completing option values and positional arguments with static enumerations, dynamic functions, or file system paths — see the [Completion functions](#completion-functions) API section for details.
 
-Below is an example CLI, [`examples/tab`](/examples/tab), demonstrating tab completion capabilities.
+Below is a demo of [`examples/tab`](/examples/tab) showing tab completion capabilities. Source code and instructions to run the example can be found in the expandable section below the demo.
 
 ![Tab completion](/assets/tab_demo.gif)
 
 <details>
 
-<summary><b>Source code</b></summary>
+<summary><b>Source code and running instructions</b></summary>
 
 [`examples/tab`](/examples/tab)
 
