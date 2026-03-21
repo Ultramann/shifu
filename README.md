@@ -3,17 +3,17 @@
   <img src="./assets/banner-light.svg#gh-light-mode-only" width="65%">
 </p>
 
-**SH**ell **I**nterface **F**ramework **U**tility, shifu, is a framework that makes creating powerful CLIs from shell scripts simple. Shifu has the following features:
+**SH**ell **I**nterface **F**ramework **U**tility, shifu, is a declarative framework that makes creating powerful CLIs from shell scripts simple. Shifu has the following features:
 
-* declarative argument parsing
+* argument parsing
 * subcommand dispatch
 * scoped help generation
 * tab completion code generation for interactive shells
 * implemented 100% in POSIX-compliant shell script
-* compatibility with POSIX-based shells; tested with: 
+* compatibility with POSIX-based shells; tested with:
   * ash, bash, dash, ksh, zsh
 
-Shell scripts are great for gluing commands together. But when you need to make and maintain subcommands, with scoped options, and help strings, things can get messy fast. Shifu handles the CLI boilerplate so you can focus on functionality.
+Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means writing a lot of boilerplate that easily gets out of sync. Shifu provides an API to describe your CLI's structure so you can focus on functionality.
 
 ## Table of contents
 
@@ -29,14 +29,14 @@ Shell scripts are great for gluing commands together. But when you need to make 
 Since shifu is just a single POSIX-compatible script, all you need to do is get a copy of it and either put it in a location on your `PATH` or in the same directory as your CLI script.
 
 ```sh
-curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
+curl -O https://raw.githubusercontent.com/Ultramann/shifu/main/shifu
 ```
 
 ## Quickstart
 
-Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ contains calls to shifu `cmd` functions. Shifu `cmd` functions provide a DSL which shifu uses to wire together your CLI. Commands are passed to shifu's command runner, `shifu_run`, or referenced as subcommands.
+Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ contains calls to shifu `cmd` functions. Together, these functions form a DSL that shifu uses to build your CLI. Commands are passed to shifu's command runner, `shifu_run`, or referenced as subcommands.
 
-Below is a very minimal, introduction shifu CLI script.
+Below is a very minimal, introductory shifu CLI script.
 
 [`examples/intro`](/examples/intro)
 
