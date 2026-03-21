@@ -102,22 +102,20 @@ The diagram below shows how shifu connects this CLI script to parse the command 
 
 ## Subcommands
 
-Shifu supports subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. Parent commands can also declare shared options that apply across their subcommands — see the [API](#notes) docs for details. Here's what the minimal structure of a subcommand CLI looks like (a complete example can be found below):
+Shifu supports subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. Parent commands can also declare shared options that apply across their subcommands, see the [API](#notes) docs for details. Here's what the minimal structure of a subcommand CLI looks like (a complete example can be found below):
 
 ```sh
 root_cmd() {
   shifu_cmd_name root
-  shifu_cmd_subs sub_cmd
-}
-
-# referenced by name in root_cmd -> shifu_cmd_subs
-sub_cmd() {
+  shifu_cmd_subs sub_cmd   # -┐
+}                          #  │
+                           #  │
+sub_cmd() {  # <──────────────┘
   shifu_cmd_name sub
-  shifu_cmd_func sub_func
-}
-
-# referenced by name in sub_cmd -> shifu_cmd_func
-sub_func() {
+  shifu_cmd_func sub_func  # -┐
+}                          #  │
+                           #  │
+sub_func() { # <──────────────┘
   echo "Hello from sub_func"
 }
 
@@ -239,9 +237,9 @@ The diagram below shows how shifu is connecting together this CLI script to prin
 
 ## Tab completion
 
-Since shifu knows all about the structure of your CLI it can generate tab completion code for interactive shells that support it, bash and zsh. 
+Since shifu knows all about the structure of your CLI it can generate tab completion code for interactive shells that support it, bash and zsh.
 
-By default, subcommand and option names can be tab completed. Shifu also provides `cmd` functions for completing option values and positional arguments with static enumerations, dynamic functions, or file system paths — see the [Completion functions](#completion-functions) API section for details.
+By default, subcommand and option names can be tab completed. Shifu also provides `cmd` functions for completing option values and positional arguments with static enumerations, dynamic functions, or file system paths, see the [Completion functions](#completion-functions) API section for details.
 
 Below is a demo of [`examples/tab`](/examples/tab) showing tab completion capabilities. Source code and instructions to run the example can be found in the expandable section below the demo.
 
@@ -361,7 +359,7 @@ These instructions can also be found by running
 ### Command runner
 
 #### `shifu_run`
-* Called at end of a CLI script
+* Called at the end of a CLI script
 * Takes the name of a command function, those ones that end in `_cmd` by convention, and all script arguments, `"$@"`
 * Dispatches call by parsing arguments in `"$@"` based on information in command function
 * Parses arguments that match subcommand names until the subcommand specifies a function to call with `shifu_cmd_func`
@@ -419,13 +417,13 @@ These instructions can also be found by running
 
 There are five option and argument declaration functions:
 
-| Type     | Function           | Parses                       |
-|----------|--------------------|------------------------------|
-| Option   | `shifu_cmd_optb`   | Binary option                |
-| Option   | `shifu_cmd_optd`   | Option with default          |
-| Option   | `shifu_cmd_optr`   | Required option              |
-| Argument | `shifu_cmd_argr`   | Required positional argument |
-| Argument | `shifu_cmd_args`   | Remaining arguments          |
+| Type     | Function         | Parses                       |
+|----------|------------------|------------------------------|
+| Option   | `shifu_cmd_optb` | Binary option                |
+| Option   | `shifu_cmd_optd` | Option with default          |
+| Option   | `shifu_cmd_optr` | Required option              |
+| Argument | `shifu_cmd_argr` | Required positional argument |
+| Argument | `shifu_cmd_args` | Remaining arguments          |
 
 Option functions (`shifu_cmd_optb`, `shifu_cmd_optd`, `shifu_cmd_optr`) parse flagged arguments into variables. They take one or more flags (e.g. `-v`, `--verbose`) before a required `--` separator, followed by parsing configuration. Argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) parse positional arguments by order of declaration.
 
@@ -516,14 +514,14 @@ All option and argument functions accept a `variable` argument, the shell variab
 The signatures and examples above are for **leaf commands** (those using `shifu_cmd_func`). When you have options that are shared across subcommands, like a `--verbose` flag, you can declare them once in a **parent command** (those using `shifu_cmd_subs`) instead of repeating them in every subcommand.
 
 Option functions called in a parent command require a mode as the first argument. The mode changes when the option will be parsed, aka when it will be provided by the CLI user. The two available modes are:
-* `:defer:` — option parsing is deferred until the leaf command, so the option can be provided alongside subcommand options
+* `:defer:` - option parsing is deferred until the leaf command, so the option can be provided alongside subcommand options
   ```sh
   shifu_cmd_optb :defer: -v --verbose -- VERBOSE false true "Verbose output"
   ```
   ```txt
   cli sub --verbose
   ```
-* `:eager:` — option parsing happens before subcommand dispatch, so the option must be provided before the subcommand name
+* `:eager:` - option parsing happens before subcommand dispatch, so the option must be provided before the subcommand name
   ```sh
   shifu_cmd_optd :eager: -c --config -- CONFIG "default" "Config file"
   ```
@@ -535,6 +533,7 @@ Positional and remaining argument functions (`shifu_cmd_argr`, `shifu_cmd_args`)
 
 The option and argument declaration order in a command function matters:
 1. Help is generated in declaration order
+1. Help strings from parent commands' deferred options are similarly deferred to the end of the generated help string
 1. Positional arguments are parsed in declaration order
 1. Options must be declared before any positional arguments, and positional arguments before remaining arguments
 
@@ -565,9 +564,9 @@ The option and argument declaration order in a command function matters:
 * Path completion
 * Enable path completions for the preceding option or argument
 * Takes a required mode argument:
-  * `:files:` — complete files and directories
-  * `:dirs:` — complete directories only. Note: in zsh, after navigating into a directory with no subdirectories, the completion system falls back to showing files. This is standard zsh behavior and differs from bash, which strictly shows only directories.
-  * `:glob: "pattern"` — complete files matching a glob pattern
+  * `:files:` - complete files and directories
+  * `:dirs:` - complete directories only. Note: in zsh, after navigating into a directory with no subdirectories, the completion system falls back to showing files. This is standard zsh behavior and differs from bash, which strictly shows only directories.
+  * `:glob: "pattern"` - complete files matching a glob pattern
 * Examples
   ```sh
   shifu_cmd_cptp :files:
