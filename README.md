@@ -59,7 +59,7 @@ intro_function() {
 shifu_run intro_cmd "$@"
 ```
 
-Calling this CLI, we can see how it parses `-o shifu` into the variable `OPTION` when provided, and also automatically generates help strings.
+Calling this CLI, we can see how `shifu_run` parses `-o shifu` into the variable `OPTION` and calls `intro_function`; but also automatically generates help strings.
 
 ```txt
 $ examples/intro
@@ -100,9 +100,11 @@ The diagram below shows how shifu connects this CLI script to parse the command 
     }
 ```
 
+This example only demonstrates how to parse one option with a default value, but shifu supports several option and argument types: binary options, options with defaults, required options, positional arguments, and remaining arguments. See the [Option and argument functions](#option-and-argument-functions) API section for details.
+
 ## Subcommands
 
-Shifu supports subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. Parent commands can also declare shared options that apply across their subcommands, see the [API](#notes) docs for details. Here's what the minimal structure of a subcommand CLI looks like (a complete example can be found below):
+Shifu supports subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. `shifu_run` matches command line arguments against the names declared with `shifu_cmd_name` in each subcommand, dispatching to the matching subcommand's target function. Here's what the minimal structure of a subcommand CLI looks like, with help strings omitted to highlight the subcommand and function references.
 
 ```sh
 root_cmd() {
@@ -122,12 +124,14 @@ sub_func() { # <──────────────┘
 shifu_run root_cmd "$@"
 ```
 
-Invoking this script:
+If this script were saved as `root` and called with `root sub`, `shifu_run` would match `sub` against the name declared in `sub_cmd` and dispatch to `sub_func`.
 
 ```txt
 $ root sub
 Hello from sub_func
 ```
+
+Parent commands can also declare shared options once instead of repeating them in each subcommand, and control when those options are parsed, see the [Option and argument functions notes](#notes) API section for details.
 
 Below is a demo of [`examples/dispatch`](/examples/dispatch), a CLI with two subcommands, `hello` and `echo`, each with their own arguments. Annotated source code of the CLI can be found in the expandable section below the demo.
 
