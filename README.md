@@ -34,7 +34,7 @@ curl -O https://raw.githubusercontent.com/Ultramann/shifu/main/shifu
 
 ## Quickstart
 
-Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ contains calls to shifu `cmd` functions. Together, these functions form a DSL that shifu uses to build your CLI. Commands are passed to shifu's command runner, `shifu_run`, or referenced as subcommands.
+The core building block in shifu is a command. A command is a function, by convention ending in `_cmd`, that _only_ contains calls to shifu `cmd` functions. Together, these functions form a DSL that shifu uses to build your CLI. Commands are passed to shifu's command runner, `shifu_run`, or referenced as subcommands.
 
 Below is a very minimal, introductory shifu CLI script.
 
