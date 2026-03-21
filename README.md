@@ -59,7 +59,7 @@ intro_function() {
 shifu_run intro_cmd "$@"
 ```
 
-Calling this CLI, we can see how `shifu_run` parses `-o shifu` into the variable `OPTION` and calls `intro_function`; but also automatically generates help strings.
+Calling this CLI, we can see how `shifu_run` parses `-o shifu` into the variable `OPTION` and calls `intro_function`; and also automatically generates help strings.
 
 ```txt
 $ examples/intro
@@ -104,7 +104,9 @@ This example only demonstrates how to parse one option with a default value, but
 
 ## Subcommands
 
-Shifu supports subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. `shifu_run` matches command line arguments against the names declared with `shifu_cmd_name` in each subcommand, dispatching to the matching subcommand's target function. Here's what the minimal structure of a subcommand CLI looks like, with help strings omitted to highlight the subcommand and function references.
+Shifu supports subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. When called, `shifu_run` recursively matches command line arguments against the names declared with `shifu_cmd_name` in each subcommand. Once a command is found using `shifu_cmd_func`, `shifu_run` calls the function by name as shown in the quickstart.
+
+Here's what the minimal structure of a subcommand CLI looks like, with help strings omitted to highlight the subcommand and function references.
 
 ```sh
 root_cmd() {
