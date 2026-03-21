@@ -7,7 +7,7 @@
 
 * argument parsing
 * subcommand dispatch
-* scoped help generation
+* help string formatting
 * tab completion code generation for interactive shells
 * implemented 100% in POSIX-compliant shell script
 * compatibility with POSIX-based shells; tested with:
@@ -104,7 +104,7 @@ This example only demonstrates how to parse one option with a default value, but
 
 ## Subcommands
 
-Shifu supports subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. When called, `shifu_run` recursively matches command line arguments against the names declared with `shifu_cmd_name` in each subcommand. Once a command is found using `shifu_cmd_func`, `shifu_run` calls the function by name as shown in the quickstart.
+Shifu supports subcommands for grouping related functionality. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. When called, `shifu_run` recursively matches command line arguments against the names declared with `shifu_cmd_name` in each subcommand. Once a command is found using `shifu_cmd_func`, `shifu_run` calls the function by name as shown in the quickstart.
 
 Here's what the minimal structure of a subcommand CLI looks like, with help strings omitted to highlight the subcommand and function references.
 
@@ -133,7 +133,7 @@ $ root sub
 Hello from sub_func
 ```
 
-Parent commands can also declare shared options once instead of repeating them in each subcommand, and control when those options are parsed, see the [Option and argument functions notes](#notes) API section for details.
+Arguments and help strings are scoped to each subcommand. Parent commands can also declare shared options once instead of repeating them in each subcommand, and control when those options are parsed, see the [Option and argument functions notes](#notes) API section for details.
 
 Below is a demo of [`examples/dispatch`](/examples/dispatch), a CLI with two subcommands, `hello` and `echo`, each with their own arguments. Annotated source code of the CLI can be found in the expandable section below the demo.
 
