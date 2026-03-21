@@ -579,3 +579,20 @@ The option and argument declaration order in a command function matters:
   shifu_cmd_cptp :dirs:
   shifu_cmd_cptp :glob: "*.txt"
   ```
+
+### Miscellaneous
+
+#### `shifu_less`
+* Creates shorthand aliases for all `shifu_cmd_*` functions without the `shifu_` prefix (aka `cmd_name` instead of `shifu_cmd_name`)
+* Called after sourcing shifu, typically on the same line
+* Makes command definitions less verbose, but the shorter names are more likely to collide with functions in your script
+* Example
+  ```sh
+  . "${0%/*}"/shifu && shifu_less || exit 1
+
+  my_cmd() {
+    cmd_name my
+    cmd_optd -o -- OPTION default "An option"
+    cmd_func my_func
+  }
+  ```
