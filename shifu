@@ -1,5 +1,8 @@
 #! /bin/sh
 
+# Copyright (c) Cary Goltermann, MIT License
+# https://github.com/Ultramann/shifu
+
 # config
 shifu_allow_options_anywhere=false
 shifu_complete_single_dash_options=false
