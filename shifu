@@ -1,5 +1,9 @@
 #! /bin/sh
 
+# Copyright (c) Cary Goltermann
+# SPDX-License-Identifier: MIT
+# https://github.com/Ultramann/shifu
+
 # config
 shifu_allow_options_anywhere=false
 shifu_complete_single_dash_options=false
