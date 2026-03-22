@@ -3,13 +3,13 @@
   <img src="./assets/banner-light.svg#gh-light-mode-only" width="65%">
 </p>
 
-**SH**ell **I**nterface **F**ramework **U**tility, shifu, is a declarative framework that makes creating powerful CLIs from shell scripts simple. Shifu has the following features:
+**SH**ell **I**nterface **F**ramework **U**tility, shifu, is a declarative framework that makes creating powerful CLIs from shell scripts simple. Shifu provides:
 
 * argument parsing
 * subcommand dispatch
 * help string formatting
 * tab completion code generation for interactive shells
-* implemented 100% in POSIX-compliant shell script
+* a single-file, dependency-free, pure POSIX shell implementation
 * compatibility with POSIX-based shells; tested with:
   * ash, bash, dash, ksh, zsh
 
