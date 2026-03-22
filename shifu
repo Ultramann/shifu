@@ -1,7 +1,6 @@
 #! /bin/sh
 
-# Copyright (c) Cary Goltermann
-# SPDX-License-Identifier: MIT
+# Copyright (c) Cary Goltermann, MIT License
 # https://github.com/Ultramann/shifu
 
 # config
