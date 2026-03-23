@@ -524,6 +524,7 @@ test_shifu_run_bad_flag_format() {
 }
 
 test_shifu_help() {
+  _shifu_setup
   expected='Test cmd all help
 
 These are all the fancy things you can do with the all command
