@@ -893,6 +893,20 @@ test_shifu_complete_bad_case_stmt_exits_silently() {
   shifu_assert_empty output "$actual"
 }
 
+test_shifu_help_flags_validation() {
+  run_test() {
+    shifu_help_flags="$1"
+    actual=$(shifu_run shifu_test_root_cmd)
+    shifu_assert_strings_equal error_message "$2" "$actual"
+  }
+  shifu_parameterize_test \
+    run_test 2 \
+    no_dash       "help"      "Option flags must start with - or --, got: help" \
+    glob_question "-?"        "Help flag contains glob character: -?" \
+    glob_star     "--*"       "Help flag contains glob character: --*" \
+    glob_bracket  "--[abc]"   "Help flag contains glob character: --[abc]"
+}
+
 # Testing utilities
 shifu_parameterize_test() {
   # 1: name of test function to run, 2: number of arguments the function accepts
