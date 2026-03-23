@@ -686,14 +686,14 @@ test_shifu_complete_func_args_flag_options() {
 }
 
 test_shifu_complete_single_dash_shows_only_double_dash_options() {
-  expected="--option-bin --option-req --option-def --flag-option-bin --flag-option-req --flag-option-def"
+  expected="--option-bin --option-req --option-def --flag-option-bin --flag-option-req --flag-option-def --help"
   actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {
   shifu_complete_single_dash_options=true
-  expected="-f -a -d --option-bin --option-req --option-def -F --flag-option-bin -A --flag-option-req -D --flag-option-def"
+  expected="-f -a -d --option-bin --option-req --option-def -F --flag-option-bin -A --flag-option-req -D --flag-option-def -h --help"
   actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }

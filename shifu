@@ -670,6 +670,10 @@ _shifu_set_completing_option() {
 _shifu_complete_option_names() {
   shifu_mode=$shifu_mode_opt_names_comp
   "$shifu_cmd"
+  _shifu_set_for_looping shifu_complete_help_flags shifu_help_flags
+  for shifu_help_flag in $shifu_complete_help_flags; do
+    _shifu_list_append shifu_comp_option_names "$shifu_help_flag"
+  done
   _shifu_set_for_looping shifu_comp_option_list shifu_comp_option_names
   _shifu_filter_matching_options "$shifu_current_word" $shifu_comp_option_list
 }
