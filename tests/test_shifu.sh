@@ -894,6 +894,25 @@ test_shifu_complete_bad_case_stmt_exits_silently() {
   shifu_assert_empty output "$actual"
 }
 
+test_shifu_complete_help_flags() {
+  run_test() {
+    shifu_help_flags="$1"
+    actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete $2)
+    shifu_assert_strings_equal completion "$3" "$actual"
+  }
+  shifu_parameterize_test \
+    run_test 3 \
+    default  "-h --help"  "--hel"  "--help" \
+    custom   "--info"     "--inf"  "--info" \
+    empty    ""           "--hel"  ""
+}
+
+test_shifu_complete_help_flags_short() {
+  shifu_complete_single_dash_options=true
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -h)
+  shifu_assert_strings_equal completion "-h" "$actual"
+}
+
 test_shifu_help_text_configurable_flags() {
   run_test() {
     shifu_help_flags="$1"
