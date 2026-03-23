@@ -3,17 +3,17 @@
   <img src="./assets/banner-light.svg#gh-light-mode-only" width="65%">
 </p>
 
-**SH**ell **I**nterface **F**ramework **U**tility, shifu, is a framework that makes creating powerful CLIs from shell scripts simple. Shifu has the following features:
+**SH**ell **I**nterface **F**ramework **U**tility, shifu, is a declarative framework that makes creating powerful CLIs from shell scripts simple. Shifu provides:
 
-* declarative argument parsing
+* argument parsing
 * subcommand dispatch
-* scoped help generation
+* help string formatting
 * tab completion code generation for interactive shells
-* implemented 100% in POSIX-compliant shell script
-* compatibility with POSIX-based shells; tested with: 
+* a single-file, dependency-free, pure POSIX shell implementation
+* compatibility with POSIX-based shells; tested with:
   * ash, bash, dash, ksh, zsh
 
-Shell scripts are great for gluing commands together. But when you need to make and maintain subcommands, with scoped options, and help strings, things can get messy fast. Shifu handles the CLI boilerplate so you can focus on functionality.
+Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means writing a lot of boilerplate that easily gets out of sync. Shifu provides an API to describe your CLI's structure so you can focus on your functionality.
 
 ## Table of contents
 
@@ -29,14 +29,14 @@ Shell scripts are great for gluing commands together. But when you need to make 
 Since shifu is just a single POSIX-compatible script, all you need to do is get a copy of it and either put it in a location on your `PATH` or in the same directory as your CLI script.
 
 ```sh
-curl -O https://raw.githubusercontent.com/Ultramann/shifu/refs/heads/main/shifu
+curl -O https://raw.githubusercontent.com/Ultramann/shifu/main/shifu
 ```
 
 ## Quickstart
 
-Shifu revolves around the concept of a command. A command is a function, by convention ending in `_cmd`, that _only_ contains calls to shifu `cmd` functions. Shifu `cmd` functions provide a DSL which shifu uses to wire together your CLI. Commands are passed to shifu's command runner, `shifu_run`, or referenced as subcommands.
+The core building block in shifu is a command. A command is a function, by convention ending in `_cmd`, that _only_ contains calls to shifu `cmd` functions. Together, these functions form a DSL that shifu uses to build your CLI. Commands are passed to shifu's command runner, `shifu_run`, or referenced as subcommands.
 
-Below is a very minimal, introduction shifu CLI script.
+Below is a very minimal, introductory shifu CLI script.
 
 [`examples/intro`](/examples/intro)
 
@@ -59,7 +59,7 @@ intro_function() {
 shifu_run intro_cmd "$@"
 ```
 
-Calling this CLI, we can see how it parses `-o shifu` into the variable `OPTION` when provided, and also automatically generates help strings.
+Calling this CLI, we can see how `shifu_run` parses `-o shifu` into the variable `OPTION` and calls `intro_function`; and also automatically generates help strings.
 
 ```txt
 $ examples/intro
@@ -100,36 +100,40 @@ The diagram below shows how shifu connects this CLI script to parse the command 
     }
 ```
 
+This example only demonstrates how to parse one option with a default value, but shifu supports several option and argument types: binary options, options with defaults, required options, positional arguments, and remaining arguments. See the [Option and argument functions](#option-and-argument-functions) API section for details.
+
 ## Subcommands
 
-Shifu supports subcommands with scoped argument parsing and help generation. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. Parent commands can also declare shared options that apply across their subcommands — see the [API](#notes) docs for details. Here's what the minimal structure of a subcommand CLI looks like (a complete example can be found below):
+Shifu supports subcommands for grouping related functionality. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. When called, `shifu_run` recursively matches command line arguments against the names declared with `shifu_cmd_name` in each subcommand. Once a command is found using `shifu_cmd_func`, `shifu_run` calls the function by name as shown in the quickstart.
+
+Here's what the minimal structure of a subcommand CLI looks like, with help strings omitted to highlight the subcommand and function references.
 
 ```sh
 root_cmd() {
   shifu_cmd_name root
-  shifu_cmd_subs sub_cmd
-}
-
-# referenced by name in root_cmd -> shifu_cmd_subs
-sub_cmd() {
+  shifu_cmd_subs sub_cmd   # -┐
+}                          #  │
+                           #  │
+sub_cmd() {  # <──────────────┘
   shifu_cmd_name sub
-  shifu_cmd_func sub_func
-}
-
-# referenced by name in sub_cmd -> shifu_cmd_func
-sub_func() {
+  shifu_cmd_func sub_func  # -┐
+}                          #  │
+                           #  │
+sub_func() { # <──────────────┘
   echo "Hello from sub_func"
 }
 
 shifu_run root_cmd "$@"
 ```
 
-Invoking this script:
+If this script were saved as `root` and called with `root sub`, `shifu_run` would match `sub` against the name declared in `sub_cmd` and dispatch to `sub_func`.
 
 ```txt
 $ root sub
 Hello from sub_func
 ```
+
+Arguments and help strings are scoped to each subcommand. Parent commands can also declare shared options once instead of repeating them in each subcommand, and control when those options are parsed, see the [Option and argument functions notes](#notes) API section for details.
 
 Below is a demo of [`examples/dispatch`](/examples/dispatch), a CLI with two subcommands, `hello` and `echo`, each with their own arguments. Annotated source code of the CLI can be found in the expandable section below the demo.
 
@@ -239,9 +243,9 @@ The diagram below shows how shifu is connecting together this CLI script to prin
 
 ## Tab completion
 
-Since shifu knows all about the structure of your CLI it can generate tab completion code for interactive shells that support it, bash and zsh. 
+Since shifu knows all about the structure of your CLI it can generate tab completion code for interactive shells that support it, bash and zsh.
 
-By default, subcommand and option names can be tab completed. Shifu also provides `cmd` functions for completing option values and positional arguments with static enumerations, dynamic functions, or file system paths — see the [Completion functions](#completion-functions) API section for details.
+By default, subcommand and option names can be tab completed. Shifu also provides `cmd` functions for completing option values and positional arguments with static enumerations, dynamic functions, or file system paths, see the [Completion functions](#completion-functions) API section for details.
 
 Below is a demo of [`examples/tab`](/examples/tab) showing tab completion capabilities. Source code and instructions to run the example can be found in the expandable section below the demo.
 
@@ -361,7 +365,7 @@ These instructions can also be found by running
 ### Command runner
 
 #### `shifu_run`
-* Called at end of a CLI script
+* Called at the end of a CLI script
 * Takes the name of a command function, those ones that end in `_cmd` by convention, and all script arguments, `"$@"`
 * Dispatches call by parsing arguments in `"$@"` based on information in command function
 * Parses arguments that match subcommand names until the subcommand specifies a function to call with `shifu_cmd_func`
@@ -419,13 +423,13 @@ These instructions can also be found by running
 
 There are five option and argument declaration functions:
 
-| Type     | Function           | Parses                       |
-|----------|--------------------|------------------------------|
-| Option   | `shifu_cmd_optb`   | Binary option                |
-| Option   | `shifu_cmd_optd`   | Option with default          |
-| Option   | `shifu_cmd_optr`   | Required option              |
-| Argument | `shifu_cmd_argr`   | Required positional argument |
-| Argument | `shifu_cmd_args`   | Remaining arguments          |
+| Type     | Function         | Parses                       |
+|----------|------------------|------------------------------|
+| Option   | `shifu_cmd_optb` | Binary option                |
+| Option   | `shifu_cmd_optd` | Option with default          |
+| Option   | `shifu_cmd_optr` | Required option              |
+| Argument | `shifu_cmd_argr` | Required positional argument |
+| Argument | `shifu_cmd_args` | Remaining arguments          |
 
 Option functions (`shifu_cmd_optb`, `shifu_cmd_optd`, `shifu_cmd_optr`) parse flagged arguments into variables. They take one or more flags (e.g. `-v`, `--verbose`) before a required `--` separator, followed by parsing configuration. Argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) parse positional arguments by order of declaration.
 
@@ -516,14 +520,14 @@ All option and argument functions accept a `variable` argument, the shell variab
 The signatures and examples above are for **leaf commands** (those using `shifu_cmd_func`). When you have options that are shared across subcommands, like a `--verbose` flag, you can declare them once in a **parent command** (those using `shifu_cmd_subs`) instead of repeating them in every subcommand.
 
 Option functions called in a parent command require a mode as the first argument. The mode changes when the option will be parsed, aka when it will be provided by the CLI user. The two available modes are:
-* `:defer:` — option parsing is deferred until the leaf command, so the option can be provided alongside subcommand options
+* `:defer:` - option parsing is deferred until the leaf command, so the option can be provided alongside subcommand options
   ```sh
   shifu_cmd_optb :defer: -v --verbose -- VERBOSE false true "Verbose output"
   ```
   ```txt
   cli sub --verbose
   ```
-* `:eager:` — option parsing happens before subcommand dispatch, so the option must be provided before the subcommand name
+* `:eager:` - option parsing happens before subcommand dispatch, so the option must be provided before the subcommand name
   ```sh
   shifu_cmd_optd :eager: -c --config -- CONFIG "default" "Config file"
   ```
@@ -535,6 +539,7 @@ Positional and remaining argument functions (`shifu_cmd_argr`, `shifu_cmd_args`)
 
 The option and argument declaration order in a command function matters:
 1. Help is generated in declaration order
+1. Help strings from parent commands' deferred options are similarly deferred to the end of the generated help string
 1. Positional arguments are parsed in declaration order
 1. Options must be declared before any positional arguments, and positional arguments before remaining arguments
 
@@ -565,12 +570,29 @@ The option and argument declaration order in a command function matters:
 * Path completion
 * Enable path completions for the preceding option or argument
 * Takes a required mode argument:
-  * `:files:` — complete files and directories
-  * `:dirs:` — complete directories only. Note: in zsh, after navigating into a directory with no subdirectories, the completion system falls back to showing files. This is standard zsh behavior and differs from bash, which strictly shows only directories.
-  * `:glob: "pattern"` — complete files matching a glob pattern
+  * `:files:` - complete files and directories
+  * `:dirs:` - complete directories only. Note: in zsh, after navigating into a directory with no subdirectories, the completion system falls back to showing files. This is standard zsh behavior and differs from bash, which strictly shows only directories.
+  * `:glob: "pattern"` - complete files matching a glob pattern
 * Examples
   ```sh
   shifu_cmd_cptp :files:
   shifu_cmd_cptp :dirs:
   shifu_cmd_cptp :glob: "*.txt"
+  ```
+
+### Miscellaneous
+
+#### `shifu_less`
+* Creates shorthand aliases for all `shifu_cmd_*` functions without the `shifu_` prefix (aka `cmd_name` instead of `shifu_cmd_name`)
+* Called after sourcing shifu, typically on the same line
+* Makes command definitions less verbose, but the shorter names are more likely to collide with functions in your script
+* Example
+  ```sh
+  . "${0%/*}"/shifu && shifu_less || exit 1
+
+  my_cmd() {
+    cmd_name my
+    cmd_optd -o -- OPTION default "An option"
+    cmd_func my_func
+  }
   ```
