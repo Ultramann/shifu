@@ -580,6 +580,41 @@ The option and argument declaration order in a command function matters:
   shifu_cmd_cptp :glob: "*.txt"
   ```
 
+### Configuration
+
+Shifu has a few variables that can be set after sourcing to change default behavior. Typically they are set just before calling `shifu_run`.
+
+#### `shifu_allow_options_anywhere`
+* Controls whether arguments starting with a dash are treated as errors
+* Type: bool
+  * `false`: options (arguments starting with `-`) are not allowed after positional arguments, shifu will error if it encounters one
+  * `true`: allows positional and remaining arguments that begin with a dash. Useful if flags need to be passed through cli arguments
+* Default: `false`
+* Example
+  ```sh
+  shifu_allow_options_anywhere=true
+  ```
+
+#### `shifu_complete_single_dash_options`
+* Controls tab completion behavior when current word is a single `-`
+* Type: bool
+  * `false`, completing `-` only shows long options (`--option-name`)
+  * `true`, completing `-` shows both short (`-o`) and long (`--option-name`) options
+* Default: `false`
+* Example
+  ```sh
+  shifu_complete_single_dash_options=true
+  ```
+
+#### `shifu_help_flags`
+* Space-separated list of flags that trigger help output, override to change which flags show help
+* Type: string
+* Default: `"-h --help"`
+* Example
+  ```sh
+  shifu_help_flags="--help"
+  ```
+
 ### Miscellaneous
 
 #### `shifu_less`
