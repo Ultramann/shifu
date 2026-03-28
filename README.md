@@ -8,12 +8,12 @@
 * argument parsing
 * subcommand dispatch
 * help string formatting
-* tab completion code generation for interactive shells
-* a single-file, dependency-free, pure POSIX shell implementation
+* tab completion for interactive shells
+* a single, dependency-free, pure POSIX file
 * compatibility with POSIX-based shells; tested with:
   * ash, bash, dash, ksh, zsh
 
-Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means writing a lot of boilerplate that easily gets out of sync. Shifu provides an API to describe your CLI's structure so you can focus on your functionality.
+Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means a lot of boilerplate that easily gets out of sync. Shifu provides an API to describe CLI structure, letting you focus on real functionality.
 
 ## Table of contents
 
