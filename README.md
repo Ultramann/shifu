@@ -411,7 +411,7 @@ These instructions can also be found by running
 
 #### `shifu_cmd_help`
 * Brief help string for the command
-* Added in help above the auto-generated help for the command arguments
+* Added in help above the help for command arguments
 * Added to help when listing a command's subcommands
 * Example
   ```sh
@@ -440,7 +440,7 @@ There are five option and argument declaration functions:
 
 Option functions (`shifu_cmd_optb`, `shifu_cmd_optd`, `shifu_cmd_optr`) parse flagged arguments into variables. They take one or more flags (e.g. `-v`, `--verbose`) before a required `--` separator, followed by parsing configuration. Argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) parse positional arguments by order of declaration.
 
-All option and argument functions accept a `variable` argument, the shell variable name that will be set when parsing, and a `help` string used in auto-generated help output.
+All option and argument functions accept a `variable` argument, the shell variable name that will be set when parsing, and a `help` string used in generated help output.
 
 #### `shifu_cmd_optb`
 * Binary option
