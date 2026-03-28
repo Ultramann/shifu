@@ -8,12 +8,12 @@
 * argument parsing
 * subcommand dispatch
 * help string formatting
-* tab completion code generation for interactive shells
-* a single-file, dependency-free, pure POSIX shell implementation
+* tab completion for interactive shells
+* a single, dependency-free, pure POSIX shell file
 * compatibility with POSIX-based shells; tested with:
   * ash, bash, dash, ksh, zsh
 
-Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means writing a lot of boilerplate that easily gets out of sync. Shifu provides an API to describe your CLI's structure so you can focus on your functionality.
+Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means a lot of boilerplate that's hard to understand and maintain. Shifu offers an API to describe CLI structure, letting you focus on real functionality.
 
 ## Table of contents
 
@@ -362,6 +362,13 @@ These instructions can also be found by running
 
 ## API
 
+* [Command runner](#command-runner)
+* [Command definition functions](#command-definition-functions)
+* [Option and argument functions](#option-and-argument-functions)
+* [Completion functions](#completion-functions)
+* [Configuration](#configuration)
+* [Miscellaneous](#miscellaneous)
+
 ### Command runner
 
 #### `shifu_run`
@@ -404,7 +411,7 @@ These instructions can also be found by running
 
 #### `shifu_cmd_help`
 * Brief help string for the command
-* Added in help above the auto-generated help for the command arguments
+* Added in help above the help for command arguments
 * Added to help when listing a command's subcommands
 * Example
   ```sh
@@ -433,7 +440,7 @@ There are five option and argument declaration functions:
 
 Option functions (`shifu_cmd_optb`, `shifu_cmd_optd`, `shifu_cmd_optr`) parse flagged arguments into variables. They take one or more flags (e.g. `-v`, `--verbose`) before a required `--` separator, followed by parsing configuration. Argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) parse positional arguments by order of declaration.
 
-All option and argument functions accept a `variable` argument, the shell variable name that will be set when parsing, and a `help` string used in auto-generated help output.
+All option and argument functions accept a `variable` argument, the shell variable name that will be set when parsing, and a `help` string used in generated help output.
 
 #### `shifu_cmd_optb`
 * Binary option
@@ -517,7 +524,7 @@ All option and argument functions accept a `variable` argument, the shell variab
 
 #### Notes
 
-The signatures and examples above are for **leaf commands** (those using `shifu_cmd_func`). When you have options that are shared across subcommands, like a `--verbose` flag, you can declare them once in a **parent command** (those using `shifu_cmd_subs`) instead of repeating them in every subcommand.
+The signatures and examples above are for leaf commands (those using `shifu_cmd_func`). When you have options that are shared across subcommands, like a `--verbose` flag, you can declare them once in a parent command (those using `shifu_cmd_subs`) instead of repeating them in every subcommand.
 
 Option functions called in a parent command require a mode as the first argument. The mode changes when the option will be parsed, aka when it will be provided by the CLI user. The two available modes are:
 * `:defer:` - option parsing is deferred until the leaf command, so the option can be provided alongside subcommand options
@@ -580,6 +587,41 @@ The option and argument declaration order in a command function matters:
   shifu_cmd_cptp :glob: "*.txt"
   ```
 
+### Configuration
+
+Shifu has a few variables that can be set after sourcing to change default behavior. Typically they are set just before calling `shifu_run`.
+
+#### `shifu_allow_options_anywhere`
+* Controls whether arguments starting with a dash are treated as errors
+* Type: bool
+  * `false`: options (arguments starting with `-`) are not allowed after positional arguments, shifu will error if it encounters one
+  * `true`: allows positional and remaining arguments that begin with a dash. Useful if flags need to be passed through cli arguments
+* Default: `false`
+* Example
+  ```sh
+  shifu_allow_options_anywhere=true
+  ```
+
+#### `shifu_complete_single_dash_options`
+* Controls tab completion behavior when current word is a single `-`
+* Type: bool
+  * `false`, completing `-` only shows long options (`--option-name`)
+  * `true`, completing `-` shows both short (`-o`) and long (`--option-name`) options
+* Default: `false`
+* Example
+  ```sh
+  shifu_complete_single_dash_options=true
+  ```
+
+#### `shifu_help_flags`
+* Space-separated list of flags that trigger help output, override to change which flags show help
+* Type: string
+* Default: `"-h --help"`
+* Example
+  ```sh
+  shifu_help_flags="--help"
+  ```
+
 ### Miscellaneous
 
 #### `shifu_less`
@@ -590,9 +632,9 @@ The option and argument declaration order in a command function matters:
   ```sh
   . "${0%/*}"/shifu && shifu_less || exit 1
 
-  my_cmd() {
-    cmd_name my
+  cli_cmd() {
+    cmd_name cli
     cmd_optd -o -- OPTION default "An option"
-    cmd_func my_func
+    cmd_func cli_func
   }
   ```

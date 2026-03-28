@@ -524,6 +524,7 @@ test_shifu_run_bad_flag_format() {
 }
 
 test_shifu_help() {
+  _shifu_setup
   expected='Test cmd all help
 
 These are all the fancy things you can do with the all command
@@ -685,14 +686,14 @@ test_shifu_complete_func_args_flag_options() {
 }
 
 test_shifu_complete_single_dash_shows_only_double_dash_options() {
-  expected="--option-bin --option-req --option-def --flag-option-bin --flag-option-req --flag-option-def"
+  expected="--option-bin --option-req --option-def --flag-option-bin --flag-option-req --flag-option-def --help"
   actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {
   shifu_complete_single_dash_options=true
-  expected="-f -a -d --option-bin --option-req --option-def -F --flag-option-bin -A --flag-option-req -D --flag-option-def"
+  expected="-f -a -d --option-bin --option-req --option-def -F --flag-option-bin -A --flag-option-req -D --flag-option-def -h --help"
   actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
@@ -893,6 +894,93 @@ test_shifu_complete_bad_case_stmt_exits_silently() {
   shifu_assert_empty output "$actual"
 }
 
+test_shifu_complete_help_flags() {
+  run_test() {
+    shifu_help_flags="$1"
+    actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete $2)
+    shifu_assert_strings_equal completion "$3" "$actual"
+  }
+  shifu_parameterize_test \
+    run_test 3 \
+    default  "-h --help"  "--hel"  "--help" \
+    custom   "--info"     "--inf"  "--info" \
+    empty    ""           "--hel"  ""
+}
+
+test_shifu_complete_help_flags_short() {
+  shifu_complete_single_dash_options=true
+  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -h)
+  shifu_assert_strings_equal completion "-h" "$actual"
+}
+
+test_shifu_help_text_configurable_flags() {
+  run_test() {
+    shifu_help_flags="$1"
+    _shifu_setup
+    actual=$(_shifu_help shifu_test_all_options_cmd 0 2>&1)
+    shifu_assert_string_contains contains "$actual" "$2"
+    shifu_assert_string_not_contains not_contains "$actual" "$3"
+  }
+  shifu_parameterize_test \
+    run_test 3 \
+    custom_flag_shown   "--info"     "--info"            "-h, --help" \
+    default_flag_shown  "-h --help"  "-h, --help"        "--info" \
+    empty_no_help_line  ""           "binary flag help"  "Show this help"
+}
+
+test_shifu_run_configurable_help_flags() {
+  run_test() {
+    shifu_help_flags="$1"
+    actual=$(shifu_run shifu_test_root_cmd sub-one leaf-one $2 2>&1)
+    shifu_assert_string_contains output "$actual" "$3"
+  }
+  shifu_parameterize_test \
+    run_test 3 \
+    custom_flag              "--info"  "--info"  "Test leaf one cmd help" \
+    default_invalid_when_removed "--help"  "-h"      "Invalid option: -h" \
+    empty_disables_help      ""        "--help"  "Invalid option: --help"
+}
+
+test_shifu_help_case_pattern() {
+  run_test() {
+    shifu_help_flags="$1"
+    _shifu_help_case_pattern
+    shifu_assert_strings_equal pattern "$2" "$shifu_help_pattern"
+  }
+  shifu_parameterize_test \
+    run_test 2 \
+    default  "-h --help"  "-h|--help" \
+    single   "--help"     "--help" \
+    empty    ""           ""
+}
+
+test_shifu_help_display_flags() {
+  run_test() {
+    shifu_help_flags="$1"
+    _shifu_help_display_flags
+    shifu_assert_strings_equal display "$2" "$shifu_help_display"
+  }
+  shifu_parameterize_test \
+    run_test 2 \
+    default  "-h --help"  "-h, --help" \
+    single   "--help"     "--help" \
+    empty    ""           ""
+}
+
+test_shifu_help_flags_validation() {
+  run_test() {
+    shifu_help_flags="$1"
+    actual=$(shifu_run shifu_test_root_cmd)
+    shifu_assert_strings_equal error_message "$2" "$actual"
+  }
+  shifu_parameterize_test \
+    run_test 2 \
+    no_dash       "help"      "Option flags must start with - or --, got: help" \
+    glob_question "-?"        "Help flag contains glob character: -?" \
+    glob_star     "--*"       "Help flag contains glob character: --*" \
+    glob_bracket  "--[abc]"   "Help flag contains glob character: --[abc]"
+}
+
 # Testing utilities
 shifu_parameterize_test() {
   # 1: name of test function to run, 2: number of arguments the function accepts
@@ -962,6 +1050,19 @@ shifu_assert_string_contains() {
   esac
   [ "${shifu_trace_tests:-}" = true ] && set +x
   shifu_report_context "${p_run_name+$p_run_name }$1: expected string to be contained" \
+    "string: \"${2:-<empty>}\"" "search: \"${3:-<empty>}\""
+  errors=$(($errors + 1))
+  [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
+}
+
+shifu_assert_string_not_contains() {
+  # 1: identifier, 2: string to search in, 3: string to search for
+  case "$2" in
+    *"$3"*) ;;
+    *) return 0 ;;
+  esac
+  [ "${shifu_trace_tests:-}" = true ] && set +x
+  shifu_report_context "${p_run_name+$p_run_name }$1: expected string to not be contained" \
     "string: \"${2:-<empty>}\"" "search: \"${3:-<empty>}\""
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0

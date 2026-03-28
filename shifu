@@ -6,6 +6,7 @@
 # config
 shifu_allow_options_anywhere=false
 shifu_complete_single_dash_options=false
+shifu_help_flags="-h --help"
 
 # modes
 shifu_mode_cmds_run=1
@@ -16,8 +17,15 @@ shifu_mode_cmds_comp=5
 shifu_mode_args_comp=6
 shifu_mode_opt_names_comp=7
 
+_shifu_setup() {
+  _shifu_validate_help_flags
+  _shifu_help_case_pattern
+  _shifu_help_display_flags
+}
+
 # api
 shifu_run() {
+  _shifu_setup
   case $# in
     0) echo "shifu_run requires at least one argument, got 0"
        exit 1 ;;
@@ -170,11 +178,17 @@ _shifu_run() {
     done
     [ "$shifu_arg_matched" = true -a -n "$shifu_cmd_func" ] && break
     [ "$shifu_arg_matched" = true -a -n "$shifu_cmd_subs" ] && continue
-    [ "$1" != "-h" -a "$1" != "--help" ] && echo "Unknown command: $1"
+    if [ -n "${shifu_help_pattern:-}" ]; then
+      eval "case \"\$1\" in $shifu_help_pattern) ;; *) echo \"Unknown command: \$1\" ;; esac"
+    else
+      echo "Unknown command: $1"
+    fi
     _shifu_help "$shifu_parent" 1
   done
   [ -z "$shifu_cmd_func" ] && { echo "$shifu_cmd_name requires arguments"; _shifu_help "$shifu_cmd" 1; }
-  case "${1:-}" in -h|--help) _shifu_help "$shifu_cmd" 0; esac
+  if [ -n "${shifu_help_pattern:-}" ]; then
+    eval "case \"\${1:-}\" in $shifu_help_pattern) _shifu_help \"\$shifu_cmd\" 0 ;; esac"
+  fi
   _shifu_parse_args false "$shifu_cmd" "$@"
   [ $? -ne 0 ] && _shifu_help "$shifu_cmd" 1
   shift $_shifu_args_parsed
@@ -192,7 +206,8 @@ _shifu_parse_args() {
   if [ "$shifu_parse_eager" = false -a -n "${shifu_defer_case:-}" ]; then
     _shifu_append_on_new_line shifu_case_stmt "  ${shifu_defer_case:-}"
   fi
-  _shifu_append_on_new_line shifu_case_stmt "  -h|--help) _shifu_help \"$shifu_cmd\" 0 ;; "
+  [ -n "${shifu_help_pattern:-}" ] && \
+    _shifu_append_on_new_line shifu_case_stmt "  $shifu_help_pattern) _shifu_help \"$shifu_cmd\" 0 ;; "
   "$shifu_cmd"
   [ $shifu_parse_stage -eq 0 ] && _shifu_update_case_stmt_invalid_option
   _shifu_append_on_new_line shifu_case_stmt "    break;;"
@@ -244,7 +259,8 @@ _shifu_help() {
   shifu_help_stage=0
   "$1"
   [ -n "$shifu_cmd_func" ] && shifu_help_options="${shifu_help_options:-}${shifu_defer_help:-}"
-  shifu_help_options="${shifu_help_options:-}\n  -h, --help\n    Show this help"
+  [ -n "${shifu_help_display:-}" ] && \
+    shifu_help_options="${shifu_help_options:-}\n  $shifu_help_display\n    Show this help"
   [ -n "${shifu_help_usage:-}" ] && shifu_help_usage="$shifu_cmd_name [OPTIONS]$shifu_help_usage"
   [ -n "$shifu_cmd_help" ] && _shifu_add_to_help_string "$shifu_cmd_help"
   [ -n "$shifu_cmd_long" ] && _shifu_add_to_help_string "$shifu_cmd_long"
@@ -295,6 +311,32 @@ _shifu_validate_flag() {
     -*) ;;
     *) _shifu_error "Option flags must start with - or --, got: $1" ;;
   esac
+}
+
+_shifu_validate_help_flags() {
+  _shifu_set_for_looping shifu_help_flags_list shifu_help_flags
+  for shifu_help_flag in $shifu_help_flags_list; do
+    _shifu_validate_flag "$shifu_help_flag"
+    case "$shifu_help_flag" in
+      *'?'*|*'*'*|*'['*) _shifu_error "Help flag contains glob character: $shifu_help_flag" ;;
+    esac
+  done
+}
+
+_shifu_help_case_pattern() {
+  shifu_help_pattern=""
+  _shifu_set_for_looping shifu_help_flags_list shifu_help_flags
+  for shifu_help_flag in $shifu_help_flags_list; do
+    shifu_help_pattern="${shifu_help_pattern:+$shifu_help_pattern|}$shifu_help_flag"
+  done
+}
+
+_shifu_help_display_flags() {
+  shifu_help_display=""
+  _shifu_set_for_looping shifu_help_flags_list shifu_help_flags
+  for shifu_help_flag in $shifu_help_flags_list; do
+    shifu_help_display="${shifu_help_display:+$shifu_help_display, }$shifu_help_flag"
+  done
 }
 
 _shifu_opt_help_parse() {
@@ -628,6 +670,10 @@ _shifu_set_completing_option() {
 _shifu_complete_option_names() {
   shifu_mode=$shifu_mode_opt_names_comp
   "$shifu_cmd"
+  _shifu_set_for_looping shifu_complete_help_flags shifu_help_flags
+  for shifu_help_flag in $shifu_complete_help_flags; do
+    _shifu_list_append shifu_comp_option_names "$shifu_help_flag"
+  done
   _shifu_set_for_looping shifu_comp_option_list shifu_comp_option_names
   _shifu_filter_matching_options "$shifu_current_word" $shifu_comp_option_list
 }
