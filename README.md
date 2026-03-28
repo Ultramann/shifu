@@ -9,7 +9,7 @@
 * subcommand dispatch
 * help string formatting
 * tab completion for interactive shells
-* a single, dependency-free, pure POSIX file
+* a single, dependency-free, pure POSIX shell file
 * compatibility with POSIX-based shells; tested with:
   * ash, bash, dash, ksh, zsh
 
