@@ -524,7 +524,7 @@ All option and argument functions accept a `variable` argument, the shell variab
 
 #### Notes
 
-The signatures and examples above are for **leaf commands** (those using `shifu_cmd_func`). When you have options that are shared across subcommands, like a `--verbose` flag, you can declare them once in a **parent command** (those using `shifu_cmd_subs`) instead of repeating them in every subcommand.
+The signatures and examples above are for leaf commands (those using `shifu_cmd_func`). When you have options that are shared across subcommands, like a `--verbose` flag, you can declare them once in a parent command (those using `shifu_cmd_subs`) instead of repeating them in every subcommand.
 
 Option functions called in a parent command require a mode as the first argument. The mode changes when the option will be parsed, aka when it will be provided by the CLI user. The two available modes are:
 * `:defer:` - option parsing is deferred until the leaf command, so the option can be provided alongside subcommand options
