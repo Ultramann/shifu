@@ -362,6 +362,13 @@ These instructions can also be found by running
 
 ## API
 
+* [Command runner](#command-runner)
+* [Command definition functions](#command-definition-functions)
+* [Option and argument functions](#option-and-argument-functions)
+* [Completion functions](#completion-functions)
+* [Configuration](#configuration)
+* [Miscellaneous](#miscellaneous)
+
 ### Command runner
 
 #### `shifu_run`
@@ -625,9 +632,9 @@ Shifu has a few variables that can be set after sourcing to change default behav
   ```sh
   . "${0%/*}"/shifu && shifu_less || exit 1
 
-  my_cmd() {
-    cmd_name my
+  cli_cmd() {
+    cmd_name cli
     cmd_optd -o -- OPTION default "An option"
-    cmd_func my_func
+    cmd_func cli_func
   }
   ```
