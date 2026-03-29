@@ -15,9 +15,9 @@ shifu_test_root_cmd() {
   shifu_cmd_help "Test root cmd help"
   shifu_cmd_subs shifu_test_sub_one_cmd shifu_test_sub_two_cmd
 
-  shifu_cmd_optb :defer: -g --global-bin -- GLOBAL_BIN false true "A test global bin cmd arg"
-  shifu_cmd_optd :defer: -G --global-def -- GLOBAL_DEF global_def "A test global def cmd arg"
-  shifu_cmd_cpte global_one global_two global_three
+  shifu_cmd_optb :defer: -g --defer-bin -- DEFER_BIN false true "A test deferred binary arg"
+  shifu_cmd_optd :defer: -G --defer-def -- DEFER_DEF defer_def "A test deferred default arg"
+  shifu_cmd_cpte defer_one defer_two defer_three
 }
 
 shifu_test_sub_one_cmd() {
@@ -25,8 +25,8 @@ shifu_test_sub_one_cmd() {
   shifu_cmd_help "Test sub one cmd help"
   shifu_cmd_subs shifu_test_leaf_one_cmd shifu_test_leaf_two_cmd
 
-  shifu_cmd_optd :defer: -S --sub-global -- SUB_GLOBAL sub_global "A test sub-one global arg"
-  shifu_cmd_cptf make_fake_sub_global_completions
+  shifu_cmd_optd :defer: -S --sub-defer -- SUB_DEFER sub_defer "A test sub-one deferred arg"
+  shifu_cmd_cptf make_fake_sub_defer_threeompletions
 }
 
 shifu_test_sub_two_cmd() {
@@ -34,8 +34,8 @@ shifu_test_sub_two_cmd() {
   shifu_cmd_help "Test sub two cmd help"
   shifu_cmd_subs shifu_test_leaf_three_cmd shifu_test_leaf_four_cmd
 
-  shifu_cmd_optd :eager: -l --local-test -- LOCAL_TEST local-test "A test local cmd arg"
-  shifu_cmd_cpte local option test
+  shifu_cmd_optd :eager: -e --eager-test -- EAGER_TEST eager-test "A test eager arg"
+  shifu_cmd_cpte eager option test
 }
 
 shifu_test_leaf_one_cmd() {
@@ -123,8 +123,8 @@ make_fake_remaining_completions() {
   shifu_add_cpts remaining args
 }
 
-make_fake_sub_global_completions() {
-  shifu_add_cpts sub_global_a sub_global_b sub_global_c
+make_fake_sub_defer_threeompletions() {
+  shifu_add_cpts sub_defer_one sub_defer_two sub_defer_three
 }
 
 test_shifu_run_zero_args() {
@@ -148,20 +148,20 @@ test_shifu_run_good() {
   shifu_assert_strings_equal output "$expected" "$actual"
 }
 
-test_shifu_run_good_cmd_global_arg() {
-  shifu_run shifu_test_root_cmd sub-two leaf-three -g -G global_val one two
+test_shifu_run_good_cmd_defer_arg() {
+  shifu_run shifu_test_root_cmd sub-two leaf-three -g -G defer_val one two
   shifu_assert_zero exit_code $?
-  shifu_assert_equal global_bin "$GLOBAL_BIN" true
-  shifu_assert_equal global_def "$GLOBAL_DEF" global_val
+  shifu_assert_equal defer_bin "$DEFER_BIN" true
+  shifu_assert_equal defer_def "$DEFER_DEF" defer_val
   shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
 }
 
-test_shifu_run_good_cmd_global_and_local_arg() {
-  shifu_run shifu_test_root_cmd sub-two -l local-val leaf-three -g -G global_val one two
+test_shifu_run_good_cmd_defer_and_eager_arg() {
+  shifu_run shifu_test_root_cmd sub-two -e eager-val leaf-three -g -G defer_val one two
   shifu_assert_zero exit_code $?
-  shifu_assert_equal local_test "$LOCAL_TEST" "local-val"
-  shifu_assert_equal global_bin "$GLOBAL_BIN" true
-  shifu_assert_equal global_def "$GLOBAL_DEF" global_val
+  shifu_assert_equal eager_test "$EAGER_TEST" "eager-val"
+  shifu_assert_equal defer_bin "$DEFER_BIN" true
+  shifu_assert_equal defer_def "$DEFER_DEF" defer_val
   shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
 }
 
@@ -237,11 +237,11 @@ shifu_test_required_options_cmd() {
   shifu_cmd_name required-options
   shifu_cmd_subs shifu_test_leaf_three_cmd
 
-  shifu_cmd_optr :eager: -l --local -- LOCAL_TEST "A test required local cmd arg"
-  shifu_cmd_optr :defer: -g --global -- GLOBAL_TEST "A test required global cmd arg"
+  shifu_cmd_optr :eager: -e --eager -- EAGER_TEST "A test required eager arg"
+  shifu_cmd_optr :defer: -g --defer -- DEFER_TEST "A test required deferred arg"
 }
 
-test_shifu_run_required_local_and_global_options() {
+test_shifu_run_required_eager_and_defer_options() {
   run_test() {
     test_cmd_args="$1"
     _shifu_set_for_looping test_cmd_args test_cmd_args
@@ -251,9 +251,9 @@ test_shifu_run_required_local_and_global_options() {
   }
   shifu_parameterize_test \
     run_test 3 \
-    both_set  "-l local leaf-three -g global" 0 "" \
-    local_set "-l local leaf-three"           1 "Required variable, GLOBAL_TEST, is not set" \
-    none_set  "leaf-three"                    1 "Required variable, LOCAL_TEST, is not set"
+    both_set  "-e eager leaf-three -g defer" 0 "" \
+    eager_set "-e eager leaf-three"          1 "Required variable, DEFER_TEST, is not set" \
+    none_set  "leaf-three"                   1 "Required variable, EAGER_TEST, is not set"
 }
 
 shifu_test_option_missing_value_cmd() {
@@ -292,16 +292,16 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -g, --global-bin
-    A test global bin cmd arg
+  -g, --defer-bin
+    A test deferred binary arg
     Default: false, set: true
-  -G, --global-def [GLOBAL_DEF]
-    A test global def cmd arg
-    Default: global_def
+  -G, --defer-def [DEFER_DEF]
+    A test deferred default arg
+    Default: defer_def
   -h, --help
     Show this help'
   )"
-  # TODO: I don't think the global option should show up in this help string
+  # TODO: I don't think the defer option should show up in this help string
   actual=$(shifu_run shifu_test_root_cmd bad sub-one leaf-two one two 2>&1)
   shifu_assert_non_zero exit_code $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
@@ -319,9 +319,9 @@ Subcommands
     Test leaf two cmd help
 
 Options
-  -S, --sub-global [SUB_GLOBAL]
-    A test sub-one global arg
-    Default: sub_global
+  -S, --sub-defer [SUB_DEFER]
+    A test sub-one deferred arg
+    Default: sub_defer
   -h, --help
     Show this help'
   )"
@@ -342,9 +342,9 @@ Subcommands
     Test leaf four cmd help
 
 Options
-  -l, --local-test [LOCAL_TEST]
-    A test local cmd arg
-    Default: local-test
+  -e, --eager-test [EAGER_TEST]
+    A test eager arg
+    Default: eager-test
   -h, --help
     Show this help'
   )"
@@ -353,7 +353,7 @@ Options
   shifu_assert_strings_equal error_message "$expected" "$actual"
 }
 
-test_shifu_run_bad_cmd_global_and_local_arg() {
+test_shifu_run_bad_cmd_defer_and_eager_arg() {
   expected="$(
     echo 'Invalid option: -g'
     printf 'Test sub two cmd help
@@ -365,13 +365,13 @@ Subcommands
     Test leaf four cmd help
 
 Options
-  -l, --local-test [LOCAL_TEST]
-    A test local cmd arg
-    Default: local-test
+  -e, --eager-test [EAGER_TEST]
+    A test eager arg
+    Default: eager-test
   -h, --help
     Show this help'
   )"
-  actual=$(shifu_run shifu_test_root_cmd sub-two -l local-test -g leaf-three one two)
+  actual=$(shifu_run shifu_test_root_cmd sub-two -e eager-test -g leaf-three one two)
   shifu_assert_non_zero exit_code $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
 }
@@ -454,12 +454,12 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -g, --global-bin
-    A test global bin cmd arg
+  -g, --defer-bin
+    A test deferred binary arg
     Default: false, set: true
-  -G, --global-def [GLOBAL_DEF]
-    A test global def cmd arg
-    Default: global_def
+  -G, --defer-def [DEFER_DEF]
+    A test deferred default arg
+    Default: defer_def
   -h, --help
     Show this help'
   )
@@ -467,30 +467,30 @@ Options
   shifu_assert_strings_equal error_message "$expected" "$actual"
 }
 
-shifu_test_bad_positional_global_arg_cmd() {
-  shifu_cmd_name bad-global
+shifu_test_bad_positional_defer_arg_cmd() {
+  shifu_cmd_name bad-defer
   shifu_cmd_subs does not matter
 
   shifu_cmd_argr bad_positional "Bad help"
 }
 
-test_shifu_run_bad_positional_global_arg_cmd() {
+test_shifu_run_bad_positional_defer_arg_cmd() {
   expected="Positional arguments can only be used in leaf commands"
-  actual=$(shifu_run shifu_test_bad_positional_global_arg_cmd does not matter 2>&1)
+  actual=$(shifu_run shifu_test_bad_positional_defer_arg_cmd does not matter 2>&1)
   shifu_assert_non_zero exit_code $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
 }
 
-shifu_test_bad_positional_local_arg_cmd() {
-  shifu_cmd_name bad-local
+shifu_test_bad_positional_eager_arg_cmd() {
+  shifu_cmd_name bad-eager
   shifu_cmd_subs does not matter
 
   shifu_cmd_argr bad_positional "Bad help"
 }
 
-test_shifu_run_bad_positional_local_arg_cmd() {
+test_shifu_run_bad_positional_eager_arg_cmd() {
   expected="Positional arguments can only be used in leaf commands"
-  actual=$(shifu_run shifu_test_bad_positional_local_arg_cmd does not matter 2>&1)
+  actual=$(shifu_run shifu_test_bad_positional_eager_arg_cmd does not matter 2>&1)
   shifu_assert_non_zero exit_code $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
 }
@@ -585,28 +585,28 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -g, --global-bin
-    A test global bin cmd arg
+  -g, --defer-bin
+    A test deferred binary arg
     Default: false, set: true
-  -G, --global-def [GLOBAL_DEF]
-    A test global def cmd arg
-    Default: global_def
+  -G, --defer-def [DEFER_DEF]
+    A test deferred default arg
+    Default: defer_def
   -h, --help
     Show this help'
   actual=$(shifu_run shifu_test_root_cmd -h)
   shifu_assert_strings_equal help_message "$expected" "$actual"
 }
 
-test_shifu_help_global() {
+test_shifu_help_defer() {
   expected='Test leaf three cmd help
 
 Options
-  -g, --global-bin
-    A test global bin cmd arg
+  -g, --defer-bin
+    A test deferred binary arg
     Default: false, set: true
-  -G, --global-def [GLOBAL_DEF]
-    A test global def cmd arg
-    Default: global_def
+  -G, --defer-def [DEFER_DEF]
+    A test deferred default arg
+    Default: defer_def
   -h, --help
     Show this help'
   actual=$(shifu_run shifu_test_root_cmd sub-two leaf-three -h 2>&1)
@@ -655,15 +655,15 @@ test_shifu_complete_func_args_remaining_func() {
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
-test_shifu_complete_func_args_local_func() {
-  expected="local option test"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete cur_word sub-two -l)
+test_shifu_complete_func_args_eager_func() {
+  expected="eager option test"
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete cur_word sub-two -e)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
-test_shifu_complete_func_args_local_func_bad() {
+test_shifu_complete_func_args_eager_func_bad() {
   expected=""
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete cur_word -l)
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete cur_word -e)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
@@ -704,49 +704,49 @@ test_shifu_complete_options_only_when_word_starts_with_dash() {
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
-test_shifu_complete_global_option_names() {
-  expected="--global-bin --global-def"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --global sub-one leaf-one)
+test_shifu_complete_defer_option_names() {
+  expected="--defer-bin --defer-def"
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --defer sub-one leaf-one)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
-test_shifu_complete_global_option_names_no_func() {
+test_shifu_complete_defer_option_names_no_func() {
   expected=""
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --global sub-one)
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --defer sub-one)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
-test_shifu_complete_local_option_names_on_subcommand() {
-  expected="--local-test"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --local sub-two)
+test_shifu_complete_eager_option_names_on_subcommand() {
+  expected="--eager-test"
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --eager sub-two)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
-test_shifu_complete_global_option_values() {
-  expected="global_one global_two global_three"
+test_shifu_complete_defer_option_values() {
+  expected="defer_one defer_two defer_three"
   actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one leaf-one -G)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
-test_shifu_complete_global_option_values_no_func() {
+test_shifu_complete_defer_option_values_no_func() {
   expected=""
   actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one -G)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
-test_shifu_complete_global_option_values_at_root() {
+test_shifu_complete_defer_option_values_at_root() {
   expected=""
   actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" -G)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
-test_shifu_complete_global_option_func_values() {
-  expected="sub_global_a sub_global_b sub_global_c"
+test_shifu_complete_defer_option_func_values() {
+  expected="sub_defer_one sub_defer_two sub_defer_three"
   actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one leaf-one -S)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
-test_shifu_complete_global_option_func_values_no_func() {
+test_shifu_complete_defer_option_func_values_no_func() {
   expected=""
   actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one -S)
   shifu_assert_strings_equal completion "$expected" "$actual"
@@ -782,29 +782,29 @@ shifu_test_path_glob_no_pattern_cmd() {
   shifu_cmd_cptp :glob:
 }
 
-shifu_test_global_path_files_cmd() {
-  shifu_cmd_name global-path-files
+shifu_test_defer_path_files_cmd() {
+  shifu_cmd_name defer-path-files
   shifu_cmd_subs shifu_test_leaf_one_cmd
   shifu_cmd_optd :defer: -c --config -- CONFIG config_default "Config file"
   shifu_cmd_cptp :files:
 }
 
-shifu_test_global_path_dirs_cmd() {
-  shifu_cmd_name global-path-dirs
+shifu_test_defer_path_dirs_cmd() {
+  shifu_cmd_name defer-path-dirs
   shifu_cmd_subs shifu_test_leaf_one_cmd
   shifu_cmd_optd :defer: -d --dir -- DIR_ARG dir_default "Directory argument"
   shifu_cmd_cptp :dirs:
 }
 
-shifu_test_global_path_glob_cmd() {
-  shifu_cmd_name global-path-glob
+shifu_test_defer_path_glob_cmd() {
+  shifu_cmd_name defer-path-glob
   shifu_cmd_subs shifu_test_leaf_one_cmd
   shifu_cmd_optd :defer: -g --glob -- GLOB_ARG glob_default "Glob argument"
   shifu_cmd_cptp :glob: "*.txt"
 }
 
-shifu_test_global_path_glob_no_pattern_cmd() {
-  shifu_cmd_name global-path-glob-no-pattern
+shifu_test_defer_path_glob_no_pattern_cmd() {
+  shifu_cmd_name defer-path-glob-no-pattern
   shifu_cmd_subs shifu_test_leaf_one_cmd
   shifu_cmd_optd :defer: -g --glob -- GLOB_ARG glob_default "Glob argument"
   shifu_cmd_cptp :glob:
@@ -845,13 +845,13 @@ test_shifu_complete_subcmds_after_eager_optb() {
 
 test_shifu_complete_subcmds_after_eager_optd() {
   expected="leaf-three leaf-four"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-two -l some_value)
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-two -e some_value)
   shifu_assert_strings_equal output "$expected" "$actual"
 }
 
 test_shifu_complete_subcmds_after_eager_optr() {
   expected="leaf-three"
-  actual=$(_shifu_complete shifu_test_required_options_cmd --shifu-complete "" -l some_value)
+  actual=$(_shifu_complete shifu_test_required_options_cmd --shifu-complete "" -e some_value)
   shifu_assert_strings_equal output "$expected" "$actual"
 }
 
@@ -863,13 +863,13 @@ test_shifu_complete_subcmds_after_multi_eager() {
 
 test_shifu_complete_leaf_options_through_eager_parent() {
   expected="--fake-arg"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --f sub-two -l some_value leaf-four)
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --f sub-two -e some_value leaf-four)
   shifu_assert_strings_equal output "$expected" "$actual"
 }
 
-test_shifu_complete_deferred_option_values_through_eager_parent() {
-  expected="global_one global_two global_three"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-two -l some_value leaf-four -G)
+test_shifu_complete_defer_option_values_through_eager_parent() {
+  expected="defer_one defer_two defer_three"
+  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-two -e some_value leaf-four -G)
   shifu_assert_strings_equal output "$expected" "$actual"
 }
 
@@ -888,18 +888,18 @@ test_shifu_complete_path() {
   }
   shifu_parameterize_test \
     run_test 3 \
-    local_files_option     shifu_test_path_files_cmd           "-f"           "SHIFU_COMP_PATH_FILES" \
-    local_files_positional shifu_test_path_files_cmd           "-f filled"    "SHIFU_COMP_PATH_FILES" \
-    local_dirs             shifu_test_path_dirs_cmd            "-d"           "SHIFU_COMP_PATH_DIRS" \
-    local_glob             shifu_test_path_glob_cmd            "-g"           "SHIFU_COMP_PATH_GLOB:*.txt" \
-    local_glob_no_pattern  shifu_test_path_glob_no_pattern_cmd "-g"           "" \
-    global_files           shifu_test_global_path_files_cmd    "leaf-one -c"  "SHIFU_COMP_PATH_FILES" \
-    global_files_no_sub    shifu_test_global_path_files_cmd    "-c"           "" \
-    global_dirs            shifu_test_global_path_dirs_cmd     "leaf-one -d"  "SHIFU_COMP_PATH_DIRS" \
-    global_dirs_no_sub     shifu_test_global_path_dirs_cmd     "-d"           "" \
-    global_glob            shifu_test_global_path_glob_cmd     "leaf-one -g"  "SHIFU_COMP_PATH_GLOB:*.txt" \
-    global_glob_no_sub     shifu_test_global_path_glob_cmd     "-g"           "" \
-    global_glob_no_pattern shifu_test_global_path_glob_no_pattern_cmd "leaf-one -g" ""
+    eager_files_option     shifu_test_path_files_cmd           "-f"           "SHIFU_COMP_PATH_FILES" \
+    eager_files_positional shifu_test_path_files_cmd           "-f filled"    "SHIFU_COMP_PATH_FILES" \
+    eager_dirs             shifu_test_path_dirs_cmd            "-d"           "SHIFU_COMP_PATH_DIRS" \
+    eager_glob             shifu_test_path_glob_cmd            "-g"           "SHIFU_COMP_PATH_GLOB:*.txt" \
+    eager_glob_no_pattern  shifu_test_path_glob_no_pattern_cmd "-g"           "" \
+    defer_files            shifu_test_defer_path_files_cmd     "leaf-one -c"  "SHIFU_COMP_PATH_FILES" \
+    defer_files_no_sub     shifu_test_defer_path_files_cmd     "-c"           "" \
+    defer_dirs             shifu_test_defer_path_dirs_cmd      "leaf-one -d"  "SHIFU_COMP_PATH_DIRS" \
+    defer_dirs_no_sub      shifu_test_defer_path_dirs_cmd      "-d"           "" \
+    defer_glob             shifu_test_defer_path_glob_cmd      "leaf-one -g"  "SHIFU_COMP_PATH_GLOB:*.txt" \
+    defer_glob_no_sub      shifu_test_defer_path_glob_cmd      "-g"           "" \
+    defer_glob_no_pattern  shifu_test_defer_path_glob_no_pattern_cmd "leaf-one -g" ""
 }
 
 shifu_test_bad_multiple_completions_single_arg_cmd() {
