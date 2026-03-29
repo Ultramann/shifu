@@ -649,6 +649,7 @@ _shifu_complete() {
   done
   shifu_comp_option_names="${shifu_build_comp_defer_option_names:-}"
   _shifu_set_completing_option
+  [ "$shifu_completing_option" = true ] && shifu_completions=""
   if [ "$shifu_completing_option" = true -a -n "${shifu_cmd_func:-}" ]; then
     _shifu_complete_option_names
   elif [ "$shifu_completing_option" = true -a -n "${shifu_cmd_subs:-}" ]; then
@@ -656,7 +657,7 @@ _shifu_complete() {
     _shifu_complete_option_names
   elif [ "$shifu_completing_option" = false -a -n "${shifu_cmd_func:-}" ]; then
     _shifu_complete_func_args false "$shifu_cmd" "$@"
-  elif [ "$shifu_completing_option" = false -a -n "${shifu_cmd_subs:-}" -a $# -eq 0 ]; then
+  elif [ "$shifu_completing_option" = false -a -n "${shifu_cmd_subs:-}" -a $# -eq 0 -a -z "${shifu_completions:-}" ]; then
     _shifu_complete_subcmd_names
   fi
   [ -n "${shifu_completions:-}" ] && echo "$shifu_completions"
