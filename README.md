@@ -9,9 +9,10 @@
 * subcommand dispatch
 * help string formatting
 * tab completion for interactive shells
-* a single, dependency-free, pure POSIX shell file
 * compatibility with POSIX-based shells; tested with:
   * ash, bash, dash, ksh, zsh
+
+all in a single POSIX shell file with no dependencies.
 
 Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means a lot of boilerplate that's hard to understand and maintain. Shifu offers an API to describe CLI structure, letting you focus on real functionality.
 
