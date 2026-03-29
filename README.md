@@ -167,7 +167,7 @@ dispatch_cmd() {
   * argument parsing
   * scoped help generation"
   # Add deferred binary option, inherited by subcommands
-  cmd_optb :defer: -g --global -- GLOBAL false true "Global binary option"
+  cmd_optb :defer: -D --deferred -- DEFERRED false true "Deferred binary option"
 }
 
 # Write first subcommand, referenced in `cmd_subs` above
@@ -184,7 +184,7 @@ hello_cmd() {
 
 # Write first subcommand target function
 dispatch_hello() {
-  [ "$GLOBAL" = true ] && message="🌐 " || message=""
+  [ "$DEFERRED" = true ] && message="☝ " || message=""
   echo "${message}Hello, $NAME!"
 }
 
@@ -204,37 +204,37 @@ echo_cmd() {
 # Write second subcommand target function
 dispatch_echo() {
   # Use variables populated by option/argument functions
-  echo "Global binary option: $GLOBAL"
-  echo "Required option:      $REQUIRED"
-  echo "Option w/ default:    $DEFAULT"
-  echo "Positional argument:  $POSITIONAL"
+  echo "Deferred binary option: $DEFERRED"
+  echo "Required option:        $REQUIRED"
+  echo "Option w/ default:      $DEFAULT"
+  echo "Positional argument:    $POSITIONAL"
 }
 
 # Run root command passing all script arguments
 shifu_run dispatch_cmd "$@"
 ```
 
-The diagram below shows how shifu is connecting together this CLI script to print the value `🌐 Hello, World!` in `dispatch_hello`.
+The diagram below shows how shifu is connecting together this CLI script to print the value `☝ Hello, World!` in `dispatch_hello`.
 
 ```
 ┌───────────── sets to ─────────────┐
 │ ┌──────────── true ──────────────┐│
 │ │                                ▼│
-│ │        examples/dispatch hello -g --name World ─────────────────────┐
-│ │                     ▲      ▲         ▲                              │
-│ │                     │      │         └────────────────────────────┐ │
-│ │                     │      └───────────────────────────────┐      │ │
-│ │ dispatch_cmd() {    │              ┌─► hello_cmd() {       │      │ │
-│ │   cmd_name dispatch ┘              │     cmd_name hello ───┘      │ │
-│ │   cmd_subs hello_cmd echo_cmd ─────┘ ┌── cmd_func dispatch_hello  │ │
-│ └── cmd_optb :defer: -g --global \ ┌───┘   cmd_optd -n --name \ ────┘ │
-└────►  -- GLOBAL false true \       │ ┌──►    -- NAME "mysterious \    │
-        "Global binary option"       │ │       user" "Name to greet"    │
-    }                                │ │ }                              │
-      ┌──────────────────────────────┘ └────────────────────────────────┘
+│ │        examples/dispatch hello -D --name World ──────────────────────┐
+│ │                     ▲      ▲         ▲                               │
+│ │                     │      │         └─────────────────────────────┐ │
+│ │                     │      └────────────────────────────────┐      │ │
+│ │ dispatch_cmd() {    │              ┌──► hello_cmd() {       │      │ │
+│ │   cmd_name dispatch ┘              │      cmd_name hello ───┘      │ │
+│ │   cmd_subs hello_cmd echo_cmd ─────┘  ┌── cmd_func dispatch_hello  │ │
+│ └── cmd_optb :defer: -D --deferred \ ┌──┘ cmd_optd -n --name \ ──────┘ │
+└────►  -- DEFERRED false true \       │  ┌──►  -- NAME "mysterious \    │
+        "Deferred binary option"       │  │     user" "Name to greet"    │
+    }                                  │  │ }                            │
+      ┌────────────────────────────────┘  └──────────────────────────────┘
       │
       └─► dispatch_hello() {
-            [ "$GLOBAL" = true ] && message="🌐 " || message=""
+            [ "$DEFERRED" = true ] && message="☝ " || message=""
             echo "${message}Hello, $NAME!"
           }
 ```

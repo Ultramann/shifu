@@ -32,7 +32,7 @@ Sleep 200ms
 Enter
 Sleep 500ms
 
-Type "examples/dispatch hello -g -n World"
+Type "examples/dispatch hello -D -n World"
 Sleep 200ms
 Enter
 Sleep 3000ms
@@ -49,7 +49,7 @@ Sleep 200ms
 Enter
 Sleep 500ms
 
-Type "examples/dispatch echo -g --required 'provided' \"
+Type "examples/dispatch echo -D --required 'provided' \"
 Enter
 Type "-d 'not default' example"
 Sleep 200ms
