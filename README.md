@@ -626,8 +626,8 @@ Shifu has a few variables that can be set after sourcing to change default behav
 ### Miscellaneous
 
 #### `shifu_add_cpts`
-* Registers completion values from within a `shifu_cmd_cptf` function
-* Takes one or more strings to add as completion options
+* Registers one or more strings to add as completions
+* Must only be called within functions passed to `shifu_cmd_cptf`
 * Example
   ```sh
   dynamic_completions() {
