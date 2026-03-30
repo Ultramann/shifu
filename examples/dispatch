@@ -11,7 +11,7 @@ dispatch_cmd() {
   * argument parsing
   * scoped help generation"
 
-  cmd_optb :defer: -g --global -- GLOBAL false true "Global binary option"
+  cmd_optb :defer: -D --deferred -- DEFERRED false true "Deferred binary option"
 }
 
 hello_cmd() {
@@ -24,7 +24,7 @@ hello_cmd() {
 }
 
 dispatch_hello() {
-  [ "$GLOBAL" = true ] && message="🌐 " || message=""
+  [ "$DEFERRED" = true ] && message="☝ " || message=""
   echo "${message}Hello, $NAME!"
 }
 
@@ -40,10 +40,10 @@ echo_cmd() {
 }
 
 dispatch_echo() {
-  echo "Global binary option: $GLOBAL"
-  echo "Required option:      $REQUIRED"
-  echo "Option w/ default:    $DEFAULT"
-  echo "Positional argument:  $POSITIONAL"
+  echo "Deferred binary option: $DEFERRED"
+  echo "Required option:        $REQUIRED"
+  echo "Option w/ default:      $DEFAULT"
+  echo "Positional argument:    $POSITIONAL"
 }
 
 shifu_run dispatch_cmd "$@"

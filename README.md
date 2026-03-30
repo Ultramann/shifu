@@ -9,9 +9,10 @@
 * subcommand dispatch
 * help string formatting
 * tab completion for interactive shells
-* a single, dependency-free, pure POSIX shell file
 * compatibility with POSIX-based shells; tested with:
   * ash, bash, dash, ksh, zsh
+
+all in a single POSIX shell file with no dependencies.
 
 Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means a lot of boilerplate that's hard to understand and maintain. Shifu offers an API to describe CLI structure, letting you focus on real functionality.
 
@@ -167,7 +168,7 @@ dispatch_cmd() {
   * argument parsing
   * scoped help generation"
   # Add deferred binary option, inherited by subcommands
-  cmd_optb :defer: -g --global -- GLOBAL false true "Global binary option"
+  cmd_optb :defer: -D --deferred -- DEFERRED false true "Deferred binary option"
 }
 
 # Write first subcommand, referenced in `cmd_subs` above
@@ -184,7 +185,7 @@ hello_cmd() {
 
 # Write first subcommand target function
 dispatch_hello() {
-  [ "$GLOBAL" = true ] && message="🌐 " || message=""
+  [ "$DEFERRED" = true ] && message="☝ " || message=""
   echo "${message}Hello, $NAME!"
 }
 
@@ -204,37 +205,37 @@ echo_cmd() {
 # Write second subcommand target function
 dispatch_echo() {
   # Use variables populated by option/argument functions
-  echo "Global binary option: $GLOBAL"
-  echo "Required option:      $REQUIRED"
-  echo "Option w/ default:    $DEFAULT"
-  echo "Positional argument:  $POSITIONAL"
+  echo "Deferred binary option: $DEFERRED"
+  echo "Required option:        $REQUIRED"
+  echo "Option w/ default:      $DEFAULT"
+  echo "Positional argument:    $POSITIONAL"
 }
 
 # Run root command passing all script arguments
 shifu_run dispatch_cmd "$@"
 ```
 
-The diagram below shows how shifu is connecting together this CLI script to print the value `🌐 Hello, World!` in `dispatch_hello`.
+The diagram below shows how shifu is connecting together this CLI script to print the value `☝ Hello, World!` in `dispatch_hello`.
 
 ```
 ┌───────────── sets to ─────────────┐
 │ ┌──────────── true ──────────────┐│
 │ │                                ▼│
-│ │        examples/dispatch hello -g --name World ─────────────────────┐
-│ │                     ▲      ▲         ▲                              │
-│ │                     │      │         └────────────────────────────┐ │
-│ │                     │      └───────────────────────────────┐      │ │
-│ │ dispatch_cmd() {    │              ┌─► hello_cmd() {       │      │ │
-│ │   cmd_name dispatch ┘              │     cmd_name hello ───┘      │ │
-│ │   cmd_subs hello_cmd echo_cmd ─────┘ ┌── cmd_func dispatch_hello  │ │
-│ └── cmd_optb :defer: -g --global \ ┌───┘   cmd_optd -n --name \ ────┘ │
-└────►  -- GLOBAL false true \       │ ┌──►    -- NAME "mysterious \    │
-        "Global binary option"       │ │       user" "Name to greet"    │
-    }                                │ │ }                              │
-      ┌──────────────────────────────┘ └────────────────────────────────┘
+│ │        examples/dispatch hello -D --name World ──────────────────────┐
+│ │                     ▲      ▲         ▲                               │
+│ │                     │      │         └─────────────────────────────┐ │
+│ │                     │      └────────────────────────────────┐      │ │
+│ │ dispatch_cmd() {    │              ┌──► hello_cmd() {       │      │ │
+│ │   cmd_name dispatch ┘              │      cmd_name hello ───┘      │ │
+│ │   cmd_subs hello_cmd echo_cmd ─────┘  ┌── cmd_func dispatch_hello  │ │
+│ └── cmd_optb :defer: -D --deferred \ ┌──┘ cmd_optd -n --name \ ──────┘ │
+└────►  -- DEFERRED false true \       │  ┌──►  -- NAME "mysterious \    │
+        "Deferred binary option"       │  │     user" "Name to greet"    │
+    }                                  │  │ }                            │
+      ┌────────────────────────────────┘  └──────────────────────────────┘
       │
       └─► dispatch_hello() {
-            [ "$GLOBAL" = true ] && message="🌐 " || message=""
+            [ "$DEFERRED" = true ] && message="☝ " || message=""
             echo "${message}Hello, $NAME!"
           }
 ```
@@ -563,7 +564,7 @@ The option and argument declaration order in a command function matters:
 #### `shifu_cmd_cptf`
 * Function completion
 * Function to dynamically generate tab completions for the preceding option or argument
-* The function should call `shifu_add_cpts` to register completions
+* The function should call [`shifu_add_cpts`](#shifu_add_cpts) to register completions
 * Example
   ```sh
   shifu_cmd_cptf file_ext_completions
@@ -623,6 +624,16 @@ Shifu has a few variables that can be set after sourcing to change default behav
   ```
 
 ### Miscellaneous
+
+#### `shifu_add_cpts`
+* Registers one or more strings to add as completions
+* Must only be called within functions passed to `shifu_cmd_cptf`
+* Example
+  ```sh
+  dynamic_completions() {
+    shifu_add_cpts "$(func_to_get_completions)"
+  }
+  ```
 
 #### `shifu_less`
 * Creates shorthand aliases for all `shifu_cmd_*` functions without the `shifu_` prefix (aka `cmd_name` instead of `shifu_cmd_name`)

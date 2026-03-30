@@ -627,7 +627,9 @@ _shifu_complete() {
   "$shifu_parent"
   _shifu_set_for_looping shifu_cmds shifu_cmd_subs
   while [ $# -ne 0 -a -n "${shifu_cmd_subs:-}" ]; do
-    _shifu_complete_func_args true "$shifu_parent" "$@"
+    _shifu_complete_func_args true "$shifu_parent" "$@" || _shifu_args_parsed=0
+    shift $_shifu_args_parsed
+    [ $# -eq 0 ] && break
     shifu_build_comp_defer_option_names="${shifu_comp_option_names:-}"
     shifu_mode=$shifu_mode_cmds_comp
     shifu_arg_matched=''
@@ -647,6 +649,7 @@ _shifu_complete() {
   done
   shifu_comp_option_names="${shifu_build_comp_defer_option_names:-}"
   _shifu_set_completing_option
+  [ "$shifu_completing_option" = true ] && shifu_completions=""
   if [ "$shifu_completing_option" = true -a -n "${shifu_cmd_func:-}" ]; then
     _shifu_complete_option_names
   elif [ "$shifu_completing_option" = true -a -n "${shifu_cmd_subs:-}" ]; then
@@ -654,7 +657,7 @@ _shifu_complete() {
     _shifu_complete_option_names
   elif [ "$shifu_completing_option" = false -a -n "${shifu_cmd_func:-}" ]; then
     _shifu_complete_func_args false "$shifu_cmd" "$@"
-  elif [ "$shifu_completing_option" = false -a -n "${shifu_cmd_subs:-}" -a $# -eq 0 ]; then
+  elif [ "$shifu_completing_option" = false -a -n "${shifu_cmd_subs:-}" -a $# -eq 0 -a -z "${shifu_completions:-}" ]; then
     _shifu_complete_subcmd_names
   fi
   [ -n "${shifu_completions:-}" ] && echo "$shifu_completions"
@@ -701,6 +704,7 @@ _shifu_complete_func_args() {
   shifu_mode=$shifu_mode_args_comp
   shifu_parse_stage=0
   shifu_parse_eager="$1"; shifu_cmd="$2"; shift 2
+  _shifu_args_parsed=0
   shifu_case_stmt="case \"\${1:-}\" in "
   if [ "$shifu_parse_eager" = false -a -n "${shifu_defer_comp_case:-}" ]; then
     shifu_case_stmt="${shifu_case_stmt}
@@ -710,27 +714,30 @@ ${shifu_defer_comp_case:-}"
   shifu_last_arg_is_eager=true
   "$shifu_cmd"
   case "${shifu_current_word:-}" in
-    -*) return 0 ;;
+    -*) [ "$shifu_parse_eager" = false ] && return 0 ;;
   esac
   if [ $shifu_parse_stage -eq 0 -a $shifu_arg_completion_set = false ]; then
     shifu_case_stmt="$shifu_case_stmt shift ;;"
   fi
   if [ "$shifu_parse_eager" = true ]; then
-    _shifu_append_on_new_line shifu_case_stmt "  *) break ;;"
+    _shifu_append_on_new_line shifu_case_stmt "  *) _shifu_comp_done=true ;;"
   elif [ $shifu_parse_stage -ne 0 ]; then
-    _shifu_append_on_new_line shifu_case_stmt "    break ;;"
+    _shifu_append_on_new_line shifu_case_stmt "    _shifu_comp_done=true ;;"
   elif [ $shifu_arg_completion_set = true ]; then
-    _shifu_append_on_new_line shifu_case_stmt "  *) break ;;"
+    _shifu_append_on_new_line shifu_case_stmt "  *) _shifu_comp_done=true ;;"
   else
-    _shifu_append_on_new_line shifu_case_stmt "    break ;;"
+    _shifu_append_on_new_line shifu_case_stmt "    _shifu_comp_done=true ;;"
   fi
   _shifu_append_on_new_line shifu_case_stmt "esac"
+  _shifu_args_parsed=$#
   _shifu_n_args=$#
-  while true; do
-    eval "$shifu_case_stmt" 2>/dev/null || exit 1
-    [ $# -eq $_shifu_n_args ] && exit 1
+  _shifu_comp_done=false
+  while [ "$_shifu_comp_done" = false ]; do
+    eval "$shifu_case_stmt" 2>/dev/null || return 1
+    [ $# -eq $_shifu_n_args ] && _shifu_comp_done=true
     _shifu_n_args=$#
   done
+  _shifu_args_parsed=$((_shifu_args_parsed - $#))
 }
 
 _shifu_filter_matching_options() {
