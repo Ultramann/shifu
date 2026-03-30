@@ -14,7 +14,7 @@
 
 all in a single POSIX shell file with no dependencies.
 
-Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means a lot of boilerplate that's hard to understand and maintain. Shifu offers an API to describe CLI structure, letting you focus on real functionality.
+Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means a lot of boilerplate that's hard to understand and maintain. Shifu offers an API to wire up your CLI, letting you focus on real functionality.
 
 ## Table of contents
 
@@ -134,7 +134,7 @@ $ root sub
 Hello from sub_func
 ```
 
-Arguments and help strings are scoped to each subcommand. Parent commands can also declare shared options once instead of repeating them in each subcommand, and control when those options are parsed, see the [Option and argument functions notes](#notes) API section for details.
+Arguments and help strings are scoped to each subcommand. Parent commands can also declare shared options once instead of repeating them in each subcommand, and control when those options are parsed. See the [Option and argument functions notes](#notes) API section for details.
 
 Below is a demo of [`examples/dispatch`](/examples/dispatch), a CLI with two subcommands, `hello` and `echo`, each with their own arguments. Annotated source code of the CLI can be found in the expandable section below the demo.
 
@@ -244,7 +244,7 @@ The diagram below shows how shifu is connecting together this CLI script to prin
 
 ## Tab completion
 
-Since shifu knows all about the structure of your CLI it can generate tab completion code for interactive shells that support it, bash and zsh.
+Since shifu knows all about the structure of your CLI, it can generate tab completion code for interactive shells that support it, bash and zsh.
 
 By default, subcommand and option names can be tab completed. Shifu also provides `cmd` functions for completing option values and positional arguments with static enumerations, dynamic functions, or file system paths, see the [Completion functions](#completion-functions) API section for details.
 
