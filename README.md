@@ -564,7 +564,7 @@ The option and argument declaration order in a command function matters:
 #### `shifu_cmd_cptf`
 * Function completion
 * Function to dynamically generate tab completions for the preceding option or argument
-* The function should call `shifu_add_cpts` to register completions
+* The function should call [`shifu_add_cpts`](#shifu_add_cpts) to register completions
 * Example
   ```sh
   shifu_cmd_cptf file_ext_completions
@@ -624,6 +624,16 @@ Shifu has a few variables that can be set after sourcing to change default behav
   ```
 
 ### Miscellaneous
+
+#### `shifu_add_cpts`
+* Registers completion values from within a `shifu_cmd_cptf` function
+* Takes one or more strings to add as completion options
+* Example
+  ```sh
+  dynamic_completions() {
+    shifu_add_cpts "$(func_to_get_completions)"
+  }
+  ```
 
 #### `shifu_less`
 * Creates shorthand aliases for all `shifu_cmd_*` functions without the `shifu_` prefix (aka `cmd_name` instead of `shifu_cmd_name`)
