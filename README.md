@@ -14,7 +14,7 @@
 
 all in a single POSIX shell file with no dependencies.
 
-Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means a lot of boilerplate that's hard to understand and maintain. Shifu offers an API to describe CLI structure, letting you focus on real functionality.
+Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means a lot of boilerplate that's hard to understand and maintain. Shifu offers an API to wire up your CLI, letting you focus on real functionality.
 
 ## Table of contents
 
