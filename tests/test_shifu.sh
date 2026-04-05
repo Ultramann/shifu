@@ -1046,6 +1046,13 @@ test_shifu_help_flags_validation() {
 
 # Testing utilities
 shifu_parameterize_test() {
+  # run test function over many test cases, test cases are separated with --.
+  # Test case args that contain multiple words should be passed as a single string
+  # and # unpacked with an @-prefixed name in shifu_test_params for word-splitting.
+  # Usage:
+  # shifu_parameterize_test <test function> \
+  # -- <case_name> args...
+  # -- <case_name> args...
   pt_test_name=$1; shift
   while [ $# -ne 0 ]; do
     if [ "$1" != "--" ]; then
@@ -1065,6 +1072,8 @@ shifu_parameterize_test() {
 }
 
 shifu_test_params() {
+  # variable names before -- are assigned from positional args passed after --
+  # @-prefixed names are prepared for word-splitting via _shifu_set_for_looping
   ua_count=0
   while [ "$1" != "--" ]; do
     eval "ua_var_$ua_count=$1"
