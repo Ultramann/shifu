@@ -972,25 +972,25 @@ shifu_parameterize_test() {
       exit 1
     fi
     shift
-    pt_run_name=$1; shift
+    pt_case_name=$1; shift
+    p_run_name=""
     pt_count=0
     for pt_arg in "$@"; do
       [ "$pt_arg" = "--" ] && break
       pt_count=$((pt_count + 1))
     done
-    pt_errors_before=$errors
-    pt_buffer=""
-    unset p_run_name
+    pt_errors_in=$errors
+    pt_output_buffer=""
     "$pt_test_name" "$@"
-    if [ $errors -eq $pt_errors_before ]; then
+    if [ $errors -eq $pt_errors_in ]; then
       pt_passed=$((pt_passed + 1))
       if [ "${shifu_verbose_tests:-}" = true ]; then
-        printf "   $shifu_green%-4s$shifu_reset%s\n" "+" "$pt_run_name"
+        printf "   $shifu_green%-4s$shifu_reset%s\n" "+" "$pt_case_name"
       fi
     else
       pt_failed=$((pt_failed + 1))
-      printf "   $shifu_red%-4s$shifu_reset%s\n" "x" "$pt_run_name"
-      [ -n "$pt_buffer" ] && echo "$pt_buffer"
+      printf "   $shifu_red%-4s$shifu_reset%s\n" "x" "$pt_case_name"
+      [ -n "$pt_output_buffer" ] && echo "$pt_output_buffer"
     fi
     shift $pt_count
   done
@@ -1033,7 +1033,7 @@ shifu_assert_empty() {
   # 1: identifier, 2: value
   [ -z "$2" ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_run_name+$p_run_name }$1: expected empty, got" "${#1}"
+  shifu_report_context "${p_run_name:+$p_run_name }$1: expected empty, got" "${#1}"
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
 }
@@ -1042,7 +1042,7 @@ shifu_assert_zero() {
   # 1: identifier, 2: value
   [ $2 -eq 0 ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_run_name+$p_run_name }$1: expected zero value, got" $2
+  shifu_report_context "${p_run_name:+$p_run_name }$1: expected zero value, got" $2
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
 }
@@ -1051,7 +1051,7 @@ shifu_assert_non_zero() {
   # 1: identifier, 2: value
   [ $2 -ne 0 ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_run_name+$p_run_name }$1: expected non-zero value, got" $2
+  shifu_report_context "${p_run_name:+$p_run_name }$1: expected non-zero value, got" $2
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
 }
@@ -1060,7 +1060,7 @@ shifu_assert_equal() {
   # 1: identifier, 2: first, 3: second
   [ "$2" = "$3" ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_run_name+$p_run_name }$1: expected values to be equal, got" \
+  shifu_report_context "${p_run_name:+$p_run_name }$1: expected values to be equal, got" \
     "${2:-<empty>}" "${3:-<empty>}"
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
@@ -1079,7 +1079,7 @@ shifu_assert_string_contains() {
     *"$3"*) return 0 ;;
   esac
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_run_name+$p_run_name }$1: expected string to be contained" \
+  shifu_report_context "${p_run_name:+$p_run_name }$1: expected string to be contained" \
     "string: \"${2:-<empty>}\"" "search: \"${3:-<empty>}\""
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
@@ -1092,7 +1092,7 @@ shifu_assert_string_not_contains() {
     *) return 0 ;;
   esac
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_run_name+$p_run_name }$1: expected string to not be contained" \
+  shifu_report_context "${p_run_name:+$p_run_name }$1: expected string to not be contained" \
     "string: \"${2:-<empty>}\"" "search: \"${3:-<empty>}\""
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
@@ -1117,8 +1117,8 @@ shifu_report_context() {
     pt_line="$pt_line
 $(printf "$shifu_grey%10s%s$shifu_reset\n" "" "$argument")"
   done
-  if [ "${pt_buffer+set}" = set ]; then
-    pt_buffer="${pt_buffer:+$pt_buffer
+  if [ "${pt_output_buffer+set}" = set ]; then
+    pt_output_buffer="${pt_output_buffer:+$pt_output_buffer
 }$pt_line"
   else
     echo "$pt_line"
