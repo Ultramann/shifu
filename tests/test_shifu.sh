@@ -218,19 +218,18 @@ test_shifu_run_args_not_required_unset() {
 
 test_shifu_run_required_args_unset() {
   run_test() {
-    test_cmd_args="$1"
-    _shifu_set_for_looping test_cmd_args test_cmd_args
-    actual=$(shifu_run shifu_test_all_options_cmd $test_cmd_args)
+    shifu_test_params @cmd_args expected_error -- "$@"
+    actual=$(shifu_run shifu_test_all_options_cmd $cmd_args)
     shifu_assert_non_zero exit_code $?
-    shifu_assert_string_contains error_message "$actual" "$2"
+    shifu_assert_string_contains error_message "$actual" "$expected_error"
   }
-  shifu_parameterize_test \
-    run_test 2 \
-    flag        ""                                        "Required variable, FLAG_REQ, is not set" \
-    option      "-a flag_value"                           "Required variable, OPTION_REQ, is not set" \
-    flag_option "-a flag_value --option-req option_value" "Required variable, FLAG_OPTION_REQ, is not set" \
-    positional  "-a flag_value --option-req option_value --flag-option-req flag_option_value" \
-                "Missing positional argument POSITIONAL_ARG_1"
+  shifu_parameterize_test run_test \
+  -- flag        ""  "Required variable, FLAG_REQ, is not set" \
+  -- option      "-a flag_value"  "Required variable, OPTION_REQ, is not set" \
+  -- flag_option "-a flag_value --option-req option_value" \
+                   "Required variable, FLAG_OPTION_REQ, is not set" \
+  -- positional  "-a flag_value --option-req option_value --flag-option-req flag_option_value" \
+                   "Missing positional argument POSITIONAL_ARG_1"
 }
 
 shifu_test_required_options_cmd() {
@@ -243,17 +242,15 @@ shifu_test_required_options_cmd() {
 
 test_shifu_run_required_eager_and_defer_options() {
   run_test() {
-    test_cmd_args="$1"
-    _shifu_set_for_looping test_cmd_args test_cmd_args
-    actual=$(shifu_run shifu_test_required_options_cmd $test_cmd_args)
-    shifu_assert_equal exit_code $2 $?
-    shifu_assert_string_contains error_message "$actual" "$3"
+    shifu_test_params @cmd_args expected_exit expected_error -- "$@"
+    actual=$(shifu_run shifu_test_required_options_cmd $cmd_args)
+    shifu_assert_equal exit_code $expected_exit $?
+    shifu_assert_string_contains error_message "$actual" "$expected_error"
   }
-  shifu_parameterize_test \
-    run_test 3 \
-    both_set  "-e eager leaf-three -g defer" 0 "" \
-    eager_set "-e eager leaf-three"          1 "Required variable, DEFER_TEST, is not set" \
-    none_set  "leaf-three"                   1 "Required variable, EAGER_TEST, is not set"
+  shifu_parameterize_test run_test \
+  -- both_set  "-e eager leaf-three -g defer"  0  "" \
+  -- eager_set "-e eager leaf-three"  1  "Required variable, DEFER_TEST, is not set" \
+  -- none_set  "leaf-three"  1  "Required variable, EAGER_TEST, is not set"
 }
 
 shifu_test_option_missing_value_cmd() {
@@ -267,17 +264,16 @@ shifu_test_option_missing_value_cmd() {
 
 test_shifu_run_option_missing_value() {
   run_test() {
-    _shifu_set_for_looping test_cmd_args test_cmd_args
-    expected="Option $1 requires a value"
-    actual=$(shifu_run shifu_test_option_missing_value_cmd $1 2>&1)
+    shifu_test_params option -- "$@"
+    expected="Option $option requires a value"
+    actual=$(shifu_run shifu_test_option_missing_value_cmd $option 2>&1)
     exit_code=$?
     shifu_assert_non_zero exit_code $exit_code
     shifu_assert_string_contains error_message "$actual" "$expected"
   }
-  shifu_parameterize_test \
-    run_test 1 \
-    long_option "--option-with-value" \
-    short_option "-o"
+  shifu_parameterize_test run_test \
+  -- long_option  "--option-with-value" \
+  -- short_option "-o"
 }
 
 test_shifu_run_bad_first_cmd() {
@@ -613,142 +609,93 @@ Options
   shifu_assert_strings_equal help_message "$expected" "$actual"
 }
 
-test_shifu_complete_subcommands() {
-  expected="sub-one sub-two"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "")
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_nested_subcommands() {
-  expected="leaf-one leaf-two"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete cur_word sub-one)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_option_enum() {
-  expected="flag option arg"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word -f -A)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_positional_enum() {
-  expected="positional arg one"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word -f -A flag)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_option_func() {
-  expected="flag option default"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word -f -D)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_positional_func() {
-  expected="positional arg two"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word -f one)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_remaining_func() {
-  expected="remaining args"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word one two)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_eager_func() {
-  expected="eager option test"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete cur_word sub-two -e)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_eager_func_bad() {
-  expected=""
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete cur_word -e)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_options() {
-  expected="--option-bin --option-req --option-def"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete --op)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_flags() {
-  expected="-f"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -f)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_flag_options() {
-  expected="--flag-option-bin --flag-option-req --flag-option-def"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete --flag)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_single_dash_shows_only_double_dash_options() {
-  expected="--option-bin --option-req --option-def --flag-option-bin --flag-option-req --flag-option-def --help"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -)
-  shifu_assert_strings_equal completion "$expected" "$actual"
+test_shifu_complete() {
+  run_test() {
+    shifu_test_params cmd @complete_args expected -- "$@"
+    actual=$(_shifu_complete $cmd --shifu-complete $complete_args)
+    shifu_assert_strings_equal completion "$expected" "$actual"
+  }
+  shifu_parameterize_test run_test \
+  -- subcommands \
+     shifu_test_root_cmd "cur_word" "sub-one sub-two" \
+  -- nested_subcommands \
+     shifu_test_root_cmd "cur_word sub-one" "leaf-one leaf-two" \
+  -- func_args_option_enum \
+     shifu_test_all_options_cmd "cur_word -f -A" "flag option arg" \
+  -- func_args_positional_enum \
+     shifu_test_all_options_cmd "cur_word -f -A flag" \
+     "positional arg one" \
+  -- func_args_option_func \
+     shifu_test_all_options_cmd "cur_word -f -D" \
+     "flag option default" \
+  -- func_args_positional_func \
+     shifu_test_all_options_cmd "cur_word -f one" \
+     "positional arg two" \
+  -- func_args_remaining_func \
+     shifu_test_all_options_cmd "cur_word one two" "remaining args" \
+  -- func_args_eager_func \
+     shifu_test_root_cmd "cur_word sub-two -e" "eager option test" \
+  -- func_args_eager_func_bad \
+     shifu_test_root_cmd "cur_word -e" "" \
+  -- func_args_options \
+     shifu_test_all_options_cmd "--op" \
+     "--option-bin --option-req --option-def" \
+  -- func_args_flags \
+     shifu_test_all_options_cmd "-f" "-f" \
+  -- func_args_flag_options \
+     shifu_test_all_options_cmd "--flag" \
+     "--flag-option-bin --flag-option-req --flag-option-def" \
+  -- single_dash_double_dash_only \
+     shifu_test_all_options_cmd "-" \
+     "--option-bin --option-req --option-def --flag-option-bin --flag-option-req --flag-option-def --help" \
+  -- options_only_when_dash \
+     shifu_test_all_options_cmd "cur_word" "positional arg one" \
+  -- defer_option_names \
+     shifu_test_root_cmd "--defer sub-one leaf-one" \
+     "--defer-bin --defer-def" \
+  -- defer_option_names_no_func \
+     shifu_test_root_cmd "--defer sub-one" "" \
+  -- eager_option_names_on_sub \
+     shifu_test_root_cmd "--eager sub-two" "--eager-test" \
+  -- defer_option_values \
+     shifu_test_root_cmd "cur_word sub-one leaf-one -G" \
+     "defer_one defer_two defer_three" \
+  -- defer_option_values_no_func \
+     shifu_test_root_cmd "cur_word sub-one -G" "" \
+  -- defer_option_values_at_root \
+     shifu_test_root_cmd "cur_word -G" "" \
+  -- defer_option_func_values \
+     shifu_test_root_cmd "cur_word sub-one leaf-one -S" \
+     "sub_defer_one sub_defer_two sub_defer_three" \
+  -- defer_option_func_values_none \
+     shifu_test_root_cmd "cur_word sub-one -S" "" \
+  -- subcmds_after_eager_optb \
+     shifu_test_eager_bin_cmd "cur_word -b" \
+     "leaf-three leaf-four" \
+  -- subcmds_after_eager_optd \
+     shifu_test_root_cmd "cur_word sub-two -e some_value" \
+     "leaf-three leaf-four" \
+  -- subcmds_after_eager_optr \
+     shifu_test_required_options_cmd "cur_word -e some_value" \
+     "leaf-three" \
+  -- subcmds_after_multi_eager \
+     shifu_test_sub_multi_eager_cmd "cur_word -b -d some_value" \
+     "leaf-three leaf-four" \
+  -- leaf_options_through_eager_parent \
+     shifu_test_root_cmd "--f sub-two -e some_value leaf-four" \
+     "--fake-arg" \
+  -- defer_values_through_eager_parent \
+     shifu_test_root_cmd "cur_word sub-two -e some_value leaf-four -G" \
+     "defer_one defer_two defer_three" \
+  -- nested_eager_at_multiple_levels \
+     shifu_test_eager_root_cmd "cur_word -r root_one sub-multi-eager -b -d data_one" \
+     "leaf-three leaf-four"
 }
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {
   shifu_complete_single_dash_options=true
   expected="-f -a -d --option-bin --option-req --option-def -F --flag-option-bin -A --flag-option-req -D --flag-option-def -h --help"
   actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_options_only_when_word_starts_with_dash() {
-  expected="positional arg one"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete "")
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_names() {
-  expected="--defer-bin --defer-def"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --defer sub-one leaf-one)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_names_no_func() {
-  expected=""
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --defer sub-one)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_eager_option_names_on_subcommand() {
-  expected="--eager-test"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --eager sub-two)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_values() {
-  expected="defer_one defer_two defer_three"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one leaf-one -G)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_values_no_func() {
-  expected=""
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one -G)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_values_at_root() {
-  expected=""
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" -G)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_func_values() {
-  expected="sub_defer_one sub_defer_two sub_defer_three"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one leaf-one -S)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_func_values_no_func() {
-  expected=""
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one -S)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
@@ -837,69 +784,26 @@ shifu_test_sub_multi_eager_cmd() {
   shifu_cmd_cpte data_one data_two data_three
 }
 
-test_shifu_complete_subcmds_after_eager_optb() {
-  expected="leaf-three leaf-four"
-  actual=$(_shifu_complete shifu_test_eager_bin_cmd --shifu-complete "" -b)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_subcmds_after_eager_optd() {
-  expected="leaf-three leaf-four"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-two -e some_value)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_subcmds_after_eager_optr() {
-  expected="leaf-three"
-  actual=$(_shifu_complete shifu_test_required_options_cmd --shifu-complete "" -e some_value)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_subcmds_after_multi_eager() {
-  expected="leaf-three leaf-four"
-  actual=$(_shifu_complete shifu_test_sub_multi_eager_cmd --shifu-complete "" -b -d some_value)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_leaf_options_through_eager_parent() {
-  expected="--fake-arg"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --f sub-two -e some_value leaf-four)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_values_through_eager_parent() {
-  expected="defer_one defer_two defer_three"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-two -e some_value leaf-four -G)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_nested_eager_at_multiple_levels() {
-  expected="leaf-three leaf-four"
-  actual=$(_shifu_complete shifu_test_eager_root_cmd --shifu-complete "" -r root_one sub-multi-eager -b -d data_one)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
 
 test_shifu_complete_path() {
   run_test() {
-    cmd=$1; complete_args="$2"; expected=$3
-    _shifu_set_for_looping complete_args complete_args
+    shifu_test_params cmd @complete_args expected -- "$@"
     actual=$(_shifu_complete "$cmd" --shifu-complete cur_word $complete_args)
     shifu_assert_strings_equal completion "$expected" "$actual"
   }
-  shifu_parameterize_test \
-    run_test 3 \
-    eager_files_option     shifu_test_path_files_cmd           "-f"           "SHIFU_COMP_PATH_FILES" \
-    eager_files_positional shifu_test_path_files_cmd           "-f filled"    "SHIFU_COMP_PATH_FILES" \
-    eager_dirs             shifu_test_path_dirs_cmd            "-d"           "SHIFU_COMP_PATH_DIRS" \
-    eager_glob             shifu_test_path_glob_cmd            "-g"           "SHIFU_COMP_PATH_GLOB:*.txt" \
-    eager_glob_no_pattern  shifu_test_path_glob_no_pattern_cmd "-g"           "" \
-    defer_files            shifu_test_defer_path_files_cmd     "leaf-one -c"  "SHIFU_COMP_PATH_FILES" \
-    defer_files_no_sub     shifu_test_defer_path_files_cmd     "-c"           "" \
-    defer_dirs             shifu_test_defer_path_dirs_cmd      "leaf-one -d"  "SHIFU_COMP_PATH_DIRS" \
-    defer_dirs_no_sub      shifu_test_defer_path_dirs_cmd      "-d"           "" \
-    defer_glob             shifu_test_defer_path_glob_cmd      "leaf-one -g"  "SHIFU_COMP_PATH_GLOB:*.txt" \
-    defer_glob_no_sub      shifu_test_defer_path_glob_cmd      "-g"           "" \
-    defer_glob_no_pattern  shifu_test_defer_path_glob_no_pattern_cmd "leaf-one -g" ""
+  shifu_parameterize_test run_test \
+  -- eager_files_option     shifu_test_path_files_cmd           "-f"           "SHIFU_COMP_PATH_FILES" \
+  -- eager_files_positional shifu_test_path_files_cmd           "-f filled"    "SHIFU_COMP_PATH_FILES" \
+  -- eager_dirs             shifu_test_path_dirs_cmd            "-d"           "SHIFU_COMP_PATH_DIRS" \
+  -- eager_glob             shifu_test_path_glob_cmd            "-g"           "SHIFU_COMP_PATH_GLOB:*.txt" \
+  -- eager_glob_no_pattern  shifu_test_path_glob_no_pattern_cmd "-g"           "" \
+  -- defer_files            shifu_test_defer_path_files_cmd     "leaf-one -c"  "SHIFU_COMP_PATH_FILES" \
+  -- defer_files_no_sub     shifu_test_defer_path_files_cmd     "-c"           "" \
+  -- defer_dirs             shifu_test_defer_path_dirs_cmd      "leaf-one -d"  "SHIFU_COMP_PATH_DIRS" \
+  -- defer_dirs_no_sub      shifu_test_defer_path_dirs_cmd      "-d"           "" \
+  -- defer_glob             shifu_test_defer_path_glob_cmd      "leaf-one -g"  "SHIFU_COMP_PATH_GLOB:*.txt" \
+  -- defer_glob_no_sub      shifu_test_defer_path_glob_cmd      "-g"           "" \
+  -- defer_glob_no_pattern  shifu_test_defer_path_glob_no_pattern_cmd "leaf-one -g" ""
 }
 
 shifu_test_bad_multiple_completions_single_arg_cmd() {
@@ -920,14 +824,14 @@ test_shifu_bad_multiple_cmd_args_complete_calls() {
 
 test_shifu_set_variable() {
   run_test() {
-    actual=$(_shifu_set_variable "$1" any)
-    shifu_assert_equal exit_code $2 $?
-    shifu_assert_strings_equal output "$3" "$actual"
+    shifu_test_params var expected_exit expected_output -- "$@"
+    actual=$(_shifu_set_variable "$var" any)
+    shifu_assert_equal exit_code $expected_exit $?
+    shifu_assert_strings_equal output "$expected_output" "$actual"
   }
-  shifu_parameterize_test \
-    run_test 3 \
-    good-var good_var 0 "" \
-    bad-var bad-var 1 "Invalid variable name: bad-var"
+  shifu_parameterize_test run_test \
+  -- good_var  good_var  0  "" \
+  -- bad_var   bad-var   1  "Invalid variable name: bad-var"
 }
 
 test_shifu_case_loop_error() {
@@ -965,15 +869,15 @@ test_shifu_complete_bad_case_stmt_exits_silently() {
 
 test_shifu_complete_help_flags() {
   run_test() {
-    shifu_help_flags="$1"
-    actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete $2)
-    shifu_assert_strings_equal completion "$3" "$actual"
+    shifu_test_params help_flags cur_word expected -- "$@"
+    shifu_help_flags="$help_flags"
+    actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete $cur_word)
+    shifu_assert_strings_equal completion "$expected" "$actual"
   }
-  shifu_parameterize_test \
-    run_test 3 \
-    default  "-h --help"  "--hel"  "--help" \
-    custom   "--info"     "--inf"  "--info" \
-    empty    ""           "--hel"  ""
+  shifu_parameterize_test run_test \
+  -- default  "-h --help"  "--hel"  "--help" \
+  -- custom   "--info"     "--inf"  "--info" \
+  -- empty    ""           "--hel"  ""
 }
 
 test_shifu_complete_help_flags_short() {
@@ -984,87 +888,144 @@ test_shifu_complete_help_flags_short() {
 
 test_shifu_help_text_configurable_flags() {
   run_test() {
-    shifu_help_flags="$1"
+    shifu_test_params help_flags expected_contains expected_not_contains -- "$@"
+    shifu_help_flags="$help_flags"
     _shifu_setup
     actual=$(_shifu_help shifu_test_all_options_cmd 0 2>&1)
-    shifu_assert_string_contains contains "$actual" "$2"
-    shifu_assert_string_not_contains not_contains "$actual" "$3"
+    shifu_assert_string_contains contains "$actual" "$expected_contains"
+    shifu_assert_string_not_contains not_contains "$actual" "$expected_not_contains"
   }
-  shifu_parameterize_test \
-    run_test 3 \
-    custom_flag_shown   "--info"     "--info"            "-h, --help" \
-    default_flag_shown  "-h --help"  "-h, --help"        "--info" \
-    empty_no_help_line  ""           "binary flag help"  "Show this help"
+  shifu_parameterize_test run_test \
+  -- custom_flag_shown   "--info"     "--info"            "-h, --help" \
+  -- default_flag_shown  "-h --help"  "-h, --help"        "--info" \
+  -- empty_no_help_line  ""           "binary flag help"  "Show this help"
 }
 
 test_shifu_run_configurable_help_flags() {
   run_test() {
-    shifu_help_flags="$1"
-    actual=$(shifu_run shifu_test_root_cmd sub-one leaf-one $2 2>&1)
-    shifu_assert_string_contains output "$actual" "$3"
+    shifu_test_params help_flags flag expected -- "$@"
+    shifu_help_flags="$help_flags"
+    actual=$(shifu_run shifu_test_root_cmd sub-one leaf-one $flag 2>&1)
+    shifu_assert_string_contains output "$actual" "$expected"
   }
-  shifu_parameterize_test \
-    run_test 3 \
-    custom_flag              "--info"  "--info"  "Test leaf one cmd help" \
-    default_invalid_when_removed "--help"  "-h"      "Invalid option: -h" \
-    empty_disables_help      ""        "--help"  "Invalid option: --help"
+  shifu_parameterize_test run_test \
+  -- custom_flag              "--info"  "--info"  "Test leaf one cmd help" \
+  -- removed_default_invalid  "--help"  "-h"      "Invalid option: -h" \
+  -- empty_disables_help      ""        "--help"  "Invalid option: --help"
 }
 
 test_shifu_help_case_pattern() {
   run_test() {
-    shifu_help_flags="$1"
+    shifu_test_params help_flags expected -- "$@"
+    shifu_help_flags="$help_flags"
     _shifu_help_case_pattern
-    shifu_assert_strings_equal pattern "$2" "$shifu_help_pattern"
+    shifu_assert_strings_equal pattern "$expected" "$shifu_help_pattern"
   }
-  shifu_parameterize_test \
-    run_test 2 \
-    default  "-h --help"  "-h|--help" \
-    single   "--help"     "--help" \
-    empty    ""           ""
+  shifu_parameterize_test run_test \
+  -- default  "-h --help"  "-h|--help" \
+  -- single   "--help"     "--help" \
+  -- empty    ""           ""
 }
 
 test_shifu_help_display_flags() {
   run_test() {
-    shifu_help_flags="$1"
+    shifu_test_params help_flags expected -- "$@"
+    shifu_help_flags="$help_flags"
     _shifu_help_display_flags
-    shifu_assert_strings_equal display "$2" "$shifu_help_display"
+    shifu_assert_strings_equal display "$expected" "$shifu_help_display"
   }
-  shifu_parameterize_test \
-    run_test 2 \
-    default  "-h --help"  "-h, --help" \
-    single   "--help"     "--help" \
-    empty    ""           ""
+  shifu_parameterize_test run_test \
+  -- default  "-h --help"  "-h, --help" \
+  -- single   "--help"     "--help" \
+  -- empty    ""           ""
 }
 
 test_shifu_help_flags_validation() {
   run_test() {
-    shifu_help_flags="$1"
+    shifu_test_params help_flags expected -- "$@"
+    shifu_help_flags="$help_flags"
     actual=$(shifu_run shifu_test_root_cmd)
-    shifu_assert_strings_equal error_message "$2" "$actual"
+    shifu_assert_strings_equal error_message "$expected" "$actual"
   }
-  shifu_parameterize_test \
-    run_test 2 \
-    no_dash       "help"      "Option flags must start with - or --, got: help" \
-    glob_question "-?"        "Help flag contains glob character: -?" \
-    glob_star     "--*"       "Help flag contains glob character: --*" \
-    glob_bracket  "--[abc]"   "Help flag contains glob character: --[abc]"
+  shifu_parameterize_test run_test \
+  -- no_dash        "help"     "Option flags must start with - or --, got: help" \
+  -- glob_question  "-?"       "Help flag contains glob character: -?" \
+  -- glob_star      "--*"      "Help flag contains glob character: --*" \
+  -- glob_bracket   "--[abc]"  "Help flag contains glob character: --[abc]"
 }
 
 # Testing utilities
 shifu_parameterize_test() {
-  # 1: name of test function to run, 2: number of arguments the function accepts
-  # remaining: groups of arguments describing different tests
-  # * first element of the each group is the parameterized run name, used in error reporting
-  # * remaining elements are passed to the test function
-  p_test_name="$1"; n_args=$2; shift 2
-  if [ $(($# % ($n_args + 1))) -ne 0 ]; then
-    echo "${p_test_name} received incorrect number of arguments"
+  # run test function over many test cases, test cases are separated with --.
+  # Test case args that contain multiple words should be passed as a single string
+  # and # unpacked with an @-prefixed name in shifu_test_params for word-splitting.
+  # Usage:
+  # shifu_parameterize_test <test function> \
+  # -- <case_name> args...
+  # -- <case_name> args...
+  pt_test_name=$1; shift
+  pt_passed=0
+  pt_failed=0
+  while [ $# -ne 0 ]; do
+    if [ "$1" != "--" ]; then
+      echo "shifu_parameterize_test: expected --, got $1"
+      exit 1
+    fi
+    shift
+    pt_case_name=$1; shift
+    p_run_name=""
+    pt_count=0
+    for pt_arg in "$@"; do
+      [ "$pt_arg" = "--" ] && break
+      pt_count=$((pt_count + 1))
+    done
+    pt_errors_in=$errors
+    pt_output_buffer=""
+    "$pt_test_name" "$@"
+    if [ $errors -eq $pt_errors_in ]; then
+      pt_passed=$((pt_passed + 1))
+      if [ "${shifu_verbose_tests:-}" = true ]; then
+        printf "   $shifu_green%-4s$shifu_reset%s\n" "+" "$pt_case_name"
+      fi
+    else
+      pt_failed=$((pt_failed + 1))
+      printf "   $shifu_red%-4s$shifu_reset%s\n" "x" "$pt_case_name"
+      [ -n "$pt_output_buffer" ] && echo "$pt_output_buffer"
+    fi
+    shift $pt_count
+  done
+  echo "PARAMETERIZED_TEST_COUNTS $pt_passed $pt_failed"
+}
+
+shifu_test_params() {
+  # variable names before -- are assigned from positional args passed after --
+  # @-prefixed names are prepared for word-splitting via _shifu_set_for_looping
+  ua_count=0
+  while [ "$1" != "--" ]; do
+    eval "ua_var_$ua_count=$1"
+    ua_count=$((ua_count + 1))
+    shift
+  done
+  shift
+  if [ "$pt_count" -ne "$ua_count" ]; then
+    echo "shifu_test_params: expected $ua_count args, got $pt_count"
     exit 1
   fi
-  while [ $# -ne 0 ]; do
-    p_run_name="$1"; shift
-    "$p_test_name" "$@"
-    shift $n_args
+  ua_idx=0
+  while [ $ua_idx -lt $ua_count ]; do
+    eval "ua_full=\$ua_var_$ua_idx"
+    case "$ua_full" in
+      @*)
+        ua_name=${ua_full#@}
+        eval "$ua_name=\$1"
+        _shifu_set_for_looping "$ua_name" "$ua_name"
+        ;;
+      *)
+        eval "$ua_full=\$1"
+        ;;
+    esac
+    shift
+    ua_idx=$((ua_idx + 1))
   done
 }
 
@@ -1072,7 +1033,7 @@ shifu_assert_empty() {
   # 1: identifier, 2: value
   [ -z "$2" ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_run_name+$p_run_name }$1: expected empty, got" "${#1}"
+  shifu_report_context "${p_run_name:+$p_run_name }$1: expected empty, got" "${#1}"
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
 }
@@ -1081,7 +1042,7 @@ shifu_assert_zero() {
   # 1: identifier, 2: value
   [ $2 -eq 0 ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_run_name+$p_run_name }$1: expected zero value, got" $2
+  shifu_report_context "${p_run_name:+$p_run_name }$1: expected zero value, got" $2
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
 }
@@ -1090,7 +1051,7 @@ shifu_assert_non_zero() {
   # 1: identifier, 2: value
   [ $2 -ne 0 ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_run_name+$p_run_name }$1: expected non-zero value, got" $2
+  shifu_report_context "${p_run_name:+$p_run_name }$1: expected non-zero value, got" $2
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
 }
@@ -1099,7 +1060,7 @@ shifu_assert_equal() {
   # 1: identifier, 2: first, 3: second
   [ "$2" = "$3" ] && return
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_run_name+$p_run_name }$1: expected values to be equal, got" \
+  shifu_report_context "${p_run_name:+$p_run_name }$1: expected values to be equal, got" \
     "${2:-<empty>}" "${3:-<empty>}"
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
@@ -1118,7 +1079,7 @@ shifu_assert_string_contains() {
     *"$3"*) return 0 ;;
   esac
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_run_name+$p_run_name }$1: expected string to be contained" \
+  shifu_report_context "${p_run_name:+$p_run_name }$1: expected string to be contained" \
     "string: \"${2:-<empty>}\"" "search: \"${3:-<empty>}\""
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
@@ -1131,7 +1092,7 @@ shifu_assert_string_not_contains() {
     *) return 0 ;;
   esac
   [ "${shifu_trace_tests:-}" = true ] && set +x
-  shifu_report_context "${p_run_name+$p_run_name }$1: expected string to not be contained" \
+  shifu_report_context "${p_run_name:+$p_run_name }$1: expected string to not be contained" \
     "string: \"${2:-<empty>}\"" "search: \"${3:-<empty>}\""
   errors=$(($errors + 1))
   [ "${shifu_trace_tests:-}" = true ] && set -x || return 0
@@ -1151,10 +1112,17 @@ shifu_report_failure() {
 
 shifu_report_context() {
   # 1: header
-  printf "$shifu_grey%7s%s$shifu_reset\n" "" "$1"; shift
+  pt_line=$(printf "$shifu_grey%7s%s$shifu_reset\n" "" "$1"); shift
   for argument in "$@"; do
-    printf "$shifu_grey%10s%s$shifu_reset\n" "" "$argument"
+    pt_line="$pt_line
+$(printf "$shifu_grey%10s%s$shifu_reset\n" "" "$argument")"
   done
+  if [ "${pt_output_buffer+set}" = set ]; then
+    pt_output_buffer="${pt_output_buffer:+$pt_output_buffer
+}$pt_line"
+  else
+    echo "$pt_line"
+  fi
 }
 
 shifu_run_test() {
@@ -1170,16 +1138,38 @@ shifu_run_test() {
 
 shifu_run_test_and_report() {
   # 1: test function
-  test_message=$(shifu_run_test "$1")
-  if [ $? -eq 0 ]; then
-    n_passed=$(($n_passed + 1))
-    shifu_report_success "$1"
+  test_func=$1
+  test_output=$(shifu_run_test "$test_func")
+  test_result=$?
+  pt_last_line=${test_output##*"
+"}
+  case "$pt_last_line" in
+    PARAMETERIZED_TEST_COUNTS*)
+      test_output=${test_output%"$pt_last_line"}
+      test_output=${test_output%"
+"}
+      pt_passed=${pt_last_line#PARAMETERIZED_TEST_COUNTS }
+      pt_failed=${pt_passed#* }
+      pt_passed=${pt_passed%% *}
+      n_passed=$(($n_passed + $pt_passed))
+      n_failed=$(($n_failed + $pt_failed))
+      n_tests=$(($n_tests + $pt_passed + $pt_failed))
+      ;;
+    *)
+      n_tests=$(($n_tests + 1))
+      if [ $test_result -eq 0 ]; then
+        n_passed=$(($n_passed + 1))
+      else
+        n_failed=$(($n_failed + 1))
+      fi
+      ;;
+  esac
+  if [ $test_result -eq 0 ]; then
+    shifu_report_success "$test_func"
   else
-    n_failed=$(($n_failed + 1))
-    shifu_report_failure "$1"
-    echo "$test_message"
+    shifu_report_failure "$test_func"
   fi
-  n_tests=$(($n_tests + 1))
+  [ -n "$test_output" ] && echo "$test_output"
 }
 
 shifu_run_test_suite() {
@@ -1209,8 +1199,10 @@ shifu_run_test_suite() {
     color="$shifu_red"
     percent_passed=$((n_passed * 100 / n_tests))
   fi
-  printf "======================%s %3s%% tests passed %s======================\n" \
-  "$color" "$percent_passed" "$shifu_reset"
+  summary=$(printf " %3s%% (%s/%s) tests passed " "$percent_passed" "$n_passed" "$n_tests")
+  pad_len=$(( (63 - ${#summary}) / 2 ))
+  pad=$(printf '%.*s' $pad_len "================================")
+  printf "%s%s%s%s%s\n" "$pad" "$color" "$summary" "$shifu_reset" "$pad"
   exit $n_failed
 }
 
