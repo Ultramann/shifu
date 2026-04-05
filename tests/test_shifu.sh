@@ -609,142 +609,72 @@ Options
   shifu_assert_strings_equal help_message "$expected" "$actual"
 }
 
-test_shifu_complete_subcommands() {
-  expected="sub-one sub-two"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "")
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_nested_subcommands() {
-  expected="leaf-one leaf-two"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete cur_word sub-one)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_option_enum() {
-  expected="flag option arg"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word -f -A)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_positional_enum() {
-  expected="positional arg one"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word -f -A flag)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_option_func() {
-  expected="flag option default"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word -f -D)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_positional_func() {
-  expected="positional arg two"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word -f one)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_remaining_func() {
-  expected="remaining args"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete cur_word one two)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_eager_func() {
-  expected="eager option test"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete cur_word sub-two -e)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_eager_func_bad() {
-  expected=""
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete cur_word -e)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_options() {
-  expected="--option-bin --option-req --option-def"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete --op)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_flags() {
-  expected="-f"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -f)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_func_args_flag_options() {
-  expected="--flag-option-bin --flag-option-req --flag-option-def"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete --flag)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_single_dash_shows_only_double_dash_options() {
-  expected="--option-bin --option-req --option-def --flag-option-bin --flag-option-req --flag-option-def --help"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -)
-  shifu_assert_strings_equal completion "$expected" "$actual"
+test_shifu_complete() {
+  run_test() {
+    shifu_test_params cmd @complete_args expected -- "$@"
+    actual=$(_shifu_complete $cmd --shifu-complete $complete_args)
+    shifu_assert_strings_equal completion "$expected" "$actual"
+  }
+  shifu_parameterize_test run_test \
+  -- subcommands \
+     shifu_test_root_cmd "cur_word" "sub-one sub-two" \
+  -- nested_subcommands \
+     shifu_test_root_cmd "cur_word sub-one" "leaf-one leaf-two" \
+  -- func_args_option_enum \
+     shifu_test_all_options_cmd "cur_word -f -A" "flag option arg" \
+  -- func_args_positional_enum \
+     shifu_test_all_options_cmd "cur_word -f -A flag" \
+     "positional arg one" \
+  -- func_args_option_func \
+     shifu_test_all_options_cmd "cur_word -f -D" \
+     "flag option default" \
+  -- func_args_positional_func \
+     shifu_test_all_options_cmd "cur_word -f one" \
+     "positional arg two" \
+  -- func_args_remaining_func \
+     shifu_test_all_options_cmd "cur_word one two" "remaining args" \
+  -- func_args_eager_func \
+     shifu_test_root_cmd "cur_word sub-two -e" "eager option test" \
+  -- func_args_eager_func_bad \
+     shifu_test_root_cmd "cur_word -e" "" \
+  -- func_args_options \
+     shifu_test_all_options_cmd "--op" \
+     "--option-bin --option-req --option-def" \
+  -- func_args_flags \
+     shifu_test_all_options_cmd "-f" "-f" \
+  -- func_args_flag_options \
+     shifu_test_all_options_cmd "--flag" \
+     "--flag-option-bin --flag-option-req --flag-option-def" \
+  -- single_dash_double_dash_only \
+     shifu_test_all_options_cmd "-" \
+     "--option-bin --option-req --option-def --flag-option-bin --flag-option-req --flag-option-def --help" \
+  -- options_only_when_dash \
+     shifu_test_all_options_cmd "cur_word" "positional arg one" \
+  -- defer_option_names \
+     shifu_test_root_cmd "--defer sub-one leaf-one" \
+     "--defer-bin --defer-def" \
+  -- defer_option_names_no_func \
+     shifu_test_root_cmd "--defer sub-one" "" \
+  -- eager_option_names_on_sub \
+     shifu_test_root_cmd "--eager sub-two" "--eager-test" \
+  -- defer_option_values \
+     shifu_test_root_cmd "cur_word sub-one leaf-one -G" \
+     "defer_one defer_two defer_three" \
+  -- defer_option_values_no_func \
+     shifu_test_root_cmd "cur_word sub-one -G" "" \
+  -- defer_option_values_at_root \
+     shifu_test_root_cmd "cur_word -G" "" \
+  -- defer_option_func_values \
+     shifu_test_root_cmd "cur_word sub-one leaf-one -S" \
+     "sub_defer_one sub_defer_two sub_defer_three" \
+  -- defer_option_func_values_none \
+     shifu_test_root_cmd "cur_word sub-one -S" ""
 }
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {
   shifu_complete_single_dash_options=true
   expected="-f -a -d --option-bin --option-req --option-def -F --flag-option-bin -A --flag-option-req -D --flag-option-def -h --help"
   actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_options_only_when_word_starts_with_dash() {
-  expected="positional arg one"
-  actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete "")
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_names() {
-  expected="--defer-bin --defer-def"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --defer sub-one leaf-one)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_names_no_func() {
-  expected=""
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --defer sub-one)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_eager_option_names_on_subcommand() {
-  expected="--eager-test"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --eager sub-two)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_values() {
-  expected="defer_one defer_two defer_three"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one leaf-one -G)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_values_no_func() {
-  expected=""
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one -G)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_values_at_root() {
-  expected=""
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" -G)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_func_values() {
-  expected="sub_defer_one sub_defer_two sub_defer_three"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one leaf-one -S)
-  shifu_assert_strings_equal completion "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_func_values_no_func() {
-  expected=""
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-one -S)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
