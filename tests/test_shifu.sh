@@ -668,7 +668,28 @@ test_shifu_complete() {
      shifu_test_root_cmd "cur_word sub-one leaf-one -S" \
      "sub_defer_one sub_defer_two sub_defer_three" \
   -- defer_option_func_values_none \
-     shifu_test_root_cmd "cur_word sub-one -S" ""
+     shifu_test_root_cmd "cur_word sub-one -S" "" \
+  -- subcmds_after_eager_optb \
+     shifu_test_eager_bin_cmd "cur_word -b" \
+     "leaf-three leaf-four" \
+  -- subcmds_after_eager_optd \
+     shifu_test_root_cmd "cur_word sub-two -e some_value" \
+     "leaf-three leaf-four" \
+  -- subcmds_after_eager_optr \
+     shifu_test_required_options_cmd "cur_word -e some_value" \
+     "leaf-three" \
+  -- subcmds_after_multi_eager \
+     shifu_test_sub_multi_eager_cmd "cur_word -b -d some_value" \
+     "leaf-three leaf-four" \
+  -- leaf_options_through_eager_parent \
+     shifu_test_root_cmd "--f sub-two -e some_value leaf-four" \
+     "--fake-arg" \
+  -- defer_values_through_eager_parent \
+     shifu_test_root_cmd "cur_word sub-two -e some_value leaf-four -G" \
+     "defer_one defer_two defer_three" \
+  -- nested_eager_at_multiple_levels \
+     shifu_test_eager_root_cmd "cur_word -r root_one sub-multi-eager -b -d data_one" \
+     "leaf-three leaf-four"
 }
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {
@@ -763,47 +784,6 @@ shifu_test_sub_multi_eager_cmd() {
   shifu_cmd_cpte data_one data_two data_three
 }
 
-test_shifu_complete_subcmds_after_eager_optb() {
-  expected="leaf-three leaf-four"
-  actual=$(_shifu_complete shifu_test_eager_bin_cmd --shifu-complete "" -b)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_subcmds_after_eager_optd() {
-  expected="leaf-three leaf-four"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-two -e some_value)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_subcmds_after_eager_optr() {
-  expected="leaf-three"
-  actual=$(_shifu_complete shifu_test_required_options_cmd --shifu-complete "" -e some_value)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_subcmds_after_multi_eager() {
-  expected="leaf-three leaf-four"
-  actual=$(_shifu_complete shifu_test_sub_multi_eager_cmd --shifu-complete "" -b -d some_value)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_leaf_options_through_eager_parent() {
-  expected="--fake-arg"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete --f sub-two -e some_value leaf-four)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_defer_option_values_through_eager_parent() {
-  expected="defer_one defer_two defer_three"
-  actual=$(_shifu_complete shifu_test_root_cmd --shifu-complete "" sub-two -e some_value leaf-four -G)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
-
-test_shifu_complete_nested_eager_at_multiple_levels() {
-  expected="leaf-three leaf-four"
-  actual=$(_shifu_complete shifu_test_eager_root_cmd --shifu-complete "" -r root_one sub-multi-eager -b -d data_one)
-  shifu_assert_strings_equal output "$expected" "$actual"
-}
 
 test_shifu_complete_path() {
   run_test() {
