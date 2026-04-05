@@ -830,8 +830,8 @@ test_shifu_set_variable() {
     shifu_assert_strings_equal output "$expected_output" "$actual"
   }
   shifu_parameterize_test run_test \
-  -- good-var  good_var  0  "" \
-  -- bad-var   bad-var   1  "Invalid variable name: bad-var"
+  -- good_var  good_var  0  "" \
+  -- bad_var   bad-var   1  "Invalid variable name: bad-var"
 }
 
 test_shifu_case_loop_error() {
