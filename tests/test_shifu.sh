@@ -540,7 +540,7 @@ Options
   -f
     binary flag help
     Default: 0, set: 1
-  -a [FLAG_REQ]
+  -a FLAG_REQ
     required flag help
     Required
   -d [FLAG_DEF]
@@ -549,7 +549,7 @@ Options
   --option-bin
     binary option help
     Default: 0, set: 1
-  --option-req [OPTION_REQ]
+  --option-req OPTION_REQ
     required option help
     Required
   --option-def [OPTION_DEF]
@@ -558,7 +558,7 @@ Options
   -F, --flag-option-bin
     binary flag/option help
     Default: 0, set: 1
-  -A, --flag-option-req [FLAG_OPTION_REQ]
+  -A, --flag-option-req FLAG_OPTION_REQ
     required flag/option help
     Required
   -D, --flag-option-def [FLAG_OPTION_DEF]

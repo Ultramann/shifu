@@ -453,7 +453,7 @@ _shifu_cmd_optr_help() {
   _shifu_opt_help_parse "$@"
   shift $shifu_opt_count
   _shifu_error_if_invalid_arg_order "$1" $shifu_help_stage
-  shifu_help_options="$shifu_help_options [$1]\n    $2\n    Required"
+  shifu_help_options="$shifu_help_options $1\n    $2\n    Required"
 }
 
 _shifu_cmd_optr_build_now() {
@@ -471,7 +471,7 @@ _shifu_cmd_optr_build_defer() {
   _shifu_list_append shifu_required_variables "$1"
   _shifu_update_case_stmt_option_value_check defer
   shifu_defer_case="$shifu_defer_case $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
-  shifu_defer_help="${shifu_defer_help:-} [$1]\n    $2\n    Required"
+  shifu_defer_help="${shifu_defer_help:-} $1\n    $2\n    Required"
 }
 
 _shifu_cmd_optd_build_comp_now() { _shifu_cmd_optv_build_comp_now "$@"; }
