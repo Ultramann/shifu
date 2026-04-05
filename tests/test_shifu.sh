@@ -1054,6 +1054,8 @@ shifu_parameterize_test() {
   # -- <case_name> args...
   # -- <case_name> args...
   pt_test_name=$1; shift
+  pt_passed=0
+  pt_failed=0
   while [ $# -ne 0 ]; do
     if [ "$1" != "--" ]; then
       echo "shifu_parameterize_test: expected --, got $1"
@@ -1071,15 +1073,18 @@ shifu_parameterize_test() {
     unset p_run_name
     "$pt_test_name" "$@"
     if [ $errors -eq $pt_errors_before ]; then
+      pt_passed=$((pt_passed + 1))
       if [ "${shifu_verbose_tests:-}" = true ]; then
         printf "   $shifu_green%-4s$shifu_reset%s\n" "+" "$pt_run_name"
       fi
     else
+      pt_failed=$((pt_failed + 1))
       printf "   $shifu_red%-4s$shifu_reset%s\n" "x" "$pt_run_name"
       [ -n "$pt_buffer" ] && echo "$pt_buffer"
     fi
     shift $pt_count
   done
+  echo "PARAMETERIZED_TEST_COUNTS $pt_passed $pt_failed"
 }
 
 shifu_test_params() {
@@ -1223,17 +1228,38 @@ shifu_run_test() {
 
 shifu_run_test_and_report() {
   # 1: test function
-  test_message=$(shifu_run_test "$1")
-  if [ $? -eq 0 ]; then
-    n_passed=$(($n_passed + 1))
-    shifu_report_success "$1"
-    [ -n "$test_message" ] && echo "$test_message"
+  test_func=$1
+  test_output=$(shifu_run_test "$test_func")
+  test_result=$?
+  pt_last_line=${test_output##*"
+"}
+  case "$pt_last_line" in
+    PARAMETERIZED_TEST_COUNTS*)
+      test_output=${test_output%"$pt_last_line"}
+      test_output=${test_output%"
+"}
+      pt_passed=${pt_last_line#PARAMETERIZED_TEST_COUNTS }
+      pt_failed=${pt_passed#* }
+      pt_passed=${pt_passed%% *}
+      n_passed=$(($n_passed + $pt_passed))
+      n_failed=$(($n_failed + $pt_failed))
+      n_tests=$(($n_tests + $pt_passed + $pt_failed))
+      ;;
+    *)
+      n_tests=$(($n_tests + 1))
+      if [ $test_result -eq 0 ]; then
+        n_passed=$(($n_passed + 1))
+      else
+        n_failed=$(($n_failed + 1))
+      fi
+      ;;
+  esac
+  if [ $test_result -eq 0 ]; then
+    shifu_report_success "$test_func"
   else
-    n_failed=$(($n_failed + 1))
-    shifu_report_failure "$1"
-    echo "$test_message"
+    shifu_report_failure "$test_func"
   fi
-  n_tests=$(($n_tests + 1))
+  [ -n "$test_output" ] && echo "$test_output"
 }
 
 shifu_run_test_suite() {
