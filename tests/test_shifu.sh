@@ -1060,13 +1060,24 @@ shifu_parameterize_test() {
       exit 1
     fi
     shift
-    p_run_name=$1; shift
+    pt_run_name=$1; shift
     pt_count=0
     for pt_arg in "$@"; do
       [ "$pt_arg" = "--" ] && break
       pt_count=$((pt_count + 1))
     done
+    pt_errors_before=$errors
+    pt_buffer=""
+    unset p_run_name
     "$pt_test_name" "$@"
+    if [ $errors -eq $pt_errors_before ]; then
+      if [ "${shifu_verbose_tests:-}" = true ]; then
+        printf "   $shifu_green%-4s$shifu_reset%s\n" "+" "$pt_run_name"
+      fi
+    else
+      printf "   $shifu_red%-4s$shifu_reset%s\n" "x" "$pt_run_name"
+      [ -n "$pt_buffer" ] && echo "$pt_buffer"
+    fi
     shift $pt_count
   done
 }
@@ -1186,10 +1197,17 @@ shifu_report_failure() {
 
 shifu_report_context() {
   # 1: header
-  printf "$shifu_grey%7s%s$shifu_reset\n" "" "$1"; shift
+  pt_line=$(printf "$shifu_grey%7s%s$shifu_reset\n" "" "$1"); shift
   for argument in "$@"; do
-    printf "$shifu_grey%10s%s$shifu_reset\n" "" "$argument"
+    pt_line="$pt_line
+$(printf "$shifu_grey%10s%s$shifu_reset\n" "" "$argument")"
   done
+  if [ "${pt_buffer+set}" = set ]; then
+    pt_buffer="${pt_buffer:+$pt_buffer
+}$pt_line"
+  else
+    echo "$pt_line"
+  fi
 }
 
 shifu_run_test() {
@@ -1209,6 +1227,7 @@ shifu_run_test_and_report() {
   if [ $? -eq 0 ]; then
     n_passed=$(($n_passed + 1))
     shifu_report_success "$1"
+    [ -n "$test_message" ] && echo "$test_message"
   else
     n_failed=$(($n_failed + 1))
     shifu_report_failure "$1"
