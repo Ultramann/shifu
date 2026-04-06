@@ -330,6 +330,26 @@ _shifu_add_equals_defer_case_arms() {
   done
 }
 
+_shifu_add_comp_eq_patterns() {
+  if [ -n "${shifu_comp_eq_patterns:-}" ]; then
+    shifu_case_stmt="${shifu_case_stmt}${shifu_comp_eq_patterns}"
+    shifu_comp_eq_patterns=""
+  fi
+}
+
+_shifu_prefix_eq_completions() {
+  shifu_eq_prefix="${shifu_current_word%%=*}="
+  shifu_prefixed_completions=""
+  _shifu_set_for_looping shifu_comp_list shifu_completions
+  for shifu_comp_item in $shifu_comp_list; do
+    shifu_comp_item="${shifu_eq_prefix}${shifu_comp_item}"
+    case "$shifu_comp_item" in
+      "${shifu_current_word}"*) _shifu_list_append shifu_prefixed_completions "$shifu_comp_item" ;;
+    esac
+  done
+  shifu_completions="$shifu_prefixed_completions"
+}
+
 _shifu_add_equals_comp_case_arms() {
   shifu_eq_target="$1"
   _shifu_set_for_looping shifu_eq_list shifu_eq_saved_args
@@ -476,16 +496,20 @@ _shifu_cmd_optd_build_defer() {
 }
 
 _shifu_cmd_optv_build_comp_now() {
+  shifu_eq_saved_args="$*"
   _shifu_opt_comp_eager_parse "$@"
   shift $shifu_opt_count
   _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
   shifu_case_stmt="$shifu_case_stmt) shift;"
+  _shifu_add_equals_comp_case_arms shifu_comp_eq_patterns
 }
 
 _shifu_cmd_optv_build_comp_defer() {
+  shifu_eq_saved_args="$*"
   _shifu_opt_build_comp_defer_parse "$@"
   shift $shifu_opt_count
   shifu_defer_comp_case="${shifu_defer_comp_case:-}) shift;"
+  _shifu_add_equals_comp_case_arms shifu_comp_eq_patterns
 }
 
 _shifu_cmd_optr_help() {
@@ -548,6 +572,7 @@ _shifu_cmd_argr_build_comp_now() {
   _shifu_opt_comp_preamble
   if [ $shifu_parse_stage -eq 0 ]; then
     shifu_parse_stage=1
+    _shifu_add_comp_eq_patterns
     _shifu_append_on_new_line shifu_case_stmt "  *)"
   elif [ $shifu_parse_stage -gt 1 ]; then
     _shifu_error "No arguments after remaining are declared: $1"
@@ -569,6 +594,7 @@ _shifu_cmd_args_build_now() {
 _shifu_cmd_args_build_comp_now() {
   _shifu_opt_comp_preamble
   [ $shifu_parse_stage -eq 2 ] && _shifu_error "Can only declare remaining arguments once: $1"
+  [ $shifu_parse_stage -eq 0 ] && _shifu_add_comp_eq_patterns
   shifu_parse_stage=2
 }
 
@@ -692,6 +718,9 @@ _shifu_complete() {
   done
   shifu_comp_option_names="${shifu_build_comp_defer_option_names:-}"
   _shifu_set_completing_option
+  case "${shifu_current_word:-}" in
+    -*=*) set -- "$@" "${shifu_current_word%%=*}" ;;
+  esac
   [ "$shifu_completing_option" = true ] && shifu_completions=""
   if [ "$shifu_completing_option" = true -a -n "${shifu_cmd_func:-}" ]; then
     _shifu_complete_option_names
@@ -703,11 +732,15 @@ _shifu_complete() {
   elif [ "$shifu_completing_option" = false -a -n "${shifu_cmd_subs:-}" -a $# -eq 0 -a -z "${shifu_completions:-}" ]; then
     _shifu_complete_subcmd_names
   fi
+  case "${shifu_current_word:-}" in
+    -*=*) _shifu_prefix_eq_completions ;;
+  esac
   [ -n "${shifu_completions:-}" ] && echo "$shifu_completions"
 }
 
 _shifu_set_completing_option() {
   case "${shifu_current_word:-}" in
+    -*=*) shifu_completing_option=false ;;
     -*) shifu_completing_option=true ;;
     *) shifu_completing_option=false ;;
   esac
@@ -748,6 +781,7 @@ _shifu_complete_func_args() {
   shifu_parse_stage=0
   shifu_parse_eager="$1"; shifu_cmd="$2"; shift 2
   _shifu_args_parsed=0
+  shifu_comp_eq_patterns=""
   shifu_case_stmt="case \"\${1:-}\" in "
   if [ "$shifu_parse_eager" = false -a -n "${shifu_defer_comp_case:-}" ]; then
     shifu_case_stmt="${shifu_case_stmt}
@@ -757,11 +791,13 @@ ${shifu_defer_comp_case:-}"
   shifu_last_arg_is_eager=true
   "$shifu_cmd"
   case "${shifu_current_word:-}" in
+    -*=*) ;;
     -*) [ "$shifu_parse_eager" = false ] && return 0 ;;
   esac
   if [ $shifu_parse_stage -eq 0 -a $shifu_arg_completion_set = false ]; then
     shifu_case_stmt="$shifu_case_stmt shift ;;"
   fi
+  _shifu_add_comp_eq_patterns
   if [ "$shifu_parse_eager" = true ]; then
     _shifu_append_on_new_line shifu_case_stmt "  *) _shifu_comp_done=true ;;"
   elif [ $shifu_parse_stage -ne 0 ]; then
