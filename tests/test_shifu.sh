@@ -979,10 +979,14 @@ shifu_parameterize_test() {
       [ "$pt_arg" = "--" ] && break
       pt_count=$((pt_count + 1))
     done
-    pt_errors_in=$errors
-    pt_output_buffer=""
-    "$pt_test_name" "$@"
-    if [ $errors -eq $pt_errors_in ]; then
+    pt_case_output=$(
+      errors=0
+      unset pt_output_buffer
+      "$pt_test_name" "$@"
+      exit $errors
+    )
+    pt_case_errors=$?
+    if [ $pt_case_errors -eq 0 ]; then
       pt_passed=$((pt_passed + 1))
       if [ "${shifu_verbose_tests:-}" = true ]; then
         printf "   $shifu_green%-4s$shifu_reset%s\n" "+" "$pt_case_name"
@@ -990,7 +994,7 @@ shifu_parameterize_test() {
     else
       pt_failed=$((pt_failed + 1))
       printf "   $shifu_red%-4s$shifu_reset%s\n" "x" "$pt_case_name"
-      [ -n "$pt_output_buffer" ] && echo "$pt_output_buffer"
+      [ -n "$pt_case_output" ] && echo "$pt_case_output"
     fi
     shift $pt_count
   done
