@@ -276,6 +276,53 @@ test_shifu_run_option_missing_value() {
   -- short_option "-o"
 }
 
+test_shifu_run_optd_equals_value() {
+  run_test() {
+    shifu_test_params option expected -- "$@"
+    shifu_run shifu_test_all_options_cmd \
+      -a req_flag_value --option-req req_option_value \
+      --flag-option-req req_flag_option_value \
+      $option \
+      positional_arg_value_one positional_arg_value_two
+    shifu_assert_zero exit_code $?
+    shifu_assert_equal option_def "$OPTION_DEF" "$expected"
+  }
+  shifu_parameterize_test run_test \
+  -- value   "--option-def=custom"     "custom" \
+  -- nested  "--option-def=key=value"  "key=value" \
+  -- empty   "--option-def="           ""
+}
+
+test_shifu_run_optr_equals_value() {
+  shifu_run shifu_test_all_options_cmd \
+    -a req_flag_value --option-req=custom_req \
+    --flag-option-req=custom_flag_req \
+    positional_arg_value_one positional_arg_value_two
+  shifu_assert_zero exit_code $?
+  shifu_assert_equal option_req "$OPTION_REQ" "custom_req"
+  shifu_assert_equal flag_option_req "$FLAG_OPTION_REQ" "custom_flag_req"
+}
+
+test_shifu_run_defer_and_eager_equals_value() {
+  run_test() {
+    shifu_test_params @cmd_args var expected -- "$@"
+    shifu_run shifu_test_root_cmd $cmd_args
+    shifu_assert_zero exit_code $?
+    eval "shifu_assert_equal $var \"\$$var\" \"$expected\""
+  }
+  shifu_parameterize_test run_test \
+  -- defer  "sub-two leaf-three -g --defer-def=custom_defer one two" \
+            DEFER_DEF "custom_defer" \
+  -- eager  "sub-two --eager-test=custom_eager leaf-three one two" \
+            EAGER_TEST "custom_eager"
+}
+
+test_shifu_run_short_flag_equals_errors() {
+  actual=$(shifu_run shifu_test_all_options_cmd -d=bad_value 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_string_contains error_message "$actual" "Invalid option"
+}
+
 test_shifu_run_bad_first_cmd() {
   expected="$(
     echo 'Unknown command: bad'
