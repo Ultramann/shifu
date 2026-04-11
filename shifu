@@ -337,6 +337,19 @@ _shifu_add_comp_eq_patterns() {
   fi
 }
 
+_shifu_prefix_eq_completions() {
+  shifu_eq_prefix="${shifu_current_word%%=*}="
+  shifu_prefixed_completions=""
+  _shifu_set_for_looping shifu_comp_list shifu_completions
+  for shifu_comp_item in $shifu_comp_list; do
+    shifu_comp_item="${shifu_eq_prefix}${shifu_comp_item}"
+    case "$shifu_comp_item" in
+      "${shifu_current_word}"*) _shifu_list_append shifu_prefixed_completions "$shifu_comp_item" ;;
+    esac
+  done
+  shifu_completions="$shifu_prefixed_completions"
+}
+
 _shifu_add_equals_comp_case_arms() {
   shifu_eq_target="$1"
   _shifu_set_for_looping shifu_eq_list shifu_eq_saved_args
@@ -648,17 +661,13 @@ Instructions
 _shifu_generate_bash_tab_completion() {
   echo "_${shifu_cmd_name}_completion() {
   current=\"\${COMP_WORDS[\${#COMP_WORDS[@]}-1]}\"
-  comp_current=\"\$current\"
-  case \"\$current\" in
-    -*=*) comp_current=\"\${current#*=}\" ;;
-  esac
   full_words=( \"\${COMP_WORDS[@]:1:\${#COMP_WORDS[@]}-2}\" )
   completions=\$($shifu_cmd_name --shifu-complete \"\$current\" \"\${full_words[@]}\")
   case \"\$completions\" in
-    SHIFU_COMP_PATH_FILES) COMPREPLY=( \$(compgen -f -- \"\$comp_current\") ) ;;
-    SHIFU_COMP_PATH_DIRS) COMPREPLY=( \$(compgen -d -- \"\$comp_current\") ) ;;
-    SHIFU_COMP_PATH_GLOB:*) COMPREPLY=( \$(compgen -f -X \"!\${completions#SHIFU_COMP_PATH_GLOB:}\" -- \"\$comp_current\") ) ;;
-    *) COMPREPLY=( \$(compgen -W \"\$completions\" -- \"\$comp_current\") )
+    SHIFU_COMP_PATH_FILES) COMPREPLY=( \$(compgen -f -- \"\$current\") ) ;;
+    SHIFU_COMP_PATH_DIRS) COMPREPLY=( \$(compgen -d -- \"\$current\") ) ;;
+    SHIFU_COMP_PATH_GLOB:*) COMPREPLY=( \$(compgen -f -X \"!\${completions#SHIFU_COMP_PATH_GLOB:}\" -- \"\$current\") ) ;;
+    *) COMPREPLY=( \$(compgen -W \"\$completions\" -- \"\$current\") )
        compopt +o filenames 2>/dev/null ;;
   esac
 }
@@ -670,9 +679,6 @@ _shifu_generate_zsh_tab_completion() {
   current=\"\${words[\$CURRENT]}\"
   full_words=( \"\${words[@]:1:\${#words[@]}-2}\" )
   completions=\$($shifu_cmd_name --shifu-complete \"\$current\" \"\${full_words[@]}\")
-  case \"\$current\" in
-    -*=*) IPREFIX=\"\${current%%=*}=\"; PREFIX=\"\${current#*=}\" ;;
-  esac
   case \"\$completions\" in
     SHIFU_COMP_PATH_FILES) _files -g '*(D)' ;;
     SHIFU_COMP_PATH_DIRS) _files -g '*(D/)' ;;
@@ -726,6 +732,9 @@ _shifu_complete() {
   elif [ "$shifu_completing_option" = false -a -n "${shifu_cmd_subs:-}" -a $# -eq 0 -a -z "${shifu_completions:-}" ]; then
     _shifu_complete_subcmd_names
   fi
+  case "${shifu_current_word:-}" in
+    -*=*) _shifu_prefix_eq_completions ;;
+  esac
   [ -n "${shifu_completions:-}" ] && echo "$shifu_completions"
 }
 

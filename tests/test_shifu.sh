@@ -745,13 +745,13 @@ test_shifu_complete() {
      "--fake-arg" \
   -- equals_value_cpte \
      shifu_test_all_options_cmd "--flag-option-req= -f" \
-     "flag option arg" \
+     "--flag-option-req=flag --flag-option-req=option --flag-option-req=arg" \
   -- equals_value_partial \
      shifu_test_all_options_cmd "--flag-option-req=fl -f" \
-     "flag option arg" \
+     "--flag-option-req=flag" \
   -- equals_value_cptf \
      shifu_test_all_options_cmd "--flag-option-def= -f" \
-     "flag option default" \
+     "--flag-option-def=flag --flag-option-def=option --flag-option-def=default" \
   -- equals_value_cptp \
      shifu_test_path_files_cmd "--file=" \
      "SHIFU_COMP_PATH_FILES"
