@@ -368,22 +368,21 @@ These instructions can also be found by running
   * [bashly](https://github.com/DannyBen/bashly): generates bash script from a YAML configuration
   * [getoptions](https://github.com/ko1nksm/getoptions): sophisticated POSIX shell option parser
 
-  |                     | argc     | bashly   | getoptions | shifu  |
-  |---------------------|:--------:|:--------:|:----------:|:------:|
-  | **Features**        |          |          |            |        |
-  | Argument parsing    | ✓        | ✓        | ✓          | ✓      |
-  | Subcommand dispatch | ✓        | ✓        |            | ✓      |
-  | Tab completion      | ✓        | ✓        |            | ✓      |
-  | Help generation     | ✓        | ✓        | ✓          | ✓      |
-  | Man page generation | ✓        | ✓        |            |        |
-  | Input validation    | ✓        | ✓        | ✓          |        |
-  | **Approach**        |          |          |            |        |
-  | Implementation      | rust     | ruby     | shell      | shell  |
-  | Framework form      | binary   | gem      | script     | script |
-  | Target shell        | bash     | bash     | POSIX      | POSIX  |
-  | Decoupled runtime   | optional | required | optional   | nope   |
 
-  * decoupled runtime: can the framework produce a CLI that runs without it
+  |                                | argc       | bashly   | getoptions | shifu  |
+  |--------------------------------|:----------:|:--------:|:----------:|:------:|
+  | **Features**                   |            |          |            |        |
+  | Argument parsing               | ✓          | ✓        | ✓          | ✓      |
+  | Subcommand dispatch            | ✓          | ✓        |            | ✓      |
+  | Tab completion                 | ✓          | ✓        |            | ✓      |
+  | Help generation                | ✓          | ✓        | ✓          | ✓      |
+  | Man page generation            | ✓          | ✓        |            |        |
+  | Input validation               | ✓          | ✓        | ✓          |        |
+  | **Approach**                   |            |          |            |        |
+  | Implementation                 | rust       | ruby     | shell      | shell  |
+  | Framework form                 | binary     | gem      | script     | script |
+  | Target shell                   | bash       | bash     | POSIX      | POSIX  |
+  | Framework required at runtime  | optionally | no       | optionally | yes    |
 
 ## API
 
