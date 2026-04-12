@@ -351,18 +351,8 @@ These instructions can also be found by running
     Shifu gives CLI shell scripts the opportunity to be better than they are
   * Finally. I want to use something like shifu, maybe others do too
 
-* How does shifu name its variables/functions, will they collide with those in my script?
-  * Shifu takes special care to prefix all variables/functions with `shifu` or `_shifu`
-  * Calling `shifu_less` after sourcing shifu will create versions of all the `cmd` functions without the `shifu` prefix. This makes command code less busy, but adds function names that are more likely to cause a collision with those in your script
-
-* What's with the `. "${0%/*}"/shifu || exit 1`?
-  * `.` is the POSIX source command; it executes a file in the current shell, making shifu's functions available to your script, akin to importing
-  * `"${0%/*}"` is parameter expansion that strips the filename from `$0` (the script path), leaving just the directory. This lets your script find shifu relative to itself rather than relying on `PATH`
-  * `|| exit 1` exits the script if sourcing fails (e.g., shifu not found), preventing cryptic errors later
-  * If shifu is on your `PATH`, you can simply use `. shifu || exit 1`
-
 * What else is out there?
-  So you vibe with the problem that shifu is solving but not with its implementation or limitations and want to know what alternatives are out there. No worries, there are some great projects in this space that approach it very differently.
+  So you vibe with the problem that shifu is solving but not with its implementation or limitations and want to know what alternatives are available. No worries, there are some great projects in this space that approach it very differently.
 
   * [argc](https://github.com/sigoden/argc): parses CLI specification from comments in script
   * [bashly](https://github.com/DannyBen/bashly): generates bash script from a YAML configuration
@@ -384,6 +374,16 @@ These instructions can also be found by running
   | Framework form                 | binary   | gem      | script     | script |
   | Target shell                   | bash     | bash     | POSIX      | POSIX  |
   | Framework required at runtime  | optional | no       | optional   | yes    |
+
+* How does shifu name its variables/functions, will they collide with those in my script?
+  * Shifu takes special care to prefix all variables/functions with `shifu` or `_shifu`
+  * Calling `shifu_less` after sourcing shifu will create versions of all the `cmd` functions without the `shifu` prefix. This makes command code less busy, but adds function names that are more likely to cause a collision with those in your script
+
+* What's with the `. "${0%/*}"/shifu || exit 1`?
+  * `.` is the POSIX source command; it executes a file in the current shell, making shifu's functions available to your script, akin to importing
+  * `"${0%/*}"` is parameter expansion that strips the filename from `$0` (the script path), leaving just the directory. This lets your script find shifu relative to itself rather than relying on `PATH`
+  * `|| exit 1` exits the script if sourcing fails (e.g., shifu not found), preventing cryptic errors later
+  * If shifu is on your `PATH`, you can simply use `. shifu || exit 1`
 
 ## API
 
