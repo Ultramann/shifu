@@ -14,7 +14,7 @@
 
 all in a single POSIX shell file with no dependencies.
 
-Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means a lot of boilerplate that's hard to understand and maintain. Shifu offers an API to wire up your CLI, letting you focus on real functionality.
+Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means a lot of boilerplate that's hard to understand and maintain. Shifu offers an API to wire up your CLI succinctly, letting you focus on real functionality.
 
 ## Table of contents
 
@@ -350,6 +350,30 @@ These instructions can also be found by running
     
     Shifu gives CLI shell scripts the opportunity to be better than they are
   * Finally. I want to use something like shifu, maybe others do too
+
+* What else is out there?
+  So you vibe with the problem that shifu is solving but not with its implementation or limitations and want to know what alternatives are available. No worries, there are some great projects in this space that approach it very differently.
+
+  * [argc](https://github.com/sigoden/argc): parses CLI specification from comments in script
+  * [bashly](https://github.com/DannyBen/bashly): generates bash script from a YAML configuration
+  * [getoptions](https://github.com/ko1nksm/getoptions): sophisticated POSIX shell option parser
+
+  <br>
+
+  |                                | argc     | bashly   | getoptions | shifu  |
+  |--------------------------------|:--------:|:--------:|:----------:|:------:|
+  | **Features**                   |          |          |            |        |
+  | Argument parsing               | ✓        | ✓        | ✓          | ✓      |
+  | Subcommand dispatch            | ✓        | ✓        |            | ✓      |
+  | Tab completion                 | ✓        | ✓        |            | ✓      |
+  | Help generation                | ✓        | ✓        | ✓          | ✓      |
+  | Man page generation            | ✓        | ✓        |            |        |
+  | Input validation               | ✓        | ✓        | ✓          |        |
+  | **Approach**                   |          |          |            |        |
+  | Implementation                 | rust     | ruby     | shell      | shell  |
+  | Framework form                 | binary   | gem      | script     | script |
+  | Target shell                   | bash     | bash     | POSIX      | POSIX  |
+  | Framework required at runtime  | optional | no       | optional   | yes    |
 
 * How does shifu name its variables/functions, will they collide with those in my script?
   * Shifu takes special care to prefix all variables/functions with `shifu` or `_shifu`
