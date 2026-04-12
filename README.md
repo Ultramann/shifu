@@ -368,6 +368,7 @@ These instructions can also be found by running
   * [bashly](https://github.com/DannyBen/bashly): generates bash script from a YAML configuration
   * [getoptions](https://github.com/ko1nksm/getoptions): sophisticated POSIX shell option parser
 
+  <br>
 
   |                                | argc       | bashly   | getoptions | shifu  |
   |--------------------------------|:----------:|:--------:|:----------:|:------:|
