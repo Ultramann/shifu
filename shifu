@@ -337,19 +337,6 @@ _shifu_add_comp_eq_patterns() {
   fi
 }
 
-_shifu_prefix_eq_completions() {
-  shifu_eq_prefix="${shifu_current_word%%=*}="
-  shifu_prefixed_completions=""
-  _shifu_set_for_looping shifu_comp_list shifu_completions
-  for shifu_comp_item in $shifu_comp_list; do
-    shifu_comp_item="${shifu_eq_prefix}${shifu_comp_item}"
-    case "$shifu_comp_item" in
-      "${shifu_current_word}"*) _shifu_list_append shifu_prefixed_completions "$shifu_comp_item" ;;
-    esac
-  done
-  shifu_completions="$shifu_prefixed_completions"
-}
-
 _shifu_add_equals_comp_case_arms() {
   shifu_eq_target="$1"
   _shifu_set_for_looping shifu_eq_list shifu_eq_saved_args
@@ -718,9 +705,6 @@ _shifu_complete() {
   done
   shifu_comp_option_names="${shifu_build_comp_defer_option_names:-}"
   _shifu_set_completing_option
-  case "${shifu_current_word:-}" in
-    -*=*) set -- "$@" "${shifu_current_word%%=*}" ;;
-  esac
   [ "$shifu_completing_option" = true ] && shifu_completions=""
   if [ "$shifu_completing_option" = true -a -n "${shifu_cmd_func:-}" ]; then
     _shifu_complete_option_names
@@ -732,15 +716,11 @@ _shifu_complete() {
   elif [ "$shifu_completing_option" = false -a -n "${shifu_cmd_subs:-}" -a $# -eq 0 -a -z "${shifu_completions:-}" ]; then
     _shifu_complete_subcmd_names
   fi
-  case "${shifu_current_word:-}" in
-    -*=*) _shifu_prefix_eq_completions ;;
-  esac
   [ -n "${shifu_completions:-}" ] && echo "$shifu_completions"
 }
 
 _shifu_set_completing_option() {
   case "${shifu_current_word:-}" in
-    -*=*) shifu_completing_option=false ;;
     -*) shifu_completing_option=true ;;
     *) shifu_completing_option=false ;;
   esac
@@ -791,7 +771,6 @@ ${shifu_defer_comp_case:-}"
   shifu_last_arg_is_eager=true
   "$shifu_cmd"
   case "${shifu_current_word:-}" in
-    -*=*) ;;
     -*) [ "$shifu_parse_eager" = false ] && return 0 ;;
   esac
   if [ $shifu_parse_stage -eq 0 -a $shifu_arg_completion_set = false ]; then

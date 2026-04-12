@@ -742,19 +742,7 @@ test_shifu_complete() {
      "leaf-three leaf-four" \
   -- leaf_options_through_equals_arg \
      shifu_test_root_cmd "--f sub-two --eager-test=some_value leaf-four" \
-     "--fake-arg" \
-  -- equals_value_cpte \
-     shifu_test_all_options_cmd "--flag-option-req= -f" \
-     "--flag-option-req=flag --flag-option-req=option --flag-option-req=arg" \
-  -- equals_value_partial \
-     shifu_test_all_options_cmd "--flag-option-req=fl -f" \
-     "--flag-option-req=flag" \
-  -- equals_value_cptf \
-     shifu_test_all_options_cmd "--flag-option-def= -f" \
-     "--flag-option-def=flag --flag-option-def=option --flag-option-def=default" \
-  -- equals_value_cptp \
-     shifu_test_path_files_cmd "--file=" \
-     "SHIFU_COMP_PATH_FILES"
+     "--fake-arg"
 }
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {
