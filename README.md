@@ -14,7 +14,7 @@
 
 all in a single POSIX shell file with no dependencies.
 
-Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means a lot of boilerplate that's hard to understand and maintain. Shifu offers an API to wire up your CLI, letting you focus on real functionality.
+Shell scripts are great for gluing terminal programs together. But adding subcommands, scoped options, help strings, and tab completion means a lot of boilerplate that's hard to understand and maintain. Shifu offers an API to wire up your CLI succinctly, letting you focus on real functionality.
 
 ## Table of contents
 
@@ -360,6 +360,30 @@ These instructions can also be found by running
   * `"${0%/*}"` is parameter expansion that strips the filename from `$0` (the script path), leaving just the directory. This lets your script find shifu relative to itself rather than relying on `PATH`
   * `|| exit 1` exits the script if sourcing fails (e.g., shifu not found), preventing cryptic errors later
   * If shifu is on your `PATH`, you can simply use `. shifu || exit 1`
+
+* What else is out there?
+  So you vibe with the problem that shifu is solving but not with its implementation or limitations and want to know what alternatives are out there. No worries, there are some great projects in this space that approach it very differently.
+
+  * [argc](https://github.com/sigoden/argc): parses CLI specification from comments in script
+  * [bashly](https://github.com/DannyBen/bashly): generates bash script from a YAML configuration
+  * [getoptions](https://github.com/ko1nksm/getoptions): sophisticated POSIX shell option parser
+
+  |                     | argc     | bashly   | getoptions | shifu  |
+  |---------------------|:--------:|:--------:|:----------:|:------:|
+  | **Features**        |          |          |            |        |
+  | Argument parsing    | ✓        | ✓        | ✓          | ✓      |
+  | Subcommand dispatch | ✓        | ✓        |            | ✓      |
+  | Tab completion      | ✓        | ✓        |            | ✓      |
+  | Help generation     | ✓        | ✓        | ✓          | ✓      |
+  | Man page generation | ✓        | ✓        |            |        |
+  | Input validation    | ✓        | ✓        | ✓          |        |
+  | **Approach**        |          |          |            |        |
+  | Implementation      | rust     | ruby     | shell      | shell  |
+  | Framework form      | binary   | gem      | script     | script |
+  | Target shell        | bash     | bash     | POSIX      | POSIX  |
+  | Decoupled runtime   | optional | required | optional   | nope   |
+
+  * decoupled runtime: can the framework produce a CLI that runs without it
 
 ## API
 
