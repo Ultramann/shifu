@@ -370,20 +370,20 @@ These instructions can also be found by running
 
   <br>
 
-  |                                | argc       | bashly   | getoptions | shifu  |
-  |--------------------------------|:----------:|:--------:|:----------:|:------:|
-  | **Features**                   |            |          |            |        |
-  | Argument parsing               | ✓          | ✓        | ✓          | ✓      |
-  | Subcommand dispatch            | ✓          | ✓        |            | ✓      |
-  | Tab completion                 | ✓          | ✓        |            | ✓      |
-  | Help generation                | ✓          | ✓        | ✓          | ✓      |
-  | Man page generation            | ✓          | ✓        |            |        |
-  | Input validation               | ✓          | ✓        | ✓          |        |
-  | **Approach**                   |            |          |            |        |
-  | Implementation                 | rust       | ruby     | shell      | shell  |
-  | Framework form                 | binary     | gem      | script     | script |
-  | Target shell                   | bash       | bash     | POSIX      | POSIX  |
-  | Framework required at runtime  | optionally | no       | optionally | yes    |
+  |                                | argc     | bashly   | getoptions | shifu  |
+  |--------------------------------|:--------:|:--------:|:----------:|:------:|
+  | **Features**                   |          |          |            |        |
+  | Argument parsing               | ✓        | ✓        | ✓          | ✓      |
+  | Subcommand dispatch            | ✓        | ✓        |            | ✓      |
+  | Tab completion                 | ✓        | ✓        |            | ✓      |
+  | Help generation                | ✓        | ✓        | ✓          | ✓      |
+  | Man page generation            | ✓        | ✓        |            |        |
+  | Input validation               | ✓        | ✓        | ✓          |        |
+  | **Approach**                   |          |          |            |        |
+  | Implementation                 | rust     | ruby     | shell      | shell  |
+  | Framework form                 | binary   | gem      | script     | script |
+  | Target shell                   | bash     | bash     | POSIX      | POSIX  |
+  | Framework required at runtime  | optional | no       | optional   | yes    |
 
 ## API
 
