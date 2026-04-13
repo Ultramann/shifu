@@ -306,6 +306,48 @@ _shifu_opt_build() {
   done
 }
 
+_shifu_add_equals_case_arms() {
+  shifu_eq_target="$1"; shifu_eq_var="$2"
+  _shifu_set_for_looping shifu_eq_list shifu_eq_saved_args
+  for shifu_eq_flag in $shifu_eq_list; do
+    case "$shifu_eq_flag" in
+      --) break ;;
+      --*) _shifu_append_on_new_line "$shifu_eq_target" \
+             "  $shifu_eq_flag=*) $shifu_eq_var=\\\${1#*=}; shift; _shifu_ack_arg ;;" ;;
+    esac
+  done
+}
+
+_shifu_add_equals_defer_case_arms() {
+  shifu_eq_var="$1"
+  _shifu_set_for_looping shifu_eq_list shifu_eq_saved_args
+  for shifu_eq_flag in $shifu_eq_list; do
+    case "$shifu_eq_flag" in
+      --) break ;;
+      --*) shifu_defer_case="$shifu_defer_case
+  $shifu_eq_flag=*) $shifu_eq_var=\\\${1#*=}; shift; _shifu_ack_arg ;;" ;;
+    esac
+  done
+}
+
+_shifu_add_comp_eq_patterns() {
+  if [ -n "${shifu_comp_eq_patterns:-}" ]; then
+    shifu_case_stmt="${shifu_case_stmt}${shifu_comp_eq_patterns}"
+    shifu_comp_eq_patterns=""
+  fi
+}
+
+_shifu_add_equals_comp_case_arms() {
+  shifu_eq_target="$1"
+  _shifu_set_for_looping shifu_eq_list shifu_eq_saved_args
+  for shifu_eq_flag in $shifu_eq_list; do
+    case "$shifu_eq_flag" in
+      --) break ;;
+      --*) _shifu_append_on_new_line "$shifu_eq_target" "  $shifu_eq_flag=*) shift ;;" ;;
+    esac
+  done
+}
+
 _shifu_validate_flag() {
   case "$1" in
     -*) ;;
@@ -419,59 +461,71 @@ _shifu_cmd_optd_help() {
 }
 
 _shifu_cmd_optd_build_now() {
+  shifu_eq_saved_args="$*"
   _shifu_opt_case_parse "$@"
   shift $shifu_opt_count
   _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
   _shifu_set_variable "$1" "$2"
   _shifu_update_case_stmt_option_value_check
   shifu_case_stmt="$shifu_case_stmt $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
+  _shifu_add_equals_case_arms shifu_case_stmt "$1"
 }
 
 _shifu_cmd_optd_build_defer() {
+  shifu_eq_saved_args="$*"
   _shifu_opt_defer_parse "$@"
   shift $shifu_opt_count
   _shifu_set_variable "$1" "$2"
   _shifu_update_case_stmt_option_value_check defer
   shifu_defer_case="$shifu_defer_case $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
   shifu_defer_help="${shifu_defer_help:-} [$1]\n    $3\n    Default: $2"
+  _shifu_add_equals_defer_case_arms "$1"
 }
 
 _shifu_cmd_optv_build_comp_now() {
+  shifu_eq_saved_args="$*"
   _shifu_opt_comp_eager_parse "$@"
   shift $shifu_opt_count
   _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
   shifu_case_stmt="$shifu_case_stmt) shift;"
+  _shifu_add_equals_comp_case_arms shifu_comp_eq_patterns
 }
 
 _shifu_cmd_optv_build_comp_defer() {
+  shifu_eq_saved_args="$*"
   _shifu_opt_build_comp_defer_parse "$@"
   shift $shifu_opt_count
   shifu_defer_comp_case="${shifu_defer_comp_case:-}) shift;"
+  _shifu_add_equals_comp_case_arms shifu_comp_eq_patterns
 }
 
 _shifu_cmd_optr_help() {
   _shifu_opt_help_parse "$@"
   shift $shifu_opt_count
   _shifu_error_if_invalid_arg_order "$1" $shifu_help_stage
-  shifu_help_options="$shifu_help_options [$1]\n    $2\n    Required"
+  shifu_help_options="$shifu_help_options $1\n    $2\n    Required"
 }
 
 _shifu_cmd_optr_build_now() {
+  shifu_eq_saved_args="$*"
   _shifu_opt_case_parse "$@"
   shift $shifu_opt_count
   _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
   _shifu_list_append shifu_required_variables "$1"
   _shifu_update_case_stmt_option_value_check
   shifu_case_stmt="$shifu_case_stmt $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
+  _shifu_add_equals_case_arms shifu_case_stmt "$1"
 }
 
 _shifu_cmd_optr_build_defer() {
+  shifu_eq_saved_args="$*"
   _shifu_opt_defer_parse "$@"
   shift $shifu_opt_count
   _shifu_list_append shifu_required_variables "$1"
   _shifu_update_case_stmt_option_value_check defer
   shifu_defer_case="$shifu_defer_case $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
-  shifu_defer_help="${shifu_defer_help:-} [$1]\n    $2\n    Required"
+  shifu_defer_help="${shifu_defer_help:-} $1\n    $2\n    Required"
+  _shifu_add_equals_defer_case_arms "$1"
 }
 
 _shifu_cmd_optd_build_comp_now() { _shifu_cmd_optv_build_comp_now "$@"; }
@@ -505,6 +559,7 @@ _shifu_cmd_argr_build_comp_now() {
   _shifu_opt_comp_preamble
   if [ $shifu_parse_stage -eq 0 ]; then
     shifu_parse_stage=1
+    _shifu_add_comp_eq_patterns
     _shifu_append_on_new_line shifu_case_stmt "  *)"
   elif [ $shifu_parse_stage -gt 1 ]; then
     _shifu_error "No arguments after remaining are declared: $1"
@@ -526,6 +581,7 @@ _shifu_cmd_args_build_now() {
 _shifu_cmd_args_build_comp_now() {
   _shifu_opt_comp_preamble
   [ $shifu_parse_stage -eq 2 ] && _shifu_error "Can only declare remaining arguments once: $1"
+  [ $shifu_parse_stage -eq 0 ] && _shifu_add_comp_eq_patterns
   shifu_parse_stage=2
 }
 
@@ -705,6 +761,7 @@ _shifu_complete_func_args() {
   shifu_parse_stage=0
   shifu_parse_eager="$1"; shifu_cmd="$2"; shift 2
   _shifu_args_parsed=0
+  shifu_comp_eq_patterns=""
   shifu_case_stmt="case \"\${1:-}\" in "
   if [ "$shifu_parse_eager" = false -a -n "${shifu_defer_comp_case:-}" ]; then
     shifu_case_stmt="${shifu_case_stmt}
@@ -719,6 +776,7 @@ ${shifu_defer_comp_case:-}"
   if [ $shifu_parse_stage -eq 0 -a $shifu_arg_completion_set = false ]; then
     shifu_case_stmt="$shifu_case_stmt shift ;;"
   fi
+  _shifu_add_comp_eq_patterns
   if [ "$shifu_parse_eager" = true ]; then
     _shifu_append_on_new_line shifu_case_stmt "  *) _shifu_comp_done=true ;;"
   elif [ $shifu_parse_stage -ne 0 ]; then

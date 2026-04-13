@@ -276,6 +276,69 @@ test_shifu_run_option_missing_value() {
   -- short_option "-o"
 }
 
+test_shifu_run_optd_equals_value() {
+  run_test() {
+    shifu_test_params option expected -- "$@"
+    shifu_run shifu_test_all_options_cmd \
+      -a req_flag_value --option-req req_option_value \
+      --flag-option-req req_flag_option_value \
+      $option \
+      positional_arg_value_one positional_arg_value_two
+    shifu_assert_zero exit_code $?
+    shifu_assert_equal option_def "$OPTION_DEF" "$expected"
+  }
+  shifu_parameterize_test run_test \
+  -- value   "--option-def=custom"     "custom" \
+  -- nested  "--option-def=key=value"  "key=value" \
+  -- empty   "--option-def="           ""
+}
+
+test_shifu_run_optr_equals_value() {
+  run_test() {
+    shifu_test_params option expected -- "$@"
+    shifu_run shifu_test_all_options_cmd \
+      -a req_flag_value --flag-option-req req_flag_option_value \
+      $option \
+      positional_arg_value_one positional_arg_value_two
+    shifu_assert_zero exit_code $?
+    shifu_assert_equal option_req "$OPTION_REQ" "$expected"
+  }
+  shifu_parameterize_test run_test \
+  -- value   "--option-req=custom_req"    "custom_req" \
+  -- nested  "--option-req=key=value"     "key=value" \
+  -- empty   "--option-req="              ""
+}
+
+test_shifu_run_defer_and_eager_equals_value() {
+  run_test() {
+    shifu_test_params @cmd_args var expected -- "$@"
+    shifu_run shifu_test_root_cmd $cmd_args
+    shifu_assert_zero exit_code $?
+    eval "shifu_assert_equal $var \"\$$var\" \"$expected\""
+  }
+  shifu_parameterize_test run_test \
+  -- defer  "sub-two leaf-three -g --defer-def=custom_defer one two" \
+            DEFER_DEF "custom_defer" \
+  -- eager  "sub-two --eager-test=custom_eager leaf-three one two" \
+            EAGER_TEST "custom_eager"
+}
+
+test_shifu_run_short_flag_equals_errors() {
+  actual=$(shifu_run shifu_test_all_options_cmd -d=bad_value 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_string_contains error_message "$actual" "Invalid option"
+}
+
+test_shifu_run_optb_equals_errors() {
+  actual=$(shifu_run shifu_test_all_options_cmd \
+    -a req_flag_value --option-req req_option_value \
+    --flag-option-req req_flag_option_value \
+    --option-bin=bad_value \
+    positional_arg_value_one positional_arg_value_two 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_string_contains error_message "$actual" "Invalid option"
+}
+
 test_shifu_run_bad_first_cmd() {
   expected="$(
     echo 'Unknown command: bad'
@@ -540,7 +603,7 @@ Options
   -f
     binary flag help
     Default: 0, set: 1
-  -a [FLAG_REQ]
+  -a FLAG_REQ
     required flag help
     Required
   -d [FLAG_DEF]
@@ -549,7 +612,7 @@ Options
   --option-bin
     binary option help
     Default: 0, set: 1
-  --option-req [OPTION_REQ]
+  --option-req OPTION_REQ
     required option help
     Required
   --option-def [OPTION_DEF]
@@ -558,7 +621,7 @@ Options
   -F, --flag-option-bin
     binary flag/option help
     Default: 0, set: 1
-  -A, --flag-option-req [FLAG_OPTION_REQ]
+  -A, --flag-option-req FLAG_OPTION_REQ
     required flag/option help
     Required
   -D, --flag-option-def [FLAG_OPTION_DEF]
@@ -689,7 +752,13 @@ test_shifu_complete() {
      "defer_one defer_two defer_three" \
   -- nested_eager_at_multiple_levels \
      shifu_test_eager_root_cmd "cur_word -r root_one sub-multi-eager -b -d data_one" \
-     "leaf-three leaf-four"
+     "leaf-three leaf-four" \
+  -- subcmds_after_eager_equals \
+     shifu_test_root_cmd "cur_word sub-two --eager-test=some_value" \
+     "leaf-three leaf-four" \
+  -- leaf_options_through_equals_arg \
+     shifu_test_root_cmd "--f sub-two --eager-test=some_value leaf-four" \
+     "--fake-arg"
 }
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {
@@ -979,10 +1048,14 @@ shifu_parameterize_test() {
       [ "$pt_arg" = "--" ] && break
       pt_count=$((pt_count + 1))
     done
-    pt_errors_in=$errors
-    pt_output_buffer=""
-    "$pt_test_name" "$@"
-    if [ $errors -eq $pt_errors_in ]; then
+    pt_case_output=$(
+      errors=0
+      unset pt_output_buffer
+      "$pt_test_name" "$@"
+      exit $errors
+    )
+    pt_case_errors=$?
+    if [ $pt_case_errors -eq 0 ]; then
       pt_passed=$((pt_passed + 1))
       if [ "${shifu_verbose_tests:-}" = true ]; then
         printf "   $shifu_green%-4s$shifu_reset%s\n" "+" "$pt_case_name"
@@ -990,7 +1063,7 @@ shifu_parameterize_test() {
     else
       pt_failed=$((pt_failed + 1))
       printf "   $shifu_red%-4s$shifu_reset%s\n" "x" "$pt_case_name"
-      [ -n "$pt_output_buffer" ] && echo "$pt_output_buffer"
+      [ -n "$pt_case_output" ] && echo "$pt_case_output"
     fi
     shift $pt_count
   done
