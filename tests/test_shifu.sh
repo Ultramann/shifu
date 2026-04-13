@@ -294,13 +294,19 @@ test_shifu_run_optd_equals_value() {
 }
 
 test_shifu_run_optr_equals_value() {
-  shifu_run shifu_test_all_options_cmd \
-    -a req_flag_value --option-req=custom_req \
-    --flag-option-req=custom_flag_req \
-    positional_arg_value_one positional_arg_value_two
-  shifu_assert_zero exit_code $?
-  shifu_assert_equal option_req "$OPTION_REQ" "custom_req"
-  shifu_assert_equal flag_option_req "$FLAG_OPTION_REQ" "custom_flag_req"
+  run_test() {
+    shifu_test_params option expected -- "$@"
+    shifu_run shifu_test_all_options_cmd \
+      -a req_flag_value --flag-option-req req_flag_option_value \
+      $option \
+      positional_arg_value_one positional_arg_value_two
+    shifu_assert_zero exit_code $?
+    shifu_assert_equal option_req "$OPTION_REQ" "$expected"
+  }
+  shifu_parameterize_test run_test \
+  -- value   "--option-req=custom_req"    "custom_req" \
+  -- nested  "--option-req=key=value"     "key=value" \
+  -- empty   "--option-req="              ""
 }
 
 test_shifu_run_defer_and_eager_equals_value() {
@@ -319,6 +325,16 @@ test_shifu_run_defer_and_eager_equals_value() {
 
 test_shifu_run_short_flag_equals_errors() {
   actual=$(shifu_run shifu_test_all_options_cmd -d=bad_value 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_string_contains error_message "$actual" "Invalid option"
+}
+
+test_shifu_run_optb_equals_errors() {
+  actual=$(shifu_run shifu_test_all_options_cmd \
+    -a req_flag_value --option-req req_option_value \
+    --flag-option-req req_flag_option_value \
+    --option-bin=bad_value \
+    positional_arg_value_one positional_arg_value_two 2>&1)
   shifu_assert_non_zero exit_code $?
   shifu_assert_string_contains error_message "$actual" "Invalid option"
 }
