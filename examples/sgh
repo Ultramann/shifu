@@ -85,15 +85,15 @@ issue_view_cmd() {
 
 issue_view() {
   _resolve_repo
-  result=$(_gh_api_query "repos/$REPO/issues/$ISSUE_NUMBER" | \
-    jq -M '
-      "\(.title)
-URL: \(.url)
-State: \(.state)
-Author: \(.user.login)
-Body: \(.body)
-"')
-  printf "$result"
+  _gh_api_query "repos/$REPO/issues/$ISSUE_NUMBER" | \
+    jq -r '"title:\t\(.title)
+state:\t\(.state)
+author:\t\(.user.login)
+labels:\t\([.labels[].name] | join(", "))
+comments:\t\(.comments)
+number:\t\(.number)
+--
+\(.body)"'
 }
 
 pr_cmd() {
@@ -136,13 +136,15 @@ pr_view_cmd() {
 pr_view() {
   _resolve_repo
   _gh_api_query "repos/$REPO/pulls/$PR_NUMBER" | \
-    jq -M '
-      "\(.title)
-URL: \(.issue_url)
-State: \(.state)
-Author: \(.user.login)
-Body: \(.body)
-"' | xargs printf
+    jq -r '"title:\t\(.title)
+state:\t\(if .merged then "merged" else .state end)
+author:\t\(.user.login)
+number:\t\(.number)
+url:\t\(.html_url)
+additions:\t\(.additions)
+deletions:\t\(.deletions)
+--
+\(.body)"'
 }
 
 _resolve_repo() {
