@@ -121,7 +121,9 @@ pr_list() {
   _update_query q "$q_val"
   _update_query per_page "$NUMBER"
   _gh_api_query "search/issues" | \
-    jq -M '.items[] | "\(.number): \(.title)"' | xargs -I{} echo {}
+    jq -r '.items[] |
+      "\(.created_at[5:7])/\(.created_at[8:10])/\(.created_at[0:4])" as $date |
+      "#\(.number)  \(.state)  \(.title)  \(.user.login)  \($date)"'
 }
 
 pr_view_cmd() {
