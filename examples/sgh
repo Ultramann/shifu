@@ -46,7 +46,7 @@ auth_clear() {
 
 issue_cmd() {
   cmd_name issue
-  cmd_subs issue_list_cmd issue_get_cmd
+  cmd_subs issue_list_cmd issue_view_cmd
   cmd_help "Commands for interacting with github repository issues"
 
   cmd_optd :defer: -R --repo -- REPO "current repo" "Github repository in OWNER/REPO format"
@@ -73,15 +73,15 @@ issue_list() {
     | xargs -I{} echo {}
 }
 
-issue_get_cmd() {
-  cmd_name get
-  cmd_func issue_get
-  cmd_help "Get issue in a GitHub repository"
+issue_view_cmd() {
+  cmd_name view
+  cmd_func issue_view
+  cmd_help "View issue in a GitHub repository"
 
-  cmd_argr ISSUE_NUMBER "Issue number to get"
+  cmd_argr ISSUE_NUMBER "Issue number to view"
 }
 
-issue_get() {
+issue_view() {
   _resolve_repo
   _get_auth_token
   result=$(_gh_api_query "repos/$REPO/issues/$ISSUE_NUMBER" | \
@@ -97,7 +97,7 @@ Body: \(.body)
 
 pr_cmd() {
   cmd_name pr
-  cmd_subs pr_list_cmd pr_get_cmd
+  cmd_subs pr_list_cmd pr_view_cmd
   cmd_help "Commands for interacting with github repository pull requests"
 
   cmd_optd :defer: -R --repo -- REPO "current repo" "Github repository in OWNER/REPO format"
@@ -123,15 +123,15 @@ pr_list() {
     jq -M '.items[] | "\(.number): \(.title)"' | xargs -I{} echo {}
 }
 
-pr_get_cmd() {
-  cmd_name get
-  cmd_func pr_get
-  cmd_help "Get pr in a GitHub repository"
+pr_view_cmd() {
+  cmd_name view
+  cmd_func pr_view
+  cmd_help "View pull request in a GitHub repository"
 
-  cmd_argr PR_NUMBER "Pull request number to get"
+  cmd_argr PR_NUMBER "Pull request number to view"
 }
 
-pr_get() {
+pr_view() {
   _resolve_repo
   _get_auth_token
   _gh_api_query "repos/$REPO/pulls/$PR_NUMBER" | \
