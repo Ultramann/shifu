@@ -112,10 +112,12 @@ pr_list_cmd() {
 pr_list() {
   _resolve_repo
   _get_auth_token
-  _update_query state "$STATE"
-  _update_query per_page $NUMBER
-  _gh_api_query "repos/$REPO/pulls" | \
-    jq -M '.[] | "\(.number): \(.title)"' | xargs -I{} echo {}
+  q_val="repo:$REPO+is:pr"
+  [ "$STATE" != "all" ] && q_val="$q_val+state:$STATE"
+  _update_query q "$q_val"
+  _update_query per_page "$NUMBER"
+  _gh_api_query "search/issues" | \
+    jq -M '.items[] | "\(.number): \(.title)"' | xargs -I{} echo {}
 }
 
 pr_get_cmd() {
@@ -170,7 +172,7 @@ _gh_api() {
   [ -n "$auth_token" ] && curl_call="$curl_call \\
     -H \"Authorization: Bearer $auth_token\""
   curl_call="$curl_call \\
-    https://api.github.com/$1"
+    'https://api.github.com/$1'"
   eval "$curl_call"
 }
 
