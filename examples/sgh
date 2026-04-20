@@ -57,13 +57,16 @@ issue_list_cmd() {
   cmd_func issue_list
   cmd_help "List issues in a GitHub repository"
 
+  cmd_optd -s --state  -- STATE open "State of issue: open, closed, all"
   cmd_optd -n --number -- NUMBER 10 "Max number of results"
 }
 
 issue_list() {
   _resolve_repo
   _get_auth_token
-  _update_query q "repo:$REPO+is:issue"
+  q_val="repo:$REPO+is:issue"
+  [ "$STATE" != "all" ] && q_val="$q_val+state:$STATE"
+  _update_query q "$q_val"
   _update_query per_page "$NUMBER"
   _gh_api_query "search/issues" | \
     jq -M '.items[] | "\(.number): \(.title)"' \
