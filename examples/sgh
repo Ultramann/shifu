@@ -63,11 +63,10 @@ issue_list_cmd() {
 issue_list() {
   _resolve_repo
   _get_auth_token
-  _update_query per_page "100"
-  _gh_api_query "repos/$REPO/issues" | \
-    jq -M "map(select(has(\"pull_request\")|not) |
-           \"\(.number): \(.title)\") |
-           .[:$NUMBER] | .[]" \
+  _update_query q "repo:$REPO+is:issue"
+  _update_query per_page "$NUMBER"
+  _gh_api_query "search/issues" | \
+    jq -M '.items[] | "\(.number): \(.title)"' \
     | xargs -I{} echo {}
 }
 
