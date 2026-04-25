@@ -2,7 +2,7 @@
 
 # Example shifu cli to partially reproduce similar functionality that
 # the github cli, gh, provides. Wrapper around curl commands to the
-# github rest api. Documentation:
+# github rest api and jq for response parsing. Documentation:
 # https://docs.github.com/en/rest?apiVersion=2022-11-28
 
 set -o pipefail
