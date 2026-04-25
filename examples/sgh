@@ -72,7 +72,7 @@ issue_list() {
   _gh_api_query "search/issues" | \
     jq -r '.items[] |
       "\(.created_at[5:7])/\(.created_at[8:10])/\(.created_at[0:4])" as $date |
-      "#\(.number)  \(.state)  \(.title)  \(.user.login)  \($date)"'
+      "#\(.number)\t\(.state)\t\(.title)\t\(.user.login)\t\($date)"' | _table
 }
 
 issue_view_cmd() {
@@ -122,7 +122,7 @@ pr_list() {
   _gh_api_query "search/issues" | \
     jq -r '.items[] |
       "\(.created_at[5:7])/\(.created_at[8:10])/\(.created_at[0:4])" as $date |
-      "#\(.number)  \(.state)  \(.title)  \(.user.login)  \($date)"'
+      "#\(.number)\t\(.state)\t\(.title)\t\(.user.login)\t\($date)"' | _table
 }
 
 pr_view_cmd() {
@@ -145,6 +145,29 @@ additions:\t\(.additions)
 deletions:\t\(.deletions)
 --
 \(.body)"'
+}
+
+_table() {
+  local input widths
+  input=$(cat)
+  [ -z "$input" ] && return
+  widths=$(printf "%s" "$input" | jq -Rrs '
+    split("\n") | map(select(length > 0))
+    | map(split("\t") | map(length))
+    | transpose | map(max) | @tsv')
+  IFS=$'\t' read -ra w <<< "$widths"
+
+  while IFS=$'\t' read -ra fields; do
+    last=$((${#fields[@]} - 1))
+    for i in "${!fields[@]}"; do
+      if [ "$i" -lt "$last" ]; then
+        printf "%s%*s  " "${fields[$i]}" "$((w[i] - ${#fields[$i]}))" ""
+      else
+        printf "%s" "${fields[$i]}"
+      fi
+    done
+    printf "\n"
+  done <<< "$input"
 }
 
 _resolve_repo() {
