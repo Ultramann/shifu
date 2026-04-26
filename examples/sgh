@@ -113,50 +113,19 @@ issue_list() {
       closed) states="[CLOSED]" ;;
       all)    states="[OPEN, CLOSED]" ;;
     esac
+    _gql_build "$JSON"
     query='query {
       repository(owner: "'"$owner"'", name: "'"$name"'") {
-        issues(first: '"$NUMBER"', states: '"$states"', orderBy: {field: CREATED_AT, direction: DESC}) {
-          nodes {
-            number title body url id state stateReason isPinned closed
-            createdAt updatedAt closedAt
-            author {
-              login
-              ... on User { id name }
-              ... on Bot { id }
-            }
-            labels(first: 100) { nodes { id name description color } }
-            assignees(first: 50) { nodes { id login name } }
-            milestone { number title description dueOn }
-            comments(first: 50) {
-              nodes {
-                id author { login } authorAssociation body createdAt
-                includesCreatedEdit isMinimized minimizedReason url viewerDidAuthor
-                reactionGroups { content users { totalCount } }
-              }
-            }
-          }
+        issues(
+          first: '"$NUMBER"',
+          states: '"$states"',
+          orderBy: { field: CREATED_AT, direction: DESC }
+        ) {
+          nodes { '"$gql"' }
         }
       }
     }'
-    _gh_graphql "$query" | jq "
-      .data.repository.issues.nodes | map({
-        number, state, title, body, url, id, isPinned, closed,
-        stateReason: (.stateReason // \"\"),
-        createdAt, updatedAt, closedAt,
-        author: {
-          id: (.author.id // \"\"),
-          is_bot: (.author | has(\"name\") | not),
-          login: .author.login,
-          name: (.author.name // .author.login)
-        },
-        labels: .labels.nodes,
-        assignees: (.assignees.nodes | map({id, is_bot: false, login, name: (.name // .login)})),
-        milestone,
-        comments: (.comments.nodes | map(. + {
-          minimizedReason: (.minimizedReason // \"\"),
-          reactionGroups: [.reactionGroups[] | select(.users.totalCount > 0)]
-        }))
-      } | {$JSON})"
+    _gh_graphql "$query" | jq ".data.repository.issues.nodes | $proj"
   else
     q_val="repo:$REPO+is:issue"
     [ "$STATE" != "all" ] && q_val="$q_val+state:$STATE"
@@ -265,6 +234,39 @@ _gh_graphql() {
   fi
   printf "%s" "$result"
 }
+
+# populate gql & proj varibles with values from gql_<f> / proj_<f> variables
+# (defined below) for fields that need custom GraphQL fragments or projection.
+# Plain fields fall through to the field name by default
+_gql_build() {
+  local g_var p_var projs="" fields=()
+  gql=""
+  IFS=', ' read -ra fields <<< "$1"
+  for f in "${fields[@]}"; do
+    [ -z "$f" ] && continue
+    g_var="gql_$f" p_var="proj_$f"
+    gql+=" ${!g_var:-$f}"
+    projs+="${!p_var:-$f}, "
+  done
+  proj="map({${projs%, }})"
+}
+
+### graphql fragments / projections
+gql_author='author { login ... on User { id name } ... on Bot { id } }'
+proj_author='author: { id: (.author.id // ""), is_bot: (.author | has("name") | not), login: .author.login, name: (.author.name // .author.login) }'
+
+gql_labels='labels(first: 100) { nodes { id name description color } }'
+proj_labels='labels: .labels.nodes'
+
+gql_assignees='assignees(first: 50) { nodes { id login name } }'
+proj_assignees='assignees: (.assignees.nodes | map({id, is_bot: false, login, name: (.name // .login)}))'
+
+gql_milestone='milestone { number title description dueOn }'
+
+proj_stateReason='stateReason: (.stateReason // "")'
+
+gql_comments='comments(first: 50) { nodes { id author { login } authorAssociation body createdAt includesCreatedEdit isMinimized minimizedReason url viewerDidAuthor reactionGroups { content users { totalCount } } } }'
+proj_comments='comments: (.comments.nodes | map(. + { minimizedReason: (.minimizedReason // ""), reactionGroups: [.reactionGroups[] | select(.users.totalCount > 0)] }))'
 
 ## formatting
 _table() {
