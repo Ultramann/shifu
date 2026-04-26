@@ -81,7 +81,7 @@ pr_list_cmd() {
   cmd_func pr_list
   cmd_help "List pull requests in a repository"
 
-  cmd_optd -s --state  -- STATE open "Filter by state: {open|closed|all}"
+  cmd_optd -s --state  -- STATE open "Filter by state: {open|closed|merged|all}"
   cmd_optd -n --number -- NUMBER 10  "Maximum number of items to fetch"
 }
 
@@ -154,13 +154,18 @@ number:\t\(.number)
 pr_list() {
   _resolve_repo
   q_val="repo:$REPO+is:pr"
-  [ "$STATE" != "all" ] && q_val="$q_val+state:$STATE"
+  case "$STATE" in
+    merged) q_val="$q_val+is:merged" ;;
+    all)    ;;
+    *)      q_val="$q_val+state:$STATE" ;;
+  esac
   _update_query q "$q_val"
   _update_query per_page "$NUMBER"
   _gh_api_query "search/issues" | \
     jq -r '.items[] |
       "\(.created_at[5:7])/\(.created_at[8:10])/\(.created_at[0:4])" as $date |
-      "#\(.number)\t\(.state)\t\(.title)\t\(.user.login)\t\($date)"' | _table
+      (if .pull_request.merged_at then "merged" else .state end) as $state |
+      "#\(.number)\t\($state)\t\(.title)\t\(.user.login)\t\($date)"' | _table
 }
 
 pr_view() {
