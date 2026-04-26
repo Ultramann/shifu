@@ -84,6 +84,7 @@ pr_list_cmd() {
 
   cmd_optd -s --state  -- STATE open "Filter by state: {open|closed|merged|all}"
   cmd_optd -n --number -- NUMBER 10  "Maximum number of items to fetch"
+  cmd_optd --json -- JSON "" "Output JSON with the specified fields"
 }
 
 pr_view_cmd() {
@@ -91,6 +92,7 @@ pr_view_cmd() {
   cmd_func pr_view
   cmd_help "View a pull request"
 
+  cmd_optd --json -- JSON "" "Output JSON with the specified fields"
   cmd_argr PR_NUMBER "Pull request number to view"
 }
 
@@ -121,9 +123,7 @@ issue_list() {
           first: '"$NUMBER"',
           states: '"$states"',
           orderBy: { field: CREATED_AT, direction: DESC }
-        ) {
-          nodes { '"$gql"' }
-        }
+        ) { nodes { '"$gql"' } }
       }
     }'
     _gh_graphql "$query" | jq ".data.repository.issues.nodes | map($proj)"
@@ -165,25 +165,56 @@ number:\t\(.number)
 ## pr
 pr_list() {
   _resolve_repo
-  q_val="repo:$REPO+is:pr"
-  case "$STATE" in
-    merged) q_val="$q_val+is:merged" ;;
-    all)    ;;
-    *)      q_val="$q_val+state:$STATE" ;;
-  esac
-  _update_query q "$q_val"
-  _update_query per_page "$NUMBER"
-  _gh_api_query "search/issues" | \
-    jq -r '.items[] |
-      "\(.created_at[5:7])/\(.created_at[8:10])/\(.created_at[0:4])" as $date |
-      (if .pull_request.merged_at then "merged" else .state end) as $state |
-      "#\(.number)\t\($state)\t\(.title)\t\(.user.login)\t\($date)"' | _table
+  if [ -n "$JSON" ]; then
+    owner="${REPO%/*}"; name="${REPO#*/}"
+    case "$STATE" in
+      open)   states="[OPEN]" ;;
+      closed) states="[CLOSED, MERGED]" ;;
+      merged) states="[MERGED]" ;;
+      all)    states="[OPEN, CLOSED, MERGED]" ;;
+    esac
+    _gql_build "$JSON"
+    query='query {
+      repository(owner: "'"$owner"'", name: "'"$name"'") {
+        pullRequests(
+          first: '"$NUMBER"',
+          states: '"$states"',
+          orderBy: { field: CREATED_AT, direction: DESC }
+        ) { nodes { '"$gql"' } }
+      }
+    }'
+    _gh_graphql "$query" | jq ".data.repository.pullRequests.nodes | map($proj)"
+  else
+    q_val="repo:$REPO+is:pr"
+    case "$STATE" in
+      merged) q_val="$q_val+is:merged" ;;
+      all)    ;;
+      *)      q_val="$q_val+state:$STATE" ;;
+    esac
+    _update_query q "$q_val"
+    _update_query per_page "$NUMBER"
+    _gh_api_query "search/issues" | \
+      jq -r '.items[] |
+        "\(.created_at[5:7])/\(.created_at[8:10])/\(.created_at[0:4])" as $date |
+        (if .pull_request.merged_at then "merged" else .state end) as $state |
+        "#\(.number)\t\($state)\t\(.title)\t\(.user.login)\t\($date)"' | _table
+  fi
 }
 
 pr_view() {
   _resolve_repo
-  _gh_api_query "repos/$REPO/pulls/$PR_NUMBER" | \
-    jq -r '"title:\t\(.title)
+  if [ -n "$JSON" ]; then
+    owner="${REPO%/*}"; name="${REPO#*/}"
+    _gql_build "$JSON"
+    query='query {
+      repository(owner: "'"$owner"'", name: "'"$name"'") {
+        pullRequest(number: '"$PR_NUMBER"') { '"$gql"' }
+      }
+    }'
+    _gh_graphql "$query" | jq ".data.repository.pullRequest | $proj"
+  else
+    _gh_api_query "repos/$REPO/pulls/$PR_NUMBER" | \
+      jq -r '"title:\t\(.title)
 state:\t\(if .merged then "merged" else .state end)
 author:\t\(.user.login)
 number:\t\(.number)
@@ -192,6 +223,7 @@ additions:\t\(.additions)
 deletions:\t\(.deletions)
 --
 \(.body)"'
+  fi
 }
 
 # helpers
@@ -252,7 +284,7 @@ _gh_graphql() {
   printf "%s" "$result"
 }
 
-# populate gql & proj varibles with values from gql_<f> / proj_<f> variables
+# populate gql & proj variables with values from gql_<f> / proj_<f> variables
 # (defined below) for fields that need custom GraphQL fragments or projection.
 # Plain fields fall through to the field name by default
 _gql_build() {
