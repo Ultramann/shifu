@@ -64,6 +64,7 @@ issue_view_cmd() {
   cmd_func issue_view
   cmd_help "View an issue"
 
+  cmd_optd --json -- JSON "" "Output JSON with the specified fields"
   cmd_argr ISSUE_NUMBER "Issue number to view"
 }
 
@@ -125,7 +126,7 @@ issue_list() {
         }
       }
     }'
-    _gh_graphql "$query" | jq ".data.repository.issues.nodes | $proj"
+    _gh_graphql "$query" | jq ".data.repository.issues.nodes | map($proj)"
   else
     q_val="repo:$REPO+is:issue"
     [ "$STATE" != "all" ] && q_val="$q_val+state:$STATE"
@@ -139,8 +140,18 @@ issue_list() {
 
 issue_view() {
   _resolve_repo
-  _gh_api_query "repos/$REPO/issues/$ISSUE_NUMBER" | \
-    jq -r '"title:\t\(.title)
+  if [ -n "$JSON" ]; then
+    owner="${REPO%/*}"; name="${REPO#*/}"
+    _gql_build "$JSON"
+    query='query {
+      repository(owner: "'"$owner"'", name: "'"$name"'") {
+        issue(number: '"$ISSUE_NUMBER"') { '"$gql"' }
+      }
+    }'
+    _gh_graphql "$query" | jq ".data.repository.issue | $proj"
+  else
+    _gh_api_query "repos/$REPO/issues/$ISSUE_NUMBER" | \
+      jq -r '"title:\t\(.title)
 state:\t\(.state)
 author:\t\(.user.login)
 labels:\t\([.labels[].name] | join(", "))
@@ -148,6 +159,7 @@ comments:\t\(.comments)
 number:\t\(.number)
 --
 \(.body)"'
+  fi
 }
 
 ## pr
@@ -253,7 +265,7 @@ _gql_build() {
     gql+=" ${!g_var:-$f}"
     projs+="${!p_var:-$f}, "
   done
-  proj="map({${projs%, }})"
+  proj="{${projs%, }}"
 }
 
 ### graphql fragments / projections
