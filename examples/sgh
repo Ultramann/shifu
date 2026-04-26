@@ -22,7 +22,7 @@ sgh_cmd() {
 auth_cmd() {
   cmd_name auth
   cmd_subs auth_clear_cmd auth_set_cmd
-  cmd_help "Commands for interacting authentication tokens"
+  cmd_help "Authenticate sgh with GitHub"
 }
 
 auth_clear_cmd() {
@@ -44,24 +44,24 @@ auth_set_cmd() {
 issue_cmd() {
   cmd_name issue
   cmd_subs issue_list_cmd issue_view_cmd
-  cmd_help "Commands for interacting with github repository issues"
+  cmd_help "Manage issues"
 
-  cmd_optd :defer: -R --repo -- REPO "current repo" "Github repository in OWNER/REPO format"
+  cmd_optd :defer: -R --repo -- REPO "current repo" "Select another repository using the [HOST/]OWNER/REPO format"
 }
 
 issue_list_cmd() {
   cmd_name list
   cmd_func issue_list
-  cmd_help "List issues in a GitHub repository"
+  cmd_help "List issues in a repository"
 
-  cmd_optd -s --state  -- STATE open "State of issue: open, closed, all"
-  cmd_optd -n --number -- NUMBER 10 "Max number of results"
+  cmd_optd -s --state  -- STATE open "Filter by state: {open|closed|all}"
+  cmd_optd -n --number -- NUMBER 10 "Maximum number of issues to fetch"
 }
 
 issue_view_cmd() {
   cmd_name view
   cmd_func issue_view
-  cmd_help "View issue in a GitHub repository"
+  cmd_help "View an issue"
 
   cmd_argr ISSUE_NUMBER "Issue number to view"
 }
@@ -70,24 +70,24 @@ issue_view_cmd() {
 pr_cmd() {
   cmd_name pr
   cmd_subs pr_list_cmd pr_view_cmd
-  cmd_help "Commands for interacting with github repository pull requests"
+  cmd_help "Manage pull requests"
 
-  cmd_optd :defer: -R --repo -- REPO "current repo" "Github repository in OWNER/REPO format"
+  cmd_optd :defer: -R --repo -- REPO "current repo" "Select another repository using the [HOST/]OWNER/REPO format"
 }
 
 pr_list_cmd() {
   cmd_name list
   cmd_func pr_list
-  cmd_help "List pull requests in a GitHub repository"
+  cmd_help "List pull requests in a repository"
 
-  cmd_optd -s --state  -- STATE open "State of PR: open, closed, all"
-  cmd_optd -n --number -- NUMBER 10  "Max number of results"
+  cmd_optd -s --state  -- STATE open "Filter by state: {open|closed|all}"
+  cmd_optd -n --number -- NUMBER 10  "Maximum number of items to fetch"
 }
 
 pr_view_cmd() {
   cmd_name view
   cmd_func pr_view
-  cmd_help "View pull request in a GitHub repository"
+  cmd_help "View a pull request"
 
   cmd_argr PR_NUMBER "Pull request number to view"
 }
