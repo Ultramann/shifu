@@ -56,6 +56,7 @@ issue_list_cmd() {
 
   cmd_optd -s --state  -- STATE open "Filter by state: {open|closed|all}"
   cmd_optd -n --number -- NUMBER 10 "Maximum number of issues to fetch"
+  cmd_optd --json -- JSON "" "Output JSON with the specified fields"
 }
 
 issue_view_cmd() {
@@ -105,14 +106,66 @@ auth_set() {
 ## issue
 issue_list() {
   _resolve_repo
-  q_val="repo:$REPO+is:issue"
-  [ "$STATE" != "all" ] && q_val="$q_val+state:$STATE"
-  _update_query q "$q_val"
-  _update_query per_page "$NUMBER"
-  _gh_api_query "search/issues" | \
-    jq -r '.items[] |
+  if [ -n "$JSON" ]; then
+    owner="${REPO%/*}"; name="${REPO#*/}"
+    case "$STATE" in
+      open)   states="[OPEN]" ;;
+      closed) states="[CLOSED]" ;;
+      all)    states="[OPEN, CLOSED]" ;;
+    esac
+    query='query {
+      repository(owner: "'"$owner"'", name: "'"$name"'") {
+        issues(first: '"$NUMBER"', states: '"$states"', orderBy: {field: CREATED_AT, direction: DESC}) {
+          nodes {
+            number title body url id state stateReason isPinned closed
+            createdAt updatedAt closedAt
+            author {
+              login
+              ... on User { id name }
+              ... on Bot { id }
+            }
+            labels(first: 100) { nodes { id name description color } }
+            assignees(first: 50) { nodes { id login name } }
+            milestone { number title description dueOn }
+            comments(first: 50) {
+              nodes {
+                id author { login } authorAssociation body createdAt
+                includesCreatedEdit isMinimized minimizedReason url viewerDidAuthor
+                reactionGroups { content users { totalCount } }
+              }
+            }
+          }
+        }
+      }
+    }'
+    _gh_graphql "$query" | jq "
+      .data.repository.issues.nodes | map({
+        number, state, title, body, url, id, isPinned, closed,
+        stateReason: (.stateReason // \"\"),
+        createdAt, updatedAt, closedAt,
+        author: {
+          id: (.author.id // \"\"),
+          is_bot: (.author | has(\"name\") | not),
+          login: .author.login,
+          name: (.author.name // .author.login)
+        },
+        labels: .labels.nodes,
+        assignees: (.assignees.nodes | map({id, is_bot: false, login, name: (.name // .login)})),
+        milestone,
+        comments: (.comments.nodes | map(. + {
+          minimizedReason: (.minimizedReason // \"\"),
+          reactionGroups: [.reactionGroups[] | select(.users.totalCount > 0)]
+        }))
+      } | {$JSON})"
+  else
+    q_val="repo:$REPO+is:issue"
+    [ "$STATE" != "all" ] && q_val="$q_val+state:$STATE"
+    _update_query q "$q_val"
+    _update_query per_page "$NUMBER"
+    _gh_api_query "search/issues" | jq -r '.items[] |
       "\(.created_at[5:7])/\(.created_at[8:10])/\(.created_at[0:4])" as $date |
       "#\(.number)\t\(.state)\t\(.title)\t\(.user.login)\t\($date)"' | _table
+  fi
 }
 
 issue_view() {
@@ -193,6 +246,21 @@ _gh_api() {
   result=$(eval "$curl_call")
   if printf "%s" "$result" | jq -e 'has("message")' > /dev/null 2>&1; then
     printf "%s" "$result" | jq -r '.message' >&2
+    exit 1
+  fi
+  printf "%s" "$result"
+}
+
+_gh_graphql() {
+  [ -f "$auth_file" ] && auth_token=$(cat "$auth_file")
+  body=$(jq -n --arg q "$1" '{query: $q}')
+  result=$(curl -sL \
+    -H "Authorization: Bearer $auth_token" \
+    -H "Content-Type: application/json" \
+    -d "$body" \
+    https://api.github.com/graphql)
+  if printf "%s" "$result" | jq -e 'has("errors")' > /dev/null 2>&1; then
+    printf "%s" "$result" | jq -r '.errors[].message' >&2
     exit 1
   fi
   printf "%s" "$result"
