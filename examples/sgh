@@ -11,16 +11,24 @@ set -o pipefail
 
 auth_file="$HOME/.sgh"
 
+# shifu cmds
 sgh_cmd() {
   cmd_name sgh
   cmd_subs auth_cmd issue_cmd pr_cmd
   cmd_help "Example github cli implemented with shifu"
 }
 
+## auth
 auth_cmd() {
   cmd_name auth
   cmd_subs auth_clear_cmd auth_set_cmd
   cmd_help "Commands for interacting authentication tokens"
+}
+
+auth_clear_cmd() {
+  cmd_name clear
+  cmd_func auth_clear
+  cmd_help "Clear token for authentication"
 }
 
 auth_set_cmd() {
@@ -32,20 +40,7 @@ auth_set_cmd() {
       https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens"
 }
 
-auth_set() {
-  printf "$PAT" > "$auth_file"
-}
-
-auth_clear_cmd() {
-  cmd_name clear
-  cmd_func auth_clear
-  cmd_help "Clear token for authentication"
-}
-
-auth_clear() {
-  [ -f "$HOME/.sgh" ] && rm "$HOME/.sgh"
-}
-
+## issue
 issue_cmd() {
   cmd_name issue
   cmd_subs issue_list_cmd issue_view_cmd
@@ -63,18 +58,6 @@ issue_list_cmd() {
   cmd_optd -n --number -- NUMBER 10 "Max number of results"
 }
 
-issue_list() {
-  _resolve_repo
-  q_val="repo:$REPO+is:issue"
-  [ "$STATE" != "all" ] && q_val="$q_val+state:$STATE"
-  _update_query q "$q_val"
-  _update_query per_page "$NUMBER"
-  _gh_api_query "search/issues" | \
-    jq -r '.items[] |
-      "\(.created_at[5:7])/\(.created_at[8:10])/\(.created_at[0:4])" as $date |
-      "#\(.number)\t\(.state)\t\(.title)\t\(.user.login)\t\($date)"' | _table
-}
-
 issue_view_cmd() {
   cmd_name view
   cmd_func issue_view
@@ -83,19 +66,7 @@ issue_view_cmd() {
   cmd_argr ISSUE_NUMBER "Issue number to view"
 }
 
-issue_view() {
-  _resolve_repo
-  _gh_api_query "repos/$REPO/issues/$ISSUE_NUMBER" | \
-    jq -r '"title:\t\(.title)
-state:\t\(.state)
-author:\t\(.user.login)
-labels:\t\([.labels[].name] | join(", "))
-comments:\t\(.comments)
-number:\t\(.number)
---
-\(.body)"'
-}
-
+## pr
 pr_cmd() {
   cmd_name pr
   cmd_subs pr_list_cmd pr_view_cmd
@@ -113,6 +84,51 @@ pr_list_cmd() {
   cmd_optd -n --number -- NUMBER 10  "Max number of results"
 }
 
+pr_view_cmd() {
+  cmd_name view
+  cmd_func pr_view
+  cmd_help "View pull request in a GitHub repository"
+
+  cmd_argr PR_NUMBER "Pull request number to view"
+}
+
+# implementations
+## auth
+auth_clear() {
+  [ -f "$HOME/.sgh" ] && rm "$HOME/.sgh"
+}
+
+auth_set() {
+  printf "$PAT" > "$auth_file"
+}
+
+## issue
+issue_list() {
+  _resolve_repo
+  q_val="repo:$REPO+is:issue"
+  [ "$STATE" != "all" ] && q_val="$q_val+state:$STATE"
+  _update_query q "$q_val"
+  _update_query per_page "$NUMBER"
+  _gh_api_query "search/issues" | \
+    jq -r '.items[] |
+      "\(.created_at[5:7])/\(.created_at[8:10])/\(.created_at[0:4])" as $date |
+      "#\(.number)\t\(.state)\t\(.title)\t\(.user.login)\t\($date)"' | _table
+}
+
+issue_view() {
+  _resolve_repo
+  _gh_api_query "repos/$REPO/issues/$ISSUE_NUMBER" | \
+    jq -r '"title:\t\(.title)
+state:\t\(.state)
+author:\t\(.user.login)
+labels:\t\([.labels[].name] | join(", "))
+comments:\t\(.comments)
+number:\t\(.number)
+--
+\(.body)"'
+}
+
+## pr
 pr_list() {
   _resolve_repo
   q_val="repo:$REPO+is:pr"
@@ -123,14 +139,6 @@ pr_list() {
     jq -r '.items[] |
       "\(.created_at[5:7])/\(.created_at[8:10])/\(.created_at[0:4])" as $date |
       "#\(.number)\t\(.state)\t\(.title)\t\(.user.login)\t\($date)"' | _table
-}
-
-pr_view_cmd() {
-  cmd_name view
-  cmd_func pr_view
-  cmd_help "View pull request in a GitHub repository"
-
-  cmd_argr PR_NUMBER "Pull request number to view"
 }
 
 pr_view() {
@@ -147,29 +155,7 @@ deletions:\t\(.deletions)
 \(.body)"'
 }
 
-_table() {
-  local input widths
-  input=$(cat)
-  [ -z "$input" ] && return
-  widths=$(printf "%s" "$input" | jq -Rrs '
-    split("\n") | map(select(length > 0))
-    | map(split("\t") | map(length))
-    | transpose | map(max) | @tsv')
-  IFS=$'\t' read -ra w <<< "$widths"
-
-  while IFS=$'\t' read -ra fields; do
-    last=$((${#fields[@]} - 1))
-    for i in "${!fields[@]}"; do
-      if [ "$i" -lt "$last" ]; then
-        printf "%s%*s  " "${fields[$i]}" "$((w[i] - ${#fields[$i]}))" ""
-      else
-        printf "%s" "${fields[$i]}"
-      fi
-    done
-    printf "\n"
-  done <<< "$input"
-}
-
+# helpers
 _resolve_repo() {
   [ "$REPO" != "current repo" ] && return
   origin_url=$(git config --get remote.origin.url)
@@ -184,6 +170,7 @@ _resolve_repo() {
   REPO="${REPO%.git}"
 }
 
+## api
 _update_query() {
   [ -z "$2" ] && return
   [ -z "$query" ] && query="?" || query="$query&"
@@ -211,5 +198,28 @@ _gh_api() {
   printf "%s" "$result"
 }
 
+## formatting
+_table() {
+  local input widths
+  input=$(cat)
+  [ -z "$input" ] && return
+  widths=$(printf "%s" "$input" | jq -Rrs '
+    split("\n") | map(select(length > 0))
+    | map(split("\t") | map(length))
+    | transpose | map(max) | @tsv')
+  IFS=$'\t' read -ra w <<< "$widths"
+
+  while IFS=$'\t' read -ra fields; do
+    last=$((${#fields[@]} - 1))
+    for i in "${!fields[@]}"; do
+      if [ "$i" -lt "$last" ]; then
+        printf "%s%*s  " "${fields[$i]}" "$((w[i] - ${#fields[$i]}))" ""
+      else
+        printf "%s" "${fields[$i]}"
+      fi
+    done
+    printf "\n"
+  done <<< "$input"
+}
 
 shifu_run sgh_cmd "$@"
