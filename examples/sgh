@@ -54,7 +54,7 @@ issue_list_cmd() {
 
   cmd_optd -s --state  -- STATE open "Filter by state: {open|closed|all}"
   cmd_optd -n --number -- NUMBER 10 "Maximum number of issues to fetch"
-  cmd_optd --json -- JSON "" "Output JSON with the specified fields"
+  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
 }
 
 issue_view_cmd() {
@@ -62,7 +62,7 @@ issue_view_cmd() {
   cmd_func issue_view
   cmd_help "View an issue"
 
-  cmd_optd --json -- JSON "" "Output JSON with the specified fields"
+  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
   cmd_argr ISSUE_NUMBER "Issue number to view"
 }
 
@@ -82,7 +82,7 @@ pr_list_cmd() {
 
   cmd_optd -s --state  -- STATE open "Filter by state: {open|closed|merged|all}"
   cmd_optd -n --number -- NUMBER 10  "Maximum number of items to fetch"
-  cmd_optd --json -- JSON "" "Output JSON with the specified fields"
+  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
 }
 
 pr_view_cmd() {
@@ -90,7 +90,7 @@ pr_view_cmd() {
   cmd_func pr_view
   cmd_help "View a pull request"
 
-  cmd_optd --json -- JSON "" "Output JSON with the specified fields"
+  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
   cmd_argr PR_NUMBER "Pull request number to view"
 }
 
@@ -130,9 +130,11 @@ issue_list() {
     [ "$STATE" != "all" ] && q_val="$q_val+state:$STATE"
     _update_query q "$q_val"
     _update_query per_page "$NUMBER"
-    _gh_api_query "search/issues" | jq -r '.items[] |
-      (.labels | map(.name) | join(",")) as $labels |
-      "\(.number)\t\(.state | ascii_upcase)\t\(.title)\t\($labels)\t\(.updated_at)"' | _table
+    _gh_api_query "search/issues" | jq -r '
+      "ID\tSTATE\tTITLE\tLABELS\tUPDATED",
+      (.items[] |
+        (.labels | map(.name) | join(",")) as $labels |
+        "\(.number)\t\(.state | ascii_upcase)\t\(.title)\t\($labels)\t\(.updated_at)")' | _table
   fi
 }
 
@@ -191,10 +193,11 @@ pr_list() {
     filter='.[]'
     [ "$STATE" = "merged" ] && filter='.[] | select(.merged_at)'
     _gh_api_query "repos/$REPO/pulls" | \
-      jq -r "$filter"' |
-        (if .merged_at then "MERGED" else .state | ascii_upcase end) as $state |
-        (if .head.repo.full_name == .base.repo.full_name then .head.ref else .head.label end) as $branch |
-        "\(.number)\t\(.title)\t\($branch)\t\($state)\t\(.created_at)"' | _table
+      jq -r '"ID\tTITLE\tBRANCH\tSTATE\tCREATED",
+        ('"$filter"' |
+          (if .merged_at then "MERGED" else .state | ascii_upcase end) as $state |
+          (if .head.repo.full_name == .base.repo.full_name then .head.ref else .head.label end) as $branch |
+          "\(.number)\t\(.title)\t\($branch)\t\($state)\t\(.created_at)")' | _table
   fi
 }
 
@@ -325,7 +328,13 @@ _table() {
     | transpose | map(max) | @tsv')
   IFS=$'\t' read -ra w <<< "$widths"
 
-  while IFS=$'\t' read -ra fields; do
+  while IFS= read -r line; do
+    local fields=() rest="$line"
+    while true; do
+      fields+=("${rest%%$'\t'*}")
+      [[ "$rest" != *$'\t'* ]] && break
+      rest="${rest#*$'\t'}"
+    done
     last=$((${#fields[@]} - 1))
     for i in "${!fields[@]}"; do
       if [ "$i" -lt "$last" ]; then
