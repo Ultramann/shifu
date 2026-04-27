@@ -1,9 +1,7 @@
 #! /bin/bash
 
-# Example shifu cli to partially reproduce similar functionality that
-# the github cli, gh, provides. Wrapper around curl commands to the
-# github rest api and jq for response parsing. Documentation:
-# https://docs.github.com/en/rest?apiVersion=2022-11-28
+# Example shifu cli to partially reproduce the github cli, gh, in shell script.
+# Wrapper around curl commands to the # github rest api and jq for response parsing.
 
 set -o pipefail
 
@@ -285,7 +283,7 @@ _gh_graphql() {
 }
 
 # populate gql & proj variables with values from gql_<f> / proj_<f> variables
-# (defined below) for fields that need custom GraphQL fragments or projection.
+# (defined below) for fields that need custom graphql fragments or projection.
 # Plain fields fall through to the field name by default
 _gql_build() {
   local g_var p_var projs="" fields=()
