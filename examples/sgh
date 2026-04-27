@@ -1,24 +1,32 @@
 #! /bin/bash
 
-# Example shifu cli to partially reproduce similar functionality that
-# the github cli, gh, provides. Wrapper around curl commands to the
-# github rest api. Documentation:
-# https://docs.github.com/en/rest?apiVersion=2022-11-28
+# Example shifu cli to partially reproduce the github cli, gh, in shell script.
+# Wrapper around curl commands to the # github rest api and jq for response parsing.
+
+set -o pipefail
 
 . "${0%/*}"/shifu && shifu_less || exit 1
 
 auth_file="$HOME/.sgh"
 
+# shifu cmds
 sgh_cmd() {
   cmd_name sgh
   cmd_subs auth_cmd issue_cmd pr_cmd
   cmd_help "Example github cli implemented with shifu"
 }
 
+## auth
 auth_cmd() {
   cmd_name auth
   cmd_subs auth_clear_cmd auth_set_cmd
-  cmd_help "Commands for interacting authentication tokens"
+  cmd_help "Authenticate sgh with GitHub"
+}
+
+auth_clear_cmd() {
+  cmd_name clear
+  cmd_func auth_clear
+  cmd_help "Clear token for authentication"
 }
 
 auth_set_cmd() {
@@ -30,116 +38,195 @@ auth_set_cmd() {
       https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens"
 }
 
-auth_set() {
-  printf "$PAT" > "$auth_file"
-}
-
-auth_clear_cmd() {
-  cmd_name clear
-  cmd_func auth_clear
-  cmd_help "Clear token for authentication"
-}
-
-auth_clear() {
-  [ -f "$HOME/.sgh" ] && rm "$HOME/.sgh"
-}
-
+## issue
 issue_cmd() {
   cmd_name issue
-  cmd_subs issue_list_cmd issue_get_cmd
-  cmd_help "Commands for interacting with github repository issues"
+  cmd_subs issue_list_cmd issue_view_cmd
+  cmd_help "Manage issues"
 
-  cmd_optd :defer: -R --repo -- REPO "current repo" "Github repository in OWNER/REPO format"
+  cmd_optd :defer: -R --repo -- REPO "current repo" "Select another repository using the [HOST/]OWNER/REPO format"
 }
 
 issue_list_cmd() {
   cmd_name list
   cmd_func issue_list
-  cmd_help "List issues in a GitHub repository"
+  cmd_help "List issues in a repository"
 
-  cmd_optd -n --number -- NUMBER 10 "Max number of results"
+  cmd_optd -s --state  -- STATE open "Filter by state: {open|closed|all}"
+  cmd_optd -n --number -- NUMBER 10 "Maximum number of issues to fetch"
+  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
 }
 
-issue_list() {
-  _resolve_repo
-  _get_auth_token
-  _update_query per_page "100"
-  _gh_api_query "repos/$REPO/issues" | \
-    jq -M "map(select(has(\"pull_request\")|not) |
-           \"\(.number): \(.title)\") |
-           .[:$NUMBER] | .[]" \
-    | xargs -I{} echo {}
+issue_view_cmd() {
+  cmd_name view
+  cmd_func issue_view
+  cmd_help "View an issue"
+
+  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
+  cmd_argr ISSUE_NUMBER "Issue number to view"
 }
 
-issue_get_cmd() {
-  cmd_name get
-  cmd_func issue_get
-  cmd_help "Get issue in a GitHub repository"
-
-  cmd_argr ISSUE_NUMBER "Issue number to get"
-}
-
-issue_get() {
-  _resolve_repo
-  _get_auth_token
-  result=$(_gh_api_query "repos/$REPO/issues/$ISSUE_NUMBER" | \
-    jq -M '
-      "\(.title)
-URL: \(.url)
-State: \(.state)
-Author: \(.user.login)
-Body: \(.body)
-"')
-  printf "$result"
-}
-
+## pr
 pr_cmd() {
   cmd_name pr
-  cmd_subs pr_list_cmd pr_get_cmd
-  cmd_help "Commands for interacting with github repository pull requests"
+  cmd_subs pr_list_cmd pr_view_cmd
+  cmd_help "Manage pull requests"
 
-  cmd_optd :defer: -R --repo -- REPO "current repo" "Github repository in OWNER/REPO format"
+  cmd_optd :defer: -R --repo -- REPO "current repo" "Select another repository using the [HOST/]OWNER/REPO format"
 }
 
 pr_list_cmd() {
   cmd_name list
   cmd_func pr_list
-  cmd_help "List pull requests in a GitHub repository"
+  cmd_help "List pull requests in a repository"
 
-  cmd_optd -s --state  -- STATE open "State of PR: open, closed, all"
-  cmd_optd -n --number -- NUMBER 10  "Max number of results"
+  cmd_optd -s --state  -- STATE open "Filter by state: {open|closed|merged|all}"
+  cmd_optd -n --number -- NUMBER 10  "Maximum number of items to fetch"
+  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
 }
 
+pr_view_cmd() {
+  cmd_name view
+  cmd_func pr_view
+  cmd_help "View a pull request"
+
+  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
+  cmd_argr PR_NUMBER "Pull request number to view"
+}
+
+# implementations
+## auth
+auth_clear() {
+  [ -f "$HOME/.sgh" ] && rm "$HOME/.sgh"
+}
+
+auth_set() {
+  printf "$PAT" > "$auth_file"
+}
+
+## issue
+issue_list() {
+  _resolve_repo
+  if [ -n "$JSON" ]; then
+    owner="${REPO%/*}"; name="${REPO#*/}"
+    case "$STATE" in
+      open)   states="[OPEN]" ;;
+      closed) states="[CLOSED]" ;;
+      all)    states="[OPEN, CLOSED]" ;;
+    esac
+    _gql_build "$JSON"
+    query='query {
+      repository(owner: "'"$owner"'", name: "'"$name"'") {
+        issues(
+          first: '"$NUMBER"',
+          states: '"$states"',
+          orderBy: { field: CREATED_AT, direction: DESC }
+        ) { nodes { '"$gql"' } }
+      }
+    }'
+    _gh_graphql "$query" | jq ".data.repository.issues.nodes | map($proj)"
+  else
+    q_val="repo:$REPO+is:issue"
+    [ "$STATE" != "all" ] && q_val="$q_val+state:$STATE"
+    _update_query q "$q_val"
+    _update_query per_page "$NUMBER"
+    _gh_api_query "search/issues" | jq -r '
+      "ID\tSTATE\tTITLE\tLABELS\tUPDATED",
+      (.items[] |
+        (.labels | map(.name) | join(",")) as $labels |
+        "\(.number)\t\(.state | ascii_upcase)\t\(.title)\t\($labels)\t\(.updated_at)")' | _table
+  fi
+}
+
+issue_view() {
+  _resolve_repo
+  if [ -n "$JSON" ]; then
+    owner="${REPO%/*}"; name="${REPO#*/}"
+    _gql_build "$JSON"
+    query='query {
+      repository(owner: "'"$owner"'", name: "'"$name"'") {
+        issue(number: '"$ISSUE_NUMBER"') { '"$gql"' }
+      }
+    }'
+    _gh_graphql "$query" | jq ".data.repository.issue | $proj"
+  else
+    _gh_api_query "repos/$REPO/issues/$ISSUE_NUMBER" | \
+      jq -r '"title:\t\(.title)
+state:\t\(.state)
+author:\t\(.user.login)
+labels:\t\([.labels[].name] | join(", "))
+comments:\t\(.comments)
+number:\t\(.number)
+--
+\(.body)"'
+  fi
+}
+
+## pr
 pr_list() {
   _resolve_repo
-  _get_auth_token
-  _update_query state "$STATE"
-  _update_query per_page $NUMBER
-  _gh_api_query "repos/$REPO/pulls" | \
-    jq -M '.[] | "\(.number): \(.title)"' | xargs -I{} echo {}
+  if [ -n "$JSON" ]; then
+    owner="${REPO%/*}"; name="${REPO#*/}"
+    case "$STATE" in
+      open)   states="[OPEN]" ;;
+      closed) states="[CLOSED, MERGED]" ;;
+      merged) states="[MERGED]" ;;
+      all)    states="[OPEN, CLOSED, MERGED]" ;;
+    esac
+    _gql_build "$JSON"
+    query='query {
+      repository(owner: "'"$owner"'", name: "'"$name"'") {
+        pullRequests(
+          first: '"$NUMBER"',
+          states: '"$states"',
+          orderBy: { field: CREATED_AT, direction: DESC }
+        ) { nodes { '"$gql"' } }
+      }
+    }'
+    _gh_graphql "$query" | jq ".data.repository.pullRequests.nodes | map($proj)"
+  else
+    case "$STATE" in
+      merged) _update_query state closed ;;
+      *)      _update_query state "$STATE" ;;
+    esac
+    _update_query per_page "$NUMBER"
+    filter='.[]'
+    [ "$STATE" = "merged" ] && filter='.[] | select(.merged_at)'
+    _gh_api_query "repos/$REPO/pulls" | \
+      jq -r '"ID\tTITLE\tBRANCH\tSTATE\tCREATED",
+        ('"$filter"' |
+          (if .merged_at then "MERGED" else .state | ascii_upcase end) as $state |
+          (if .head.repo.full_name == .base.repo.full_name then .head.ref else .head.label end) as $branch |
+          "\(.number)\t\(.title)\t\($branch)\t\($state)\t\(.created_at)")' | _table
+  fi
 }
 
-pr_get_cmd() {
-  cmd_name get
-  cmd_func pr_get
-  cmd_help "Get pr in a GitHub repository"
-
-  cmd_argr PR_NUMBER "Pull request number to get"
-}
-
-pr_get() {
+pr_view() {
   _resolve_repo
-  _get_auth_token
-  _gh_api_query "repos/$REPO/pulls/$PR_NUMBER" | \
-    jq -M '
-      "\(.title)
-URL: \(.issue_url)
-State: \(.state)
-Author: \(.user.login)
-Body: \(.body)
-"' | xargs printf
+  if [ -n "$JSON" ]; then
+    owner="${REPO%/*}"; name="${REPO#*/}"
+    _gql_build "$JSON"
+    query='query {
+      repository(owner: "'"$owner"'", name: "'"$name"'") {
+        pullRequest(number: '"$PR_NUMBER"') { '"$gql"' }
+      }
+    }'
+    _gh_graphql "$query" | jq ".data.repository.pullRequest | $proj"
+  else
+    _gh_api_query "repos/$REPO/pulls/$PR_NUMBER" | \
+      jq -r '"title:\t\(.title)
+state:\t\(if .merged then "merged" else .state end)
+author:\t\(.user.login)
+number:\t\(.number)
+url:\t\(.html_url)
+additions:\t\(.additions)
+deletions:\t\(.deletions)
+--
+\(.body)"'
+  fi
 }
 
+# helpers
 _resolve_repo() {
   [ "$REPO" != "current repo" ] && return
   origin_url=$(git config --get remote.origin.url)
@@ -154,6 +241,7 @@ _resolve_repo() {
   REPO="${REPO%.git}"
 }
 
+## api
 _update_query() {
   [ -z "$2" ] && return
   [ -z "$query" ] && query="?" || query="$query&"
@@ -165,24 +253,98 @@ _gh_api_query() {
 }
 
 _gh_api() {
+  [ -f "$auth_file" ] && auth_token=$(cat "$auth_file")
   curl_call="curl -sL \\
     -H \"Accept: application/vnd.github+json\" \\
     -H \"X-GitHub-Api-Version: 2022-11-28\""
   [ -n "$auth_token" ] && curl_call="$curl_call \\
     -H \"Authorization: Bearer $auth_token\""
   curl_call="$curl_call \\
-    https://api.github.com/$1"
-  eval "$curl_call"
-}
-
-_get_auth_token() {
-  [ -f "$auth_file" ] && auth_token=$(cat "$auth_file")
-  result=$(_gh_api)
-  jq -e 'has("status") and .status != "200"' <<< "$result" > /dev/null
-  if [ $? -eq 0 ]; then
-    echo "$result" | jq -rM '.message'
+    'https://api.github.com/$1'"
+  result=$(eval "$curl_call")
+  if printf "%s" "$result" | jq -e 'has("message")' > /dev/null 2>&1; then
+    printf "%s" "$result" | jq -r '.message' >&2
     exit 1
   fi
+  printf "%s" "$result"
+}
+
+_gh_graphql() {
+  [ -f "$auth_file" ] && auth_token=$(cat "$auth_file")
+  body=$(jq -n --arg q "$1" '{query: $q}')
+  result=$(curl -sL \
+    -H "Authorization: Bearer $auth_token" \
+    -H "Content-Type: application/json" \
+    -d "$body" \
+    https://api.github.com/graphql)
+  if printf "%s" "$result" | jq -e 'has("errors")' > /dev/null 2>&1; then
+    printf "%s" "$result" | jq -r '.errors[].message' >&2
+    exit 1
+  fi
+  printf "%s" "$result"
+}
+
+# populate gql & proj variables with values from gql_<f> / proj_<f> variables
+# (defined below) for fields that need custom graphql fragments or projection.
+# Plain fields fall through to the field name by default
+_gql_build() {
+  local g_var p_var projs="" fields=()
+  gql=""
+  IFS=', ' read -ra fields <<< "$1"
+  for f in "${fields[@]}"; do
+    [ -z "$f" ] && continue
+    g_var="gql_$f" p_var="proj_$f"
+    gql+=" ${!g_var:-$f}"
+    projs+="${!p_var:-$f}, "
+  done
+  proj="{${projs%, }}"
+}
+
+### graphql fragments / projections
+gql_author='author { login ... on User { id name } ... on Bot { id } }'
+proj_author='author: { id: (.author.id // ""), is_bot: (.author | has("name") | not), login: .author.login, name: (.author.name // .author.login) }'
+
+gql_labels='labels(first: 100) { nodes { id name description color } }'
+proj_labels='labels: .labels.nodes'
+
+gql_assignees='assignees(first: 50) { nodes { id login name } }'
+proj_assignees='assignees: (.assignees.nodes | map({id, is_bot: false, login, name: (.name // .login)}))'
+
+gql_milestone='milestone { number title description dueOn }'
+
+proj_stateReason='stateReason: (.stateReason // "")'
+
+gql_comments='comments(first: 50) { nodes { id author { login } authorAssociation body createdAt includesCreatedEdit isMinimized minimizedReason url viewerDidAuthor reactionGroups { content users { totalCount } } } }'
+proj_comments='comments: (.comments.nodes | map(. + { minimizedReason: (.minimizedReason // ""), reactionGroups: [.reactionGroups[] | select(.users.totalCount > 0)] }))'
+
+## formatting
+_table() {
+  local input widths
+  input=$(cat)
+  [ -z "$input" ] && return
+  widths=$(printf "%s" "$input" | jq -Rrs '
+    split("\n") | map(select(length > 0))
+    | map(split("\t") | map(length))
+    | transpose | map(max) | @tsv')
+  IFS=$'\t' read -ra w <<< "$widths"
+
+  while IFS= read -r line; do
+    local fields=() rest="$line"
+    while true; do
+      fields+=("${rest%%$'\t'*}")
+      [[ "$rest" != *$'\t'* ]] && break
+      rest="${rest#*$'\t'}"
+    done
+    last=$((${#fields[@]} - 1))
+    for i in "${!fields[@]}"; do
+      if [ "$i" -lt "$last" ]; then
+        printf "%s%*s  " "${fields[$i]}" "$((w[i] - ${#fields[$i]}))" ""
+      else
+        printf "%s" "${fields[$i]}"
+      fi
+    done
+    printf "\n"
+  done <<< "$input"
 }
 
 shifu_run sgh_cmd "$@"
