@@ -52,9 +52,9 @@ issue_list_cmd() {
   cmd_func issue_list
   cmd_help "List issues in a repository"
 
-  cmd_optd -s --state  -- STATE open "Filter by state: {open|closed|all}"
-  cmd_optd -n --number -- NUMBER 10 "Maximum number of issues to fetch"
-  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
+  cmd_optd -s --state -- STATE open "Filter by state: {open|closed|all}"
+  cmd_optd -L --limit -- LIMIT 30 "Maximum number of issues to fetch"
+  cmd_optd    --json  -- JSON "" "Output JSON with the specified fields"
 }
 
 issue_view_cmd() {
@@ -62,7 +62,7 @@ issue_view_cmd() {
   cmd_func issue_view
   cmd_help "View an issue"
 
-  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
+  cmd_optd --json -- JSON "" "Output JSON with the specified fields"
   cmd_argr ISSUE_NUMBER "Issue number to view"
 }
 
@@ -80,9 +80,9 @@ pr_list_cmd() {
   cmd_func pr_list
   cmd_help "List pull requests in a repository"
 
-  cmd_optd -s --state  -- STATE open "Filter by state: {open|closed|merged|all}"
-  cmd_optd -n --number -- NUMBER 10  "Maximum number of items to fetch"
-  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
+  cmd_optd -s --state -- STATE open "Filter by state: {open|closed|merged|all}"
+  cmd_optd -L --limit -- LIMIT 30  "Maximum number of items to fetch"
+  cmd_optd     --json -- JSON "" "Output JSON with the specified fields"
 }
 
 pr_view_cmd() {
@@ -90,7 +90,7 @@ pr_view_cmd() {
   cmd_func pr_view
   cmd_help "View a pull request"
 
-  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
+  cmd_optd --json -- JSON "" "Output JSON with the specified fields"
   cmd_argr PR_NUMBER "Pull request number to view"
 }
 
@@ -118,7 +118,7 @@ issue_list() {
     query='query {
       repository(owner: "'"$owner"'", name: "'"$name"'") {
         issues(
-          first: '"$NUMBER"',
+          first: '"$LIMIT"',
           states: '"$states"',
           orderBy: { field: CREATED_AT, direction: DESC }
         ) { nodes { '"$gql"' } }
@@ -129,7 +129,7 @@ issue_list() {
     q_val="repo:$REPO+is:issue"
     [ "$STATE" != "all" ] && q_val="$q_val+state:$STATE"
     _update_query q "$q_val"
-    _update_query per_page "$NUMBER"
+    _update_query per_page "$LIMIT"
     _gh_api_query "search/issues" | jq -r '
       "ID\tSTATE\tTITLE\tLABELS\tUPDATED",
       (.items[] |
@@ -177,7 +177,7 @@ pr_list() {
     query='query {
       repository(owner: "'"$owner"'", name: "'"$name"'") {
         pullRequests(
-          first: '"$NUMBER"',
+          first: '"$LIMIT"',
           states: '"$states"',
           orderBy: { field: CREATED_AT, direction: DESC }
         ) { nodes { '"$gql"' } }
@@ -189,7 +189,7 @@ pr_list() {
       merged) _update_query state closed ;;
       *)      _update_query state "$STATE" ;;
     esac
-    _update_query per_page "$NUMBER"
+    _update_query per_page "$LIMIT"
     filter='.[]'
     [ "$STATE" = "merged" ] && filter='.[] | select(.merged_at)'
     _gh_api_query "repos/$REPO/pulls" | \
