@@ -12,8 +12,20 @@ auth_file="$HOME/.sgh"
 # shifu cmds
 sgh_cmd() {
   cmd_name sgh
-  cmd_subs auth_cmd issue_cmd pr_cmd
+  cmd_subs api_cmd auth_cmd issue_cmd pr_cmd
   cmd_help "Example github cli implemented with shifu"
+}
+
+## api
+api_cmd() {
+  cmd_name api
+  cmd_func api_call
+  cmd_help "Make an authenticated GitHub API request"
+
+  cmd_optd -X --method -- METHOD AUTO "The HTTP method for the request (AUTO is GET, or POST when --input is set)"
+  cmd_optd -H --header -- HEADER "" "Add a HTTP request header in key:value format"
+  cmd_optd    --input  -- INPUT  "" "The file to use as body for the HTTP request (use \"-\" to read from standard input)"
+  cmd_argr ENDPOINT "GitHub API endpoint path or \"graphql\""
 }
 
 ## auth
@@ -52,9 +64,9 @@ issue_list_cmd() {
   cmd_func issue_list
   cmd_help "List issues in a repository"
 
-  cmd_optd -s --state  -- STATE open "Filter by state: {open|closed|all}"
-  cmd_optd -n --number -- NUMBER 10 "Maximum number of issues to fetch"
-  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
+  cmd_optd -s --state -- STATE open "Filter by state: {open|closed|all}"
+  cmd_optd -L --limit -- LIMIT 30 "Maximum number of issues to fetch"
+  cmd_optd    --json  -- JSON "" "Output JSON with the specified fields"
 }
 
 issue_view_cmd() {
@@ -62,7 +74,7 @@ issue_view_cmd() {
   cmd_func issue_view
   cmd_help "View an issue"
 
-  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
+  cmd_optd --json -- JSON "" "Output JSON with the specified fields"
   cmd_argr ISSUE_NUMBER "Issue number to view"
 }
 
@@ -80,9 +92,9 @@ pr_list_cmd() {
   cmd_func pr_list
   cmd_help "List pull requests in a repository"
 
-  cmd_optd -s --state  -- STATE open "Filter by state: {open|closed|merged|all}"
-  cmd_optd -n --number -- NUMBER 10  "Maximum number of items to fetch"
-  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
+  cmd_optd -s --state -- STATE open "Filter by state: {open|closed|merged|all}"
+  cmd_optd -L --limit -- LIMIT 30  "Maximum number of items to fetch"
+  cmd_optd     --json -- JSON "" "Output JSON with the specified fields"
 }
 
 pr_view_cmd() {
@@ -90,11 +102,37 @@ pr_view_cmd() {
   cmd_func pr_view
   cmd_help "View a pull request"
 
-  cmd_optd --json      -- JSON "" "Output JSON with the specified fields"
+  cmd_optd --json -- JSON "" "Output JSON with the specified fields"
   cmd_argr PR_NUMBER "Pull request number to view"
 }
 
 # implementations
+## api
+api_call() {
+  [ -f "$auth_file" ] && auth_token=$(cat "$auth_file")
+
+  if [ "$METHOD" = "AUTO" ]; then
+    [ -n "$INPUT" ] && method=POST || method=GET
+  else
+    method="$METHOD"
+  fi
+
+  curl_call="curl -sL -X \"$method\" \
+    -H \"Accept: application/vnd.github+json\" \
+    -H \"X-GitHub-Api-Version: 2022-11-28\""
+  [ -n "$auth_token" ] && curl_call="$curl_call -H \"Authorization: Bearer $auth_token\""
+  [ -n "$INPUT" ] && curl_call="$curl_call -H \"Content-Type: application/json\""
+  [ -n "$HEADER" ] && curl_call="$curl_call -H \"$HEADER\""
+
+  if [ "$INPUT" = "-" ]; then
+    curl_call="$curl_call --data-binary @-"
+  elif [ -n "$INPUT" ]; then
+    curl_call="$curl_call --data-binary \"@$INPUT\""
+  fi
+
+  eval "$curl_call 'https://api.github.com/$ENDPOINT'"
+}
+
 ## auth
 auth_clear() {
   [ -f "$HOME/.sgh" ] && rm "$HOME/.sgh"
@@ -118,7 +156,7 @@ issue_list() {
     query='query {
       repository(owner: "'"$owner"'", name: "'"$name"'") {
         issues(
-          first: '"$NUMBER"',
+          first: '"$LIMIT"',
           states: '"$states"',
           orderBy: { field: CREATED_AT, direction: DESC }
         ) { nodes { '"$gql"' } }
@@ -129,7 +167,7 @@ issue_list() {
     q_val="repo:$REPO+is:issue"
     [ "$STATE" != "all" ] && q_val="$q_val+state:$STATE"
     _update_query q "$q_val"
-    _update_query per_page "$NUMBER"
+    _update_query per_page "$LIMIT"
     _gh_api_query "search/issues" | jq -r '
       "ID\tSTATE\tTITLE\tLABELS\tUPDATED",
       (.items[] |
@@ -177,7 +215,7 @@ pr_list() {
     query='query {
       repository(owner: "'"$owner"'", name: "'"$name"'") {
         pullRequests(
-          first: '"$NUMBER"',
+          first: '"$LIMIT"',
           states: '"$states"',
           orderBy: { field: CREATED_AT, direction: DESC }
         ) { nodes { '"$gql"' } }
@@ -189,7 +227,7 @@ pr_list() {
       merged) _update_query state closed ;;
       *)      _update_query state "$STATE" ;;
     esac
-    _update_query per_page "$NUMBER"
+    _update_query per_page "$LIMIT"
     filter='.[]'
     [ "$STATE" = "merged" ] && filter='.[] | select(.merged_at)'
     _gh_api_query "repos/$REPO/pulls" | \
@@ -254,14 +292,9 @@ _gh_api_query() {
 
 _gh_api() {
   [ -f "$auth_file" ] && auth_token=$(cat "$auth_file")
-  curl_call="curl -sL \\
-    -H \"Accept: application/vnd.github+json\" \\
-    -H \"X-GitHub-Api-Version: 2022-11-28\""
-  [ -n "$auth_token" ] && curl_call="$curl_call \\
-    -H \"Authorization: Bearer $auth_token\""
-  curl_call="$curl_call \\
-    'https://api.github.com/$1'"
-  result=$(eval "$curl_call")
+  curl_call="curl -sL -H \"Accept: application/vnd.github+json\" -H \"X-GitHub-Api-Version: 2022-11-28\""
+  [ -n "$auth_token" ] && curl_call="$curl_call -H \"Authorization: Bearer $auth_token\""
+  result=$(eval "$curl_call 'https://api.github.com/$1'")
   if printf "%s" "$result" | jq -e 'has("message")' > /dev/null 2>&1; then
     printf "%s" "$result" | jq -r '.message' >&2
     exit 1
