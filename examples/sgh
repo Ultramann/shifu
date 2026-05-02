@@ -12,8 +12,20 @@ auth_file="$HOME/.sgh"
 # shifu cmds
 sgh_cmd() {
   cmd_name sgh
-  cmd_subs auth_cmd issue_cmd pr_cmd
+  cmd_subs api_cmd auth_cmd issue_cmd pr_cmd
   cmd_help "Example github cli implemented with shifu"
+}
+
+## api
+api_cmd() {
+  cmd_name api
+  cmd_func api_call
+  cmd_help "Make an authenticated GitHub API request"
+
+  cmd_optd -X --method -- METHOD AUTO "The HTTP method for the request (AUTO is GET, or POST when --input is set)"
+  cmd_optd -H --header -- HEADER "" "Add a HTTP request header in key:value format"
+  cmd_optd    --input  -- INPUT  "" "The file to use as body for the HTTP request (use \"-\" to read from standard input)"
+  cmd_argr ENDPOINT "GitHub API endpoint path or \"graphql\""
 }
 
 ## auth
@@ -95,6 +107,32 @@ pr_view_cmd() {
 }
 
 # implementations
+## api
+api_call() {
+  [ -f "$auth_file" ] && auth_token=$(cat "$auth_file")
+
+  if [ "$METHOD" = "AUTO" ]; then
+    [ -n "$INPUT" ] && method=POST || method=GET
+  else
+    method="$METHOD"
+  fi
+
+  curl_call="curl -sL -X \"$method\" \
+    -H \"Accept: application/vnd.github+json\" \
+    -H \"X-GitHub-Api-Version: 2022-11-28\""
+  [ -n "$auth_token" ] && curl_call="$curl_call -H \"Authorization: Bearer $auth_token\""
+  [ -n "$INPUT" ] && curl_call="$curl_call -H \"Content-Type: application/json\""
+  [ -n "$HEADER" ] && curl_call="$curl_call -H \"$HEADER\""
+
+  if [ "$INPUT" = "-" ]; then
+    curl_call="$curl_call --data-binary @-"
+  elif [ -n "$INPUT" ]; then
+    curl_call="$curl_call --data-binary \"@$INPUT\""
+  fi
+
+  eval "$curl_call 'https://api.github.com/$ENDPOINT'"
+}
+
 ## auth
 auth_clear() {
   [ -f "$HOME/.sgh" ] && rm "$HOME/.sgh"
@@ -254,14 +292,9 @@ _gh_api_query() {
 
 _gh_api() {
   [ -f "$auth_file" ] && auth_token=$(cat "$auth_file")
-  curl_call="curl -sL \\
-    -H \"Accept: application/vnd.github+json\" \\
-    -H \"X-GitHub-Api-Version: 2022-11-28\""
-  [ -n "$auth_token" ] && curl_call="$curl_call \\
-    -H \"Authorization: Bearer $auth_token\""
-  curl_call="$curl_call \\
-    'https://api.github.com/$1'"
-  result=$(eval "$curl_call")
+  curl_call="curl -sL -H \"Accept: application/vnd.github+json\" -H \"X-GitHub-Api-Version: 2022-11-28\""
+  [ -n "$auth_token" ] && curl_call="$curl_call -H \"Authorization: Bearer $auth_token\""
+  result=$(eval "$curl_call 'https://api.github.com/$1'")
   if printf "%s" "$result" | jq -e 'has("message")' > /dev/null 2>&1; then
     printf "%s" "$result" | jq -r '.message' >&2
     exit 1
