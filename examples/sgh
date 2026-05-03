@@ -1,7 +1,8 @@
 #! /bin/bash
 
 # Example shifu cli to partially reproduce the github cli, gh, in shell script.
-# Wrapper around curl commands to the github rest api and jq for response parsing.
+# Wrapper around curl commands to the github rest api and jq for response parsing,
+# with git used to get local repository information.
 
 set -o pipefail
 
@@ -22,9 +23,10 @@ api_cmd() {
   cmd_func api_call
   cmd_help "Make an authenticated GitHub API request"
 
-  cmd_optd -X --method -- METHOD AUTO "The HTTP method for the request (AUTO is GET, or POST when --input is set)"
-  cmd_optd -H --header -- HEADER "" "Add a HTTP request header in key:value format"
-  cmd_optd    --input  -- INPUT  "" "The file to use as body for the HTTP request (use \"-\" to read from standard input)"
+  cmd_optd -X --method   -- METHOD   AUTO "The HTTP method for the request (AUTO is GET, or POST when --input is set)"
+  cmd_optd -H --header   -- HEADER   "" "Add a HTTP request header in key:value format"
+  cmd_optd    --input    -- INPUT    "" "The file to use as body for the HTTP request (use \"-\" to read from standard input)"
+  cmd_optd    --hostname -- HOSTNAME AUTO "The GitHub hostname for the request (AUTO is github.com or the GH_HOST environment variable)"
   cmd_argr ENDPOINT "GitHub API endpoint path or \"graphql\""
 }
 
@@ -144,7 +146,16 @@ api_call() {
     curl_call="$curl_call --data-binary \"@$INPUT\""
   fi
 
-  eval "$curl_call 'https://api.github.com/$ENDPOINT'"
+  [ "$HOSTNAME" = "AUTO" ] && HOSTNAME="${GH_HOST:-github.com}"
+  case "$HOSTNAME" in
+    github.com) api_host="api.github.com"; api_path="" ;;
+    *)          api_host="$HOSTNAME";      api_path="/api/v3" ;;
+  esac
+  case "$ENDPOINT" in
+    http://*|https://*) url="$ENDPOINT" ;;
+    *) url="https://${api_host}${api_path}/$ENDPOINT" ;;
+  esac
+  eval "$curl_call '$url'"
 }
 
 ## auth
