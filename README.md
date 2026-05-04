@@ -127,7 +127,7 @@ sub_func() { # <──────────────┘
 shifu_run root_cmd "$@"
 ```
 
-If this script were saved as `root` and called with `root sub`, `shifu_run` would match `sub` against the name declared in `sub_cmd` and dispatch to `sub_func`.
+If this script were saved and made executable in a file named `root` and called with `root sub`, `shifu_run` would match `sub` against the name declared in `sub_cmd` and dispatch to `sub_func`.
 
 ```txt
 $ root sub
