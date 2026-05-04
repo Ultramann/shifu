@@ -3,6 +3,76 @@
 # Copyright (c) Cary Goltermann, MIT License
 # https://github.com/Ultramann/shifu
 
+# API reference (see README for full documentation)
+#
+# Command runner
+#   shifu_run <root_cmd> [args...]
+#     dispatch CLI; call at end of script
+#
+# Command definition functions
+# > call inside command functions
+#
+#   shifu_cmd_name <name>
+#     name as invoked on the CLI
+#   shifu_cmd_help <text>
+#     short help string
+#   shifu_cmd_long <text>
+#     long help string
+#   shifu_cmd_subs <fn>...
+#     list of subcommand functions (non-leaf cmd only)
+#   shifu_cmd_func <fn>
+#     function to run (leaf cmd only)
+#
+# Option and argument functions
+# > options in non-leaf cmds require scope as first arg:
+# > * :eager: - parsed before subcommand dispatch
+# > * :defer: - parsing deferred to the leaf
+#
+#   shifu_cmd_optb [scope] <flags> -- <var> <default> <set_value> <help>
+#     binary option, sets <var> to <set_value> when present
+#   shifu_cmd_optd [scope] <flags> -- <var> <default> <help>
+#     option with default value
+#   shifu_cmd_optr [scope] <flags> -- <var> <help>
+#     required option
+#   shifu_cmd_argr <var> <help>
+#     required positional argument (leaf cmd only), declare in order
+#   shifu_cmd_args <help>
+#     remaining arguments passed to cmd function (leaf only)
+#
+# Completion functions
+# > attach to the most recent option/argument
+#
+#   shifu_cmd_cpte <word>...
+#     complete from enumerated words
+#   shifu_cmd_cptf <function>
+#     complete with output of <function>
+#   shifu_cmd_cptp :files: | :dirs: | :glob: <pattern>
+#     complete paths
+#
+# Miscellaneous
+#   shifu_add_cpts <word>...
+#     append words to completions; used inside cptf functions
+#   shifu_less
+#     define unprefixed aliases (cmd_name, cmd_optb, ...) for terser scripts
+#
+# Example
+#   #! /bin/sh
+#   . "${0%/*}"/shifu || exit 1
+#
+#   intro_cmd() {
+#     shifu_cmd_name intro
+#     shifu_cmd_func intro_function
+#     shifu_cmd_help "An introduction shifu cli"
+#     shifu_cmd_optd -o --option -- OPTION none "Example option to echo"
+#   }
+#
+#   intro_function() { echo "$OPTION"; }
+#
+#   shifu_run intro_cmd "$@"
+#
+#   # ./intro -o hello  -> hello
+#   # ./intro --help    -> auto-generated help
+
 # config
 shifu_allow_options_anywhere=false
 shifu_complete_single_dash_options=false
