@@ -38,6 +38,22 @@
 #     required positional argument (leaf cmd only), declare in order
 #   shifu_cmd_args <help>
 #     remaining arguments passed to cmd function (leaf only)
+#
+# Completion functions
+# > attach to the most recent option/argument
+#
+#   shifu_cmd_cpte <word>...
+#     complete from enumerated words
+#   shifu_cmd_cptf <function>
+#     complete with output of <function>
+#   shifu_cmd_cptp :files: | :dirs: | :glob: <pattern>
+#     complete paths
+#
+# Miscellaneous
+#   shifu_add_cpts <word>...
+#     append words to completions; for use inside cptf functions
+#   shifu_less
+#     define unprefixed aliases (cmd_name, cmd_optb, ...) for terser scripts
 
 # config
 shifu_allow_options_anywhere=false
