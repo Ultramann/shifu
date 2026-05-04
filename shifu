@@ -51,9 +51,27 @@
 #
 # Miscellaneous
 #   shifu_add_cpts <word>...
-#     append words to completions; for use inside cptf functions
+#     append words to completions; used inside cptf functions
 #   shifu_less
 #     define unprefixed aliases (cmd_name, cmd_optb, ...) for terser scripts
+#
+# Example
+#   #! /bin/sh
+#   . "${0%/*}"/shifu || exit 1
+#
+#   intro_cmd() {
+#     shifu_cmd_name intro
+#     shifu_cmd_func intro_function
+#     shifu_cmd_help "An introduction shifu cli"
+#     shifu_cmd_optd -o --option -- OPTION none "Example option to echo"
+#   }
+#
+#   intro_function() { echo "$OPTION"; }
+#
+#   shifu_run intro_cmd "$@"
+#
+#   # ./intro -o hello  -> hello
+#   # ./intro --help    -> auto-generated help
 
 # config
 shifu_allow_options_anywhere=false
