@@ -1023,6 +1023,56 @@ test_shifu_help_flags_validation() {
   -- glob_bracket   "--[abc]"  "Help flag contains glob character: --[abc]"
 }
 
+test_shifu_itr_list_empty() {
+  ITEMS_LIST=""
+  count=0
+  while shifu_itr_list ITEMS; do
+    count=$((count + 1))
+  done
+  shifu_assert_equal count 0 $count
+}
+
+test_shifu_itr_list_single() {
+  ITEMS_LIST=""
+  _shifu_append_list ITEMS_LIST "alpha"
+  result=""
+  while shifu_itr_list ITEMS; do
+    result="$result$ITEMS,"
+  done
+  shifu_assert_strings_equal items "alpha," "$result"
+}
+
+test_shifu_itr_list_multiple() {
+  ITEMS_LIST=""
+  _shifu_append_list ITEMS_LIST "a"
+  _shifu_append_list ITEMS_LIST "b"
+  _shifu_append_list ITEMS_LIST "c"
+  result=""
+  while shifu_itr_list ITEMS; do
+    result="$result$ITEMS,"
+  done
+  shifu_assert_strings_equal items "a,b,c," "$result"
+}
+
+test_shifu_itr_list_reiterate() {
+  ITEMS_LIST=""
+  _shifu_append_list ITEMS_LIST "a"
+  _shifu_append_list ITEMS_LIST "b"
+
+  pass1=""
+  while shifu_itr_list ITEMS; do
+    pass1="$pass1$ITEMS,"
+  done
+
+  pass2=""
+  while shifu_itr_list ITEMS; do
+    pass2="$pass2$ITEMS,"
+  done
+
+  shifu_assert_strings_equal first  "a,b," "$pass1"
+  shifu_assert_strings_equal second "a,b," "$pass2"
+}
+
 # Testing utilities
 shifu_parameterize_test() {
   # run test function over many test cases, test cases are separated with --.

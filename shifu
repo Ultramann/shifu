@@ -214,6 +214,25 @@ shifu_add_cpts() {
   done
 }
 
+shifu_list_delim='#=|=#'
+
+_shifu_append_list() {
+  eval "$1=\"\${$1:-}\$2\$shifu_list_delim\""
+}
+
+shifu_itr_list() {
+  if ! [ "${shifu_itr_temp+set}" ]; then
+    eval "shifu_itr_temp=\$$1_LIST"
+  fi
+  if [ -z "$shifu_itr_temp" ]; then
+    unset shifu_itr_temp
+    return 1
+  fi
+  shifu_itr_tail="${shifu_itr_temp#*$shifu_list_delim}"
+  eval "$1=\"\${shifu_itr_temp%\$shifu_list_delim\$shifu_itr_tail}\""
+  shifu_itr_temp="$shifu_itr_tail"
+}
+
 shifu_less() {
   cmd_name() { shifu_cmd_name "$@"; }
   cmd_help() { shifu_cmd_help "$@"; }
@@ -229,6 +248,7 @@ shifu_less() {
   cmd_cptf() { shifu_cmd_cptf "$@"; }
   cmd_cptp() { shifu_cmd_cptp "$@"; }
   add_cpts() { shifu_add_cpts "$@"; }
+  itr_list() { shifu_itr_list "$@"; }
 }
 
 # helpers
