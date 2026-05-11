@@ -488,6 +488,13 @@ _shifu_opt_case_parse() {
   ' '|' "$@"
 }
 
+_shifu_strip_list_suffix() {
+  case "$1" in
+    *'[]') shifu_is_list=true;  shifu_list_var="${1%'[]'}" ;;
+    *)     shifu_is_list=false; shifu_list_var="$1" ;;
+  esac
+}
+
 _shifu_opt_defer_parse() {
   _shifu_opt_build shifu_defer_case '' '|' "$@"
   _shifu_opt_build shifu_defer_help '\n  ' ', ' "$@"
@@ -568,10 +575,18 @@ _shifu_cmd_optd() {
         _shifu_opt_case_parse "$@"
         shift $shifu_opt_count
         _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
-        _shifu_set_variable "$1" "$2"
-        _shifu_update_case_stmt_option_value_check
-        shifu_case_stmt="$shifu_case_stmt $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
-        _shifu_add_equals_case_arms shifu_case_stmt "$1"
+        _shifu_strip_list_suffix "$1"
+        if [ "$shifu_is_list" = true ]; then
+          _shifu_set_variable "$shifu_list_var" ""
+          _shifu_set_variable "${shifu_list_var}_LIST" "${2:+$2$shifu_list_delim}"
+          _shifu_update_case_stmt_option_value_check
+          shifu_case_stmt="$shifu_case_stmt _shifu_append_list ${shifu_list_var}_LIST \"\$2\"; shift 2; _shifu_ack_arg 2 ;;"
+        else
+          _shifu_set_variable "$1" "$2"
+          _shifu_update_case_stmt_option_value_check
+          shifu_case_stmt="$shifu_case_stmt $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
+          _shifu_add_equals_case_arms shifu_case_stmt "$1"
+        fi
       else
         _shifu_opt_defer_parse "$@"
         shift $shifu_opt_count

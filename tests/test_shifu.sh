@@ -1073,6 +1073,41 @@ test_shifu_itr_list_reiterate() {
   shifu_assert_strings_equal second "a,b," "$pass2"
 }
 
+shifu_test_list_optd_cmd() {
+  shifu_cmd_name list-optd
+  shifu_cmd_func shifu_test_list_optd_func
+  shifu_cmd_optd -i --item -- ITEMS[] "" "list of items"
+}
+
+shifu_test_list_optd_w_default_cmd() {
+  shifu_cmd_name list-optd-default
+  shifu_cmd_func shifu_test_list_optd_func
+  shifu_cmd_optd -i --item -- ITEMS[] "zero" "list of items"
+}
+
+shifu_test_list_optd_func() {
+  result=""
+  while shifu_itr_list ITEMS; do
+    result="$result$ITEMS,"
+  done
+  echo "$result"
+}
+
+test_shifu_run_optd_list() {
+  run_test() {
+    shifu_test_params cmd @cmd_args expected -- "$@"
+    actual=$(shifu_run $cmd $cmd_args 2>&1)
+    shifu_assert_zero exit_code $?
+    shifu_assert_strings_equal output "$expected" "$actual"
+  }
+  shifu_parameterize_test run_test \
+  -- no_args          shifu_test_list_optd_cmd            ""                    "" \
+  -- single           shifu_test_list_optd_cmd            "--item one"          "one," \
+  -- multiple         shifu_test_list_optd_cmd            "--item a -i b -i c"  "a,b,c," \
+  -- default_no_args  shifu_test_list_optd_w_default_cmd  ""                    "zero," \
+  -- default_w_args   shifu_test_list_optd_w_default_cmd  "-i one"              "zero,one,"
+}
+
 # Testing utilities
 shifu_parameterize_test() {
   # run test function over many test cases, test cases are separated with --.
