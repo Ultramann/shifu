@@ -1054,6 +1054,17 @@ test_shifu_itr_list_multiple() {
   shifu_assert_strings_equal items "a,b,c," "$result"
 }
 
+test_shifu_itr_list_glob_chars() {
+  ITEMS_LIST=""
+  _shifu_append_list ITEMS_LIST "first"
+  _shifu_append_list ITEMS_LIST "a[bc]"
+  result=""
+  while shifu_itr_list ITEMS; do
+    result="$result$ITEMS,"
+  done
+  shifu_assert_strings_equal items "first,a[bc]," "$result"
+}
+
 test_shifu_itr_list_reiterate() {
   ITEMS_LIST=""
   _shifu_append_list ITEMS_LIST "a"
