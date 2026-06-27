@@ -1076,13 +1076,13 @@ test_shifu_itr_list_reiterate() {
 shifu_test_list_optd_cmd() {
   shifu_cmd_name list-optd
   shifu_cmd_func shifu_test_list_optd_func
-  shifu_cmd_optd -i --item -- ITEMS[] "" "list of items"
+  shifu_cmd_optd -i --item -- ITEMS... "" "list of items"
 }
 
 shifu_test_list_optd_w_default_cmd() {
   shifu_cmd_name list-optd-default
   shifu_cmd_func shifu_test_list_optd_func
-  shifu_cmd_optd -i --item -- ITEMS[] "zero" "list of items"
+  shifu_cmd_optd -i --item -- ITEMS... "zero" "list of items"
 }
 
 shifu_test_list_optd_func() {

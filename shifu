@@ -490,8 +490,8 @@ _shifu_opt_case_parse() {
 
 _shifu_strip_list_suffix() {
   case "$1" in
-    *'[]') shifu_is_list=true;  shifu_list_var="${1%'[]'}" ;;
-    *)     shifu_is_list=false; shifu_list_var="$1" ;;
+    *'...') shifu_is_list=true;  shifu_list_var="${1%'...'}" ;;
+    *)      shifu_is_list=false; shifu_list_var="$1" ;;
   esac
 }
 
