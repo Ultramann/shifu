@@ -228,9 +228,8 @@ shifu_itr_list() {
     unset shifu_itr_temp
     return 1
   fi
-  shifu_itr_tail="${shifu_itr_temp#*$shifu_list_delim}"
-  eval "$1=\"\${shifu_itr_temp%\$shifu_list_delim\$shifu_itr_tail}\""
-  shifu_itr_temp="$shifu_itr_tail"
+  eval "$1=\"\${shifu_itr_temp%%\$shifu_list_delim*}\""
+  shifu_itr_temp="${shifu_itr_temp#*$shifu_list_delim}"
 }
 
 shifu_less() {
