@@ -31,7 +31,8 @@
 #   shifu_cmd_optb [scope] <flags> -- <var> <default> <set_value> <help>
 #     binary option, sets <var> to <set_value> when present
 #   shifu_cmd_optd [scope] <flags> -- <var> <default> <help>
-#     option with default value
+#     option with default value; suffix <var> with ... to make it
+#     repeatable, accruing args into a list (see shifu_itr_list)
 #   shifu_cmd_optr [scope] <flags> -- <var> <help>
 #     required option
 #   shifu_cmd_argr <var> <help>
@@ -50,6 +51,10 @@
 #     complete paths
 #
 # Miscellaneous
+#   shifu_itr_list <var>
+#     iterate args accrued by a repeatable optd flag; call in a while
+#     loop with <var> (without ...), each pass sets <var> to the next
+#     accrued value
 #   shifu_add_cpts <word>...
 #     append words to completions; used inside cptf functions
 #   shifu_less
@@ -214,6 +219,24 @@ shifu_add_cpts() {
   done
 }
 
+shifu_list_delim='#=|=#'
+
+_shifu_append_list() {
+  eval "$1=\"\${$1:-}\$2\$shifu_list_delim\""
+}
+
+shifu_itr_list() {
+  if ! [ "${shifu_itr_temp+set}" ]; then
+    eval "shifu_itr_temp=\$$1_LIST"
+  fi
+  if [ -z "$shifu_itr_temp" ]; then
+    unset shifu_itr_temp
+    return 1
+  fi
+  eval "$1=\"\${shifu_itr_temp%%\$shifu_list_delim*}\""
+  shifu_itr_temp="${shifu_itr_temp#*$shifu_list_delim}"
+}
+
 shifu_less() {
   cmd_name() { shifu_cmd_name "$@"; }
   cmd_help() { shifu_cmd_help "$@"; }
@@ -229,6 +252,7 @@ shifu_less() {
   cmd_cptf() { shifu_cmd_cptf "$@"; }
   cmd_cptp() { shifu_cmd_cptp "$@"; }
   add_cpts() { shifu_add_cpts "$@"; }
+  itr_list() { shifu_itr_list "$@"; }
 }
 
 # helpers
@@ -468,6 +492,13 @@ _shifu_opt_case_parse() {
   ' '|' "$@"
 }
 
+_shifu_strip_list_suffix() {
+  case "$1" in
+    *'...') shifu_is_list=true;  shifu_list_var="${1%'...'}" ;;
+    *)      shifu_is_list=false; shifu_list_var="$1" ;;
+  esac
+}
+
 _shifu_opt_defer_parse() {
   _shifu_opt_build shifu_defer_case '' '|' "$@"
   _shifu_opt_build shifu_defer_help '\n  ' ', ' "$@"
@@ -548,10 +579,18 @@ _shifu_cmd_optd() {
         _shifu_opt_case_parse "$@"
         shift $shifu_opt_count
         _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
-        _shifu_set_variable "$1" "$2"
-        _shifu_update_case_stmt_option_value_check
-        shifu_case_stmt="$shifu_case_stmt $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
-        _shifu_add_equals_case_arms shifu_case_stmt "$1"
+        _shifu_strip_list_suffix "$1"
+        if [ "$shifu_is_list" = true ]; then
+          _shifu_set_variable "$shifu_list_var" ""
+          _shifu_set_variable "${shifu_list_var}_LIST" "${2:+$2$shifu_list_delim}"
+          _shifu_update_case_stmt_option_value_check
+          shifu_case_stmt="$shifu_case_stmt _shifu_append_list ${shifu_list_var}_LIST \"\$2\"; shift 2; _shifu_ack_arg 2 ;;"
+        else
+          _shifu_set_variable "$1" "$2"
+          _shifu_update_case_stmt_option_value_check
+          shifu_case_stmt="$shifu_case_stmt $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
+          _shifu_add_equals_case_arms shifu_case_stmt "$1"
+        fi
       else
         _shifu_opt_defer_parse "$@"
         shift $shifu_opt_count

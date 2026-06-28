@@ -1023,6 +1023,102 @@ test_shifu_help_flags_validation() {
   -- glob_bracket   "--[abc]"  "Help flag contains glob character: --[abc]"
 }
 
+test_shifu_itr_list_empty() {
+  ITEM_LIST=""
+  count=0
+  while shifu_itr_list ITEM; do
+    count=$((count + 1))
+  done
+  shifu_assert_equal count 0 $count
+}
+
+test_shifu_itr_list_single() {
+  ITEM_LIST=""
+  _shifu_append_list ITEM_LIST "alpha"
+  result=""
+  while shifu_itr_list ITEM; do
+    result="$result$ITEM,"
+  done
+  shifu_assert_strings_equal items "alpha," "$result"
+}
+
+test_shifu_itr_list_multiple() {
+  ITEM_LIST=""
+  _shifu_append_list ITEM_LIST "a"
+  _shifu_append_list ITEM_LIST "b"
+  _shifu_append_list ITEM_LIST "c"
+  result=""
+  while shifu_itr_list ITEM; do
+    result="$result$ITEM,"
+  done
+  shifu_assert_strings_equal items "a,b,c," "$result"
+}
+
+test_shifu_itr_list_glob_chars() {
+  ITEM_LIST=""
+  _shifu_append_list ITEM_LIST "first"
+  _shifu_append_list ITEM_LIST "a[bc]"
+  result=""
+  while shifu_itr_list ITEM; do
+    result="$result$ITEM,"
+  done
+  shifu_assert_strings_equal items "first,a[bc]," "$result"
+}
+
+test_shifu_itr_list_reiterate() {
+  ITEM_LIST=""
+  _shifu_append_list ITEM_LIST "a"
+  _shifu_append_list ITEM_LIST "b"
+
+  pass1=""
+  while shifu_itr_list ITEM; do
+    pass1="$pass1$ITEM,"
+  done
+
+  pass2=""
+  while shifu_itr_list ITEM; do
+    pass2="$pass2$ITEM,"
+  done
+
+  shifu_assert_strings_equal first  "a,b," "$pass1"
+  shifu_assert_strings_equal second "a,b," "$pass2"
+}
+
+shifu_test_list_optd_cmd() {
+  shifu_cmd_name list-optd
+  shifu_cmd_func shifu_test_list_optd_func
+  shifu_cmd_optd -i --item -- ITEM... "" "list of items"
+}
+
+shifu_test_list_optd_w_default_cmd() {
+  shifu_cmd_name list-optd-default
+  shifu_cmd_func shifu_test_list_optd_func
+  shifu_cmd_optd -i --item -- ITEM... "zero" "list of items"
+}
+
+shifu_test_list_optd_func() {
+  result=""
+  while shifu_itr_list ITEM; do
+    result="$result$ITEM,"
+  done
+  echo "$result"
+}
+
+test_shifu_run_optd_list() {
+  run_test() {
+    shifu_test_params cmd @cmd_args expected -- "$@"
+    actual=$(shifu_run $cmd $cmd_args 2>&1)
+    shifu_assert_zero exit_code $?
+    shifu_assert_strings_equal output "$expected" "$actual"
+  }
+  shifu_parameterize_test run_test \
+  -- no_args          shifu_test_list_optd_cmd            ""                    "" \
+  -- single           shifu_test_list_optd_cmd            "--item one"          "one," \
+  -- multiple         shifu_test_list_optd_cmd            "--item a -i b -i c"  "a,b,c," \
+  -- default_no_args  shifu_test_list_optd_w_default_cmd  ""                    "zero," \
+  -- default_w_args   shifu_test_list_optd_w_default_cmd  "-i one"              "zero,one,"
+}
+
 # Testing utilities
 shifu_parameterize_test() {
   # run test function over many test cases, test cases are separated with --.
