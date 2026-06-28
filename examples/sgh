@@ -23,10 +23,10 @@ api_cmd() {
   cmd_func api_call
   cmd_help "Make an authenticated GitHub API request"
 
-  cmd_optd -X --method   -- METHOD   AUTO "The HTTP method for the request (AUTO is GET, or POST when --input is set)"
-  cmd_optd -H --header   -- HEADER   "" "Add a HTTP request header in key:value format"
-  cmd_optd    --input    -- INPUT    "" "The file to use as body for the HTTP request (use \"-\" to read from standard input)"
-  cmd_optd    --hostname -- HOSTNAME AUTO "The GitHub hostname for the request (AUTO is github.com or the GH_HOST environment variable)"
+  cmd_optd -X --method   -- METHOD    AUTO "The HTTP method for the request (AUTO is GET, or POST when --input is set)"
+  cmd_optd -H --header   -- HEADER... "" "Add a HTTP request header in key:value format"
+  cmd_optd    --input    -- INPUT     "" "The file to use as body for the HTTP request (use \"-\" to read from standard input)"
+  cmd_optd    --hostname -- HOSTNAME  AUTO "The GitHub hostname for the request (AUTO is github.com or the GH_HOST environment variable)"
   cmd_argr ENDPOINT "GitHub API endpoint path or \"graphql\""
 }
 
@@ -138,7 +138,9 @@ api_call() {
     -H \"X-GitHub-Api-Version: 2022-11-28\""
   [ -n "$auth_token" ] && curl_call="$curl_call -H \"Authorization: Bearer $auth_token\""
   [ -n "$INPUT" ] && curl_call="$curl_call -H \"Content-Type: application/json\""
-  [ -n "$HEADER" ] && curl_call="$curl_call -H \"$HEADER\""
+  while itr_list HEADER; do
+    curl_call="$curl_call -H \"$HEADER\""
+  done
 
   if [ "$INPUT" = "-" ]; then
     curl_call="$curl_call --data-binary @-"
