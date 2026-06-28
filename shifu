@@ -31,7 +31,8 @@
 #   shifu_cmd_optb [scope] <flags> -- <var> <default> <set_value> <help>
 #     binary option, sets <var> to <set_value> when present
 #   shifu_cmd_optd [scope] <flags> -- <var> <default> <help>
-#     option with default value
+#     option with default value; suffix <var> with ... to make it
+#     repeatable, accruing args into a list (see shifu_itr_list)
 #   shifu_cmd_optr [scope] <flags> -- <var> <help>
 #     required option
 #   shifu_cmd_argr <var> <help>
@@ -50,6 +51,10 @@
 #     complete paths
 #
 # Miscellaneous
+#   shifu_itr_list <var>
+#     iterate args accrued by a repeatable optd flag; call in a while
+#     loop with <var> (without ...), each pass sets <var> to the next
+#     accrued value
 #   shifu_add_cpts <word>...
 #     append words to completions; used inside cptf functions
 #   shifu_less
