@@ -1024,60 +1024,60 @@ test_shifu_help_flags_validation() {
 }
 
 test_shifu_itr_list_empty() {
-  ITEMS_LIST=""
+  ITEM_LIST=""
   count=0
-  while shifu_itr_list ITEMS; do
+  while shifu_itr_list ITEM; do
     count=$((count + 1))
   done
   shifu_assert_equal count 0 $count
 }
 
 test_shifu_itr_list_single() {
-  ITEMS_LIST=""
-  _shifu_append_list ITEMS_LIST "alpha"
+  ITEM_LIST=""
+  _shifu_append_list ITEM_LIST "alpha"
   result=""
-  while shifu_itr_list ITEMS; do
-    result="$result$ITEMS,"
+  while shifu_itr_list ITEM; do
+    result="$result$ITEM,"
   done
   shifu_assert_strings_equal items "alpha," "$result"
 }
 
 test_shifu_itr_list_multiple() {
-  ITEMS_LIST=""
-  _shifu_append_list ITEMS_LIST "a"
-  _shifu_append_list ITEMS_LIST "b"
-  _shifu_append_list ITEMS_LIST "c"
+  ITEM_LIST=""
+  _shifu_append_list ITEM_LIST "a"
+  _shifu_append_list ITEM_LIST "b"
+  _shifu_append_list ITEM_LIST "c"
   result=""
-  while shifu_itr_list ITEMS; do
-    result="$result$ITEMS,"
+  while shifu_itr_list ITEM; do
+    result="$result$ITEM,"
   done
   shifu_assert_strings_equal items "a,b,c," "$result"
 }
 
 test_shifu_itr_list_glob_chars() {
-  ITEMS_LIST=""
-  _shifu_append_list ITEMS_LIST "first"
-  _shifu_append_list ITEMS_LIST "a[bc]"
+  ITEM_LIST=""
+  _shifu_append_list ITEM_LIST "first"
+  _shifu_append_list ITEM_LIST "a[bc]"
   result=""
-  while shifu_itr_list ITEMS; do
-    result="$result$ITEMS,"
+  while shifu_itr_list ITEM; do
+    result="$result$ITEM,"
   done
   shifu_assert_strings_equal items "first,a[bc]," "$result"
 }
 
 test_shifu_itr_list_reiterate() {
-  ITEMS_LIST=""
-  _shifu_append_list ITEMS_LIST "a"
-  _shifu_append_list ITEMS_LIST "b"
+  ITEM_LIST=""
+  _shifu_append_list ITEM_LIST "a"
+  _shifu_append_list ITEM_LIST "b"
 
   pass1=""
-  while shifu_itr_list ITEMS; do
-    pass1="$pass1$ITEMS,"
+  while shifu_itr_list ITEM; do
+    pass1="$pass1$ITEM,"
   done
 
   pass2=""
-  while shifu_itr_list ITEMS; do
-    pass2="$pass2$ITEMS,"
+  while shifu_itr_list ITEM; do
+    pass2="$pass2$ITEM,"
   done
 
   shifu_assert_strings_equal first  "a,b," "$pass1"
@@ -1087,19 +1087,19 @@ test_shifu_itr_list_reiterate() {
 shifu_test_list_optd_cmd() {
   shifu_cmd_name list-optd
   shifu_cmd_func shifu_test_list_optd_func
-  shifu_cmd_optd -i --item -- ITEMS... "" "list of items"
+  shifu_cmd_optd -i --item -- ITEM... "" "list of items"
 }
 
 shifu_test_list_optd_w_default_cmd() {
   shifu_cmd_name list-optd-default
   shifu_cmd_func shifu_test_list_optd_func
-  shifu_cmd_optd -i --item -- ITEMS... "zero" "list of items"
+  shifu_cmd_optd -i --item -- ITEM... "zero" "list of items"
 }
 
 shifu_test_list_optd_func() {
   result=""
-  while shifu_itr_list ITEMS; do
-    result="$result$ITEMS,"
+  while shifu_itr_list ITEM; do
+    result="$result$ITEM,"
   done
   echo "$result"
 }

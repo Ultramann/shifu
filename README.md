@@ -498,6 +498,22 @@ All option and argument functions accept a `variable` argument, the shell variab
   cli                   # OUTPUT="out"
   cli --output result   # OUTPUT="result"
   ```
+* Repeatable flag
+  * Suffix the variable name with `...` to make the flag repeatable: each time it is used, its argument is accrued instead of overwriting the previous value
+  * Iterate the accrued arguments with [`shifu_itr_list`](#shifu_itr_list); the variable itself is not assigned the values
+  * A non-empty `<default>` becomes the first item in the list, only one default item is supported
+  * Signature
+    ```sh
+    shifu_cmd_optd <flags> -- <variable>... <default> <help>
+    ```
+  * Example
+    ```sh
+    shifu_cmd_optd -i --item -- ITEM... "" "List of items"
+    ```
+    ```txt
+    cli                          # ITEM has no values
+    cli --item a --item b -i c   # ITEM has values: a, b, c
+    ```
 
 #### `shifu_cmd_optr`
 * Required option
@@ -648,6 +664,20 @@ Shifu has a few variables that can be set after sourcing to change default behav
   ```
 
 ### Miscellaneous
+
+#### `shifu_itr_list`
+* Enables iteration over arguments accrued by a repeatable flag (see [`shifu_cmd_optd`](#shifu_cmd_optd))
+* Use in `while` loop, passing variable name (without `...`). Each time through the loop, the variable is set to the next accrued value
+* Example
+  ```sh
+  shifu_cmd_optd -i --item -- ITEM... "" "List of items"
+
+  process_func() {
+    while shifu_itr_list ITEM; do
+      echo "$ITEM"
+    done
+  }
+  ```
 
 #### `shifu_add_cpts`
 * Registers one or more strings to add as completions
