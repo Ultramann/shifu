@@ -237,36 +237,46 @@ shifu_less() {
 }
 
 # helpers
+_shifu_load_cur_cmd() {
+  shifu_mode=$shifu_mode_cmds_run
+  shifu_cur_cmd="$1"
+  _shifu_clear_cmd_vars
+  "$shifu_cur_cmd"
+  _shifu_set_for_looping shifu_cmds shifu_cmd_subs
+}
+
+_shifu_match_subcmd() {
+  for shifu_cmd in $shifu_cmds; do
+    _shifu_clear_cmd_vars
+    "$shifu_cmd"
+    [ "$1" = "$shifu_cmd_name" ] || continue
+    [ -z "$shifu_cmd_func" ] && _shifu_load_cur_cmd "$shifu_cmd"
+    return 0
+  done
+  _shifu_clear_cmd_vars
+  return 1
+}
+
 _shifu_run() {
   [ "${SHIFU_SET_X:-0}" = 1 ] && set -x
-  shifu_mode=$shifu_mode_cmds_run
-  shifu_parent="$1"; shifu_cmd="$1"; shift
+  _shifu_load_cur_cmd "$1"
+  shifu_cmd="$1"; shift
   shifu_required_variables=""
-  "$shifu_parent"
-  _shifu_set_for_looping shifu_cmds shifu_cmd_subs
   while [ $# -ne 0 -a -n "${shifu_cmd_subs:-}" ]; do
-    _shifu_parse_args true "$shifu_parent" "$@"
+    _shifu_parse_args true "$shifu_cur_cmd" "$@"
     shifu_mode=$shifu_mode_cmds_run
     shift $_shifu_args_parsed
-    shifu_arg_matched=''
-    for shifu_cmd in $shifu_cmds; do
-      _shifu_clear_cmd_vars
-      "$shifu_cmd"
-      [ "$1" != "$shifu_cmd_name" ] && continue
-      shifu_arg_matched=true; shift
+    if _shifu_match_subcmd "$1"; then
+      shift
       [ -n "$shifu_cmd_func" ] && break
-      shifu_parent="$shifu_cmd"
-      _shifu_set_for_looping shifu_cmds shifu_cmd_subs
-      break
-    done
-    [ "$shifu_arg_matched" = true -a -n "$shifu_cmd_func" ] && break
-    [ "$shifu_arg_matched" = true -a -n "$shifu_cmd_subs" ] && continue
+      [ -n "$shifu_cmd_subs" ] && continue
+    fi
     if [ -n "${shifu_help_pattern:-}" ]; then
       eval "case \"\$1\" in $shifu_help_pattern) ;; *) echo \"Unknown command: \$1\" ;; esac"
     else
       echo "Unknown command: $1"
     fi
-    _shifu_help "$shifu_parent" 1
+    _shifu_help "$shifu_cur_cmd" 1
   done
   [ -z "$shifu_cmd_func" ] && { echo "$shifu_cmd_name requires arguments"; _shifu_help "$shifu_cmd" 1; }
   if [ -n "${shifu_help_pattern:-}" ]; then
@@ -780,30 +790,20 @@ compdef _${shifu_cmd_name}_completion $shifu_cmd_name"
 }
 
 _shifu_complete() {
-  shifu_mode=$shifu_mode_cmds_comp
-  shifu_parent="$1"; shifu_cmd="$1"; shifu_current_word="$3"; shift 3
+  shifu_cmd="$1"; shifu_current_word="$3"
+  _shifu_load_cur_cmd "$1"
+  shift 3
   # current word is only non-empty if there are ascii chars after the last full word
-  "$shifu_parent"
-  _shifu_set_for_looping shifu_cmds shifu_cmd_subs
   while [ $# -ne 0 -a -n "${shifu_cmd_subs:-}" ]; do
-    _shifu_complete_func_args true "$shifu_parent" "$@" || _shifu_args_parsed=0
+    _shifu_complete_func_args true "$shifu_cur_cmd" "$@" || _shifu_args_parsed=0
     shift $_shifu_args_parsed
     [ $# -eq 0 ] && break
     shifu_build_comp_defer_option_names="${shifu_comp_option_names:-}"
     shifu_mode=$shifu_mode_cmds_comp
-    shifu_arg_matched=''
-    for shifu_cmd in $shifu_cmds; do
-      _shifu_clear_cmd_vars
-      "$shifu_cmd"
-      [ "$1" != "$shifu_cmd_name" ] && continue
-      shifu_arg_matched=true; shift
-      [ -n "$shifu_cmd_func" ] && break
-      shifu_parent="$shifu_cmd"
-      _shifu_set_for_looping shifu_cmds shifu_cmd_subs
-      break
-    done
-    [ "$shifu_arg_matched" != true ] && _shifu_clear_cmd_vars
-    [ "$shifu_arg_matched" = true -a -n "$shifu_cmd_subs" ] && continue
+    if _shifu_match_subcmd "$1"; then
+      shift
+      [ -n "$shifu_cmd_subs" ] && continue
+    fi
     break
   done
   shifu_comp_option_names="${shifu_build_comp_defer_option_names:-}"
@@ -851,8 +851,7 @@ _shifu_collect_option_names() {
 }
 
 _shifu_complete_subcmd_names() {
-  "$shifu_parent"
-  _shifu_set_for_looping shifu_cmds shifu_cmd_subs
+  _shifu_load_cur_cmd "$shifu_cur_cmd"
   for shifu_cmd in $shifu_cmds; do
     "$shifu_cmd"
     _shifu_list_append shifu_completions "$shifu_cmd_name"
