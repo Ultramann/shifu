@@ -295,16 +295,11 @@ _shifu_parse_args() {
   shifu_parse_eager="$1"; shifu_cmd="$2"; shift 2
   [ "$shifu_parse_eager" = true ] && shifu_required_variables_eager=""
   shifu_required_positionals=""
-  shifu_case_stmt="case \"\$1\" in"
-  if [ "$shifu_parse_eager" = false -a -n "${shifu_defer_case:-}" ]; then
-    _shifu_append_on_new_line shifu_case_stmt "  ${shifu_defer_case:-}"
-  fi
-  [ -n "${shifu_help_pattern:-}" ] && \
-    _shifu_append_on_new_line shifu_case_stmt "  $shifu_help_pattern) _shifu_help \"$shifu_cmd\" 0 ;; "
+  _shifu_case_open
+  _shifu_case_inline_deferred
+  _shifu_case_arm_help
   "$shifu_cmd"
-  [ $shifu_parse_stage -eq 0 ] && _shifu_update_case_stmt_invalid_option
-  _shifu_append_on_new_line shifu_case_stmt "    break;;"
-  _shifu_append_on_new_line shifu_case_stmt "esac"
+  _shifu_case_close
   _shifu_args_parsed=0
   _shifu_n_args=$#
   while [ $# -ne 0 ]; do
@@ -396,30 +391,6 @@ _shifu_opt_build() {
     eval "$shifu_build_var=\"\$$shifu_build_var$shifu_build_sep\$1\""
     shifu_opt_count=$((shifu_opt_count + 1))
     shift
-  done
-}
-
-_shifu_add_equals_case_arms() {
-  shifu_eq_target="$1"; shifu_eq_var="$2"
-  _shifu_set_for_looping shifu_eq_list shifu_eq_saved_args
-  for shifu_eq_flag in $shifu_eq_list; do
-    case "$shifu_eq_flag" in
-      --) break ;;
-      --*) _shifu_append_on_new_line "$shifu_eq_target" \
-             "  $shifu_eq_flag=*) $shifu_eq_var=\\\${1#*=}; shift; _shifu_ack_arg ;;" ;;
-    esac
-  done
-}
-
-_shifu_add_equals_defer_case_arms() {
-  shifu_eq_var="$1"
-  _shifu_set_for_looping shifu_eq_list shifu_eq_saved_args
-  for shifu_eq_flag in $shifu_eq_list; do
-    case "$shifu_eq_flag" in
-      --) break ;;
-      --*) shifu_defer_case="$shifu_defer_case
-  $shifu_eq_flag=*) $shifu_eq_var=\\\${1#*=}; shift; _shifu_ack_arg ;;" ;;
-    esac
   done
 }
 
@@ -526,19 +497,13 @@ _shifu_cmd_optb() {
       shifu_help_options="$shifu_help_options\n    $4\n    Default: ${2:-empty}, set: $3"
       ;;
     $shifu_mode_args_run)
-      if [ "$shifu_arg_scope" = eager ]; then
-        _shifu_opt_case_parse "$@"
-        shift $shifu_opt_count
-        _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
-        _shifu_set_variable "$1" "$2"
-        shifu_case_stmt="$shifu_case_stmt) $1=$3; shift; _shifu_ack_arg ;;"
-      else
-        _shifu_opt_defer_parse "$@"
-        shift $shifu_opt_count
-        _shifu_set_variable "$1" "$2"
-        shifu_defer_case="${shifu_defer_case:-}) $1=$3; shift; _shifu_ack_arg ;;"
+      _shifu_case_arm_begin "$shifu_arg_scope" "$@"
+      shift $shifu_opt_count
+      _shifu_guard_arg_order "$1"
+      _shifu_var_default "$1" "$2"
+      _shifu_case_arm_flag "$1" "$3"
+      [ "$shifu_arg_scope" = defer ] && \
         shifu_defer_help="${shifu_defer_help:-}\n    $4\n    Default: $2, set: $3"
-      fi
       ;;
     $shifu_mode_args_comp)
       if [ "$shifu_arg_scope" = eager ]; then
@@ -565,31 +530,22 @@ _shifu_cmd_optd() {
       shifu_help_options="$shifu_help_options [$1]\n    $3\n    Default: $2"
       ;;
     $shifu_mode_args_run)
-      shifu_eq_saved_args="$*"
+      _shifu_case_arm_begin "$shifu_arg_scope" "$@"
+      shift $shifu_opt_count
+      _shifu_guard_arg_order "$1"
       if [ "$shifu_arg_scope" = eager ]; then
-        _shifu_opt_case_parse "$@"
-        shift $shifu_opt_count
-        _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
         _shifu_strip_list_suffix "$1"
         if [ "$shifu_is_list" = true ]; then
-          _shifu_set_variable "$shifu_list_var" ""
-          _shifu_set_variable "${shifu_list_var}_LIST" "${2:+$2$shifu_list_delim}"
-          _shifu_update_case_stmt_option_value_check
-          shifu_case_stmt="$shifu_case_stmt _shifu_append_list ${shifu_list_var}_LIST \"\$2\"; shift 2; _shifu_ack_arg 2 ;;"
+          _shifu_var_list "$shifu_list_var" "$2"
+          _shifu_case_arm_append "$shifu_list_var"
         else
-          _shifu_set_variable "$1" "$2"
-          _shifu_update_case_stmt_option_value_check
-          shifu_case_stmt="$shifu_case_stmt $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
-          _shifu_add_equals_case_arms shifu_case_stmt "$1"
+          _shifu_var_default "$1" "$2"
+          _shifu_case_arm_value "$1"
         fi
       else
-        _shifu_opt_defer_parse "$@"
-        shift $shifu_opt_count
-        _shifu_set_variable "$1" "$2"
-        _shifu_update_case_stmt_option_value_check defer
-        shifu_defer_case="$shifu_defer_case $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
+        _shifu_var_default "$1" "$2"
+        _shifu_case_arm_value "$1"
         shifu_defer_help="${shifu_defer_help:-} [$1]\n    $3\n    Default: $2"
-        _shifu_add_equals_defer_case_arms "$1"
       fi
       ;;
     $shifu_mode_args_comp)
@@ -619,24 +575,13 @@ _shifu_cmd_optr() {
       shifu_help_options="$shifu_help_options $1\n    $2\n    Required"
       ;;
     $shifu_mode_args_run)
-      shifu_eq_saved_args="$*"
-      if [ "$shifu_arg_scope" = eager ]; then
-        _shifu_opt_case_parse "$@"
-        shift $shifu_opt_count
-        _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
-        _shifu_list_append shifu_required_variables "$1"
-        _shifu_update_case_stmt_option_value_check
-        shifu_case_stmt="$shifu_case_stmt $1=\$2; shift 2; _shifu_ack_arg 2 ;;"
-        _shifu_add_equals_case_arms shifu_case_stmt "$1"
-      else
-        _shifu_opt_defer_parse "$@"
-        shift $shifu_opt_count
-        _shifu_list_append shifu_required_variables "$1"
-        _shifu_update_case_stmt_option_value_check defer
-        shifu_defer_case="$shifu_defer_case $1=\\\$2; shift 2; _shifu_ack_arg 2 ;;"
+      _shifu_case_arm_begin "$shifu_arg_scope" "$@"
+      shift $shifu_opt_count
+      _shifu_guard_arg_order "$1"
+      _shifu_var_require "$1"
+      _shifu_case_arm_value "$1"
+      [ "$shifu_arg_scope" = defer ] && \
         shifu_defer_help="${shifu_defer_help:-} $1\n    $2\n    Required"
-        _shifu_add_equals_defer_case_arms "$1"
-      fi
       ;;
     $shifu_mode_args_comp)
       shifu_eq_saved_args="$*"
@@ -670,13 +615,13 @@ _shifu_cmd_argr() {
     $shifu_mode_args_run)
       if [ $shifu_parse_stage -eq 0 ]; then
         shifu_parse_stage=1
-        _shifu_update_case_stmt_invalid_option
+        _shifu_case_arm_invalid
       elif [ $shifu_parse_stage -gt 1 ]; then
         _shifu_error "No arguments after remaining are declared: $1"
       fi
-      _shifu_set_variable "$1" ""
-      _shifu_list_append shifu_required_positionals "$1"
-      _shifu_append_on_new_line shifu_case_stmt "    $1=\\\$1; shift; _shifu_ack_arg"
+      _shifu_var_default "$1" ""
+      _shifu_var_require_pos "$1"
+      _shifu_case_arm_positional "$1"
       ;;
     $shifu_mode_args_comp)
       _shifu_opt_comp_preamble
@@ -700,7 +645,7 @@ _shifu_cmd_args() {
       ;;
     $shifu_mode_args_run)
       [ $shifu_parse_stage -gt 1 ] && _shifu_error "Can only declare remaining arguments once: $1"
-      [ $shifu_parse_stage -eq 0 ] && _shifu_update_case_stmt_invalid_option
+      [ $shifu_parse_stage -eq 0 ] && _shifu_case_arm_invalid
       shifu_parse_stage=2
       ;;
     $shifu_mode_args_comp)
@@ -912,10 +857,137 @@ _shifu_filter_matching_options() {
   done
 }
 
-_shifu_update_case_stmt_invalid_option() {
+# case-statement codegen: the one set of accessors for shifu_case_stmt /
+# shifu_defer_case. Nothing else builds those strings by hand.
+#   _shifu_case_open                    start a fresh statement (subject read from mode)
+#   _shifu_case_inline_deferred         inline accumulated deferred arms into a leaf statement
+#   _shifu_case_arm_help                emit the help-flag arm
+#   _shifu_case_arm_invalid             emit the invalid-option arm, open the positional branch
+#   _shifu_case_close                   finish the statement (default arm + esac)
+#   _shifu_case_arm_begin <scope> ..    open an option arm: select eager/defer buffer +
+#                                       escaping ($shifu_case_val), emit the flag pattern
+#   _shifu_case_arm_flag <var> <setval> binary-option body
+#   _shifu_case_arm_value <var>         value-option body (value guard + assign + =-forms)
+#   _shifu_case_arm_append <listvar>    repeatable-option body (value guard + list append)
+#   _shifu_case_arm_positional <var>    positional-argument body
+
+_shifu_case_open() {
+  if [ $shifu_mode -eq $shifu_mode_args_comp ]; then
+    shifu_case_stmt="case \"\${1:-}\" in "
+  else
+    shifu_case_stmt="case \"\$1\" in"
+  fi
+}
+
+_shifu_case_inline_deferred() {
+  [ "$shifu_parse_eager" = false -a -n "${shifu_defer_case:-}" ] || return 0
+  _shifu_append_on_new_line shifu_case_stmt "  ${shifu_defer_case:-}"
+}
+
+_shifu_case_arm_help() {
+  [ -n "${shifu_help_pattern:-}" ] || return 0
+  _shifu_append_on_new_line shifu_case_stmt "  $shifu_help_pattern) _shifu_help \"$shifu_cmd\" 0 ;; "
+}
+
+_shifu_case_arm_invalid() {
   shifu_case_stmt="$shifu_case_stmt
   -*) echo \"Invalid option: \$1\"; _shifu_help \"\$shifu_cmd\" 1 ;;
   *)"
+}
+
+_shifu_case_close() {
+  [ $shifu_parse_stage -eq 0 ] && _shifu_case_arm_invalid
+  _shifu_append_on_new_line shifu_case_stmt "    break;;"
+  _shifu_append_on_new_line shifu_case_stmt "esac"
+}
+
+_shifu_case_write() {
+  case $shifu_case_buf in
+    shifu_case_stmt)  shifu_case_stmt="${shifu_case_stmt:-}$1" ;;
+    shifu_defer_case) shifu_defer_case="${shifu_defer_case:-}$1" ;;
+  esac
+}
+
+_shifu_case_arm_begin() {
+  shifu_case_scope=$1; shift
+  shifu_eq_saved_args="$*"
+  if [ "$shifu_case_scope" = eager ]; then
+    shifu_case_buf=shifu_case_stmt; shifu_case_val='$2'
+    _shifu_opt_case_parse "$@"
+  else
+    shifu_case_buf=shifu_defer_case; shifu_case_val='\$2'
+    _shifu_opt_defer_parse "$@"
+  fi
+}
+
+_shifu_case_arm_flag() { _shifu_case_write ") $1=$2; shift; _shifu_ack_arg ;;"; }
+
+_shifu_case_arm_value() {
+  _shifu_case_require_value
+  _shifu_case_write " $1=$shifu_case_val; shift 2; _shifu_ack_arg 2 ;;"
+  _shifu_case_arm_equals "$1"
+}
+
+_shifu_case_arm_append() {
+  _shifu_case_require_value
+  _shifu_case_write " _shifu_append_list ${1}_LIST \"$shifu_case_val\"; shift 2; _shifu_ack_arg 2 ;;"
+}
+
+_shifu_case_arm_positional() {
+  _shifu_append_on_new_line shifu_case_stmt "    $1=\\\$1; shift; _shifu_ack_arg"
+}
+
+_shifu_case_require_value() {
+  if [ "$shifu_case_scope" = eager ]; then
+    shifu_case_stmt="$shifu_case_stmt) [ \$# -lt 2 ] && { echo \"Option \$1 requires a value\"; _shifu_help \"\$shifu_cmd\" 1; };"
+  else
+    shifu_defer_case="${shifu_defer_case:-}) [ \\\$# -lt 2 ] && { echo \\\"Option \\\$1 requires a value\\\"; _shifu_help \\\"\\\$shifu_cmd\\\" 1; };"
+  fi
+}
+
+_shifu_case_arm_equals() {
+  shifu_eq_var="$1"
+  _shifu_set_for_looping shifu_eq_list shifu_eq_saved_args
+  for shifu_eq_flag in $shifu_eq_list; do
+    case "$shifu_eq_flag" in
+      --) break ;;
+      --*)
+        if [ "$shifu_case_scope" = eager ]; then
+          _shifu_append_on_new_line shifu_case_stmt "  $shifu_eq_flag=*) $shifu_eq_var=\\\${1#*=}; shift; _shifu_ack_arg ;;"
+        else
+          shifu_defer_case="$shifu_defer_case
+  $shifu_eq_flag=*) $shifu_eq_var=\\\${1#*=}; shift; _shifu_ack_arg ;;"
+        fi ;;
+    esac
+  done
+}
+
+_shifu_guard_arg_order() {
+  [ "$shifu_case_scope" = eager ] || return 0
+  _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
+}
+
+# parsed-variable registration: seed a declared option/arg's shell variable.
+#   _shifu_var_default <name> <value>   set a var to its pre-parse default
+#   _shifu_var_require <name>           mark a var required
+#   _shifu_var_require_pos <name>       mark a positional required
+#   _shifu_var_list <name> <first>      seed a repeatable (list) var
+
+_shifu_var_default() { _shifu_var_set "$1" "$2"; }
+
+_shifu_var_require() { _shifu_list_append shifu_required_variables "$1"; }
+
+_shifu_var_require_pos() { _shifu_list_append shifu_required_positionals "$1"; }
+
+_shifu_var_list() {
+  _shifu_var_set "$1" ""
+  _shifu_var_set "${1}_LIST" "${2:+$2$shifu_list_delim}"
+}
+
+_shifu_var_set() {
+  eval "$1=\"$2\"" > /dev/null 2>&1
+  [ $? -eq 0 ] && return 0
+  _shifu_error "Invalid variable name: $1"
 }
 
 _shifu_append_on_new_line() {
@@ -932,14 +1004,6 @@ _shifu_error_if_options() {
   done
 }
 
-_shifu_update_case_stmt_option_value_check() {
-  if [ "${1:-}" = "defer" ]; then
-    shifu_defer_case="${shifu_defer_case:-}) [ \\\$# -lt 2 ] && { echo \\\"Option \\\$1 requires a value\\\"; _shifu_help \\\"\\\$shifu_cmd\\\" 1; };"
-  else
-    shifu_case_stmt="$shifu_case_stmt) [ \$# -lt 2 ] && { echo \"Option \$1 requires a value\"; _shifu_help \"\$shifu_cmd\" 1; };"
-  fi
-}
-
 _shifu_set_for_looping() {
   eval "[ -z \"\${$2:-}\" ] && { $1=''; return; }"
   if [ -n "${ZSH_VERSION:-}" ]; then
@@ -947,12 +1011,6 @@ _shifu_set_for_looping() {
   else
     eval "$1=\$$2"
   fi
-}
-
-_shifu_set_variable() {
-  eval "$1=\"$2\"" > /dev/null 2>&1
-  [ $? -eq 0 ] && return 0
-  _shifu_error "Invalid variable name: $1"
 }
 
 _shifu_list_append() {

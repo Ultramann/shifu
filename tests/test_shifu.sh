@@ -891,10 +891,10 @@ test_shifu_bad_multiple_cmd_args_complete_calls() {
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
 
-test_shifu_set_variable() {
+test_shifu_var_set() {
   run_test() {
     shifu_test_params var expected_exit expected_output -- "$@"
-    actual=$(_shifu_set_variable "$var" any)
+    actual=$(_shifu_var_set "$var" any)
     shifu_assert_equal exit_code $expected_exit $?
     shifu_assert_strings_equal output "$expected_output" "$actual"
   }
