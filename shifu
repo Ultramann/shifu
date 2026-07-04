@@ -274,6 +274,10 @@ _shifu_run() {
 _shifu_parse_args() {
   shifu_mode=$shifu_mode_args_run
   shifu_parse_stage=0
+  _shifu_pos_idx=0
+  _shifu_pos_count=0
+  _shifu_remaining_declared=false
+  _shifu_in_remaining=false
   shifu_parse_eager="$1"; shifu_cmd="$2"; shift 2
   [ "$shifu_parse_eager" = true ] && shifu_required_variables_eager=""
   shifu_required_positionals=""
@@ -285,6 +289,7 @@ _shifu_parse_args() {
   _shifu_args_parsed=0
   _shifu_n_args=$#
   while [ $# -ne 0 ]; do
+    [ "$_shifu_in_remaining" = true ] && break
     eval "$shifu_case_stmt" || _shifu_case_eval_error
     [ $# -eq $_shifu_n_args ] && _shifu_case_loop_error
     _shifu_n_args=$#
@@ -307,8 +312,6 @@ _shifu_parse_args() {
       _shifu_help \"$shifu_cmd\" 1
     fi"
   done
-  [ "$shifu_parse_eager" = true -o $# -eq 0 -o "$shifu_allow_options_anywhere" != false ] && return
-  _shifu_error_if_options "$@"
 }
 
 _shifu_ack_arg() {
@@ -618,6 +621,7 @@ _shifu_cmd_argr() {
       if [ $shifu_parse_stage -eq 0 ]; then
         shifu_parse_stage=1
         _shifu_case_arm_invalid
+        _shifu_case_positional_open
       elif [ $shifu_parse_stage -gt 1 ]; then
         _shifu_error "No arguments after remaining are declared: $1"
       fi
@@ -899,7 +903,11 @@ _shifu_case_arm_invalid() {
 
 _shifu_case_close() {
   [ $shifu_parse_stage -eq 0 ] && _shifu_case_arm_invalid
-  _shifu_append_on_new_line shifu_case_stmt "    break;;"
+  if [ $_shifu_pos_count -gt 0 ]; then
+    _shifu_case_positional_close
+  else
+    _shifu_append_on_new_line shifu_case_stmt "    break;;"
+  fi
   _shifu_append_on_new_line shifu_case_stmt "esac"
 }
 
@@ -937,8 +945,23 @@ _shifu_case_arm_append() {
   _shifu_case_write " _shifu_append_list ${1}_LIST \"$shifu_case_val\"; shift 2; _shifu_ack_arg 2 ;;"
 }
 
+_shifu_case_positional_open() {
+  shifu_case_stmt="$shifu_case_stmt
+    case \$_shifu_pos_idx in"
+}
+
 _shifu_case_arm_positional() {
-  _shifu_append_on_new_line shifu_case_stmt "    $1=\\\$1; shift; _shifu_ack_arg"
+  shifu_case_stmt="$shifu_case_stmt
+      $_shifu_pos_count) $1=\$1 ;;"
+  _shifu_pos_count=$((_shifu_pos_count + 1))
+}
+
+_shifu_case_positional_close() {
+  shifu_case_stmt="$shifu_case_stmt
+      *) echo \"Unexpected positional: \$1\"; _shifu_help \"\$shifu_cmd\" 1 ;;
+    esac
+    _shifu_pos_idx=\$((_shifu_pos_idx + 1))
+    shift; _shifu_ack_arg ;;"
 }
 
 _shifu_case_require_value() {
