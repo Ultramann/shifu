@@ -924,7 +924,9 @@ _shifu_case_arm_begin() {
   fi
 }
 
-_shifu_case_arm_flag() { _shifu_case_write ") $1=$2; shift; _shifu_ack_arg ;;"; }
+_shifu_case_arm_flag() {
+  _shifu_case_write ") $1=$2; shift; _shifu_ack_arg ;;"
+}
 
 _shifu_case_arm_value() {
   _shifu_case_require_value
@@ -977,11 +979,17 @@ _shifu_guard_arg_order() {
 #   _shifu_var_require_pos <name>       mark a positional required
 #   _shifu_var_list <name> <first>      seed a repeatable (list) var
 
-_shifu_var_default() { _shifu_var_set "$1" "$2"; }
+_shifu_var_default() {
+  _shifu_var_set "$1" "$2"
+}
 
-_shifu_var_require() { _shifu_list_append shifu_required_variables "$1"; }
+_shifu_var_require() {
+  _shifu_list_append shifu_required_variables "$1"
+}
 
-_shifu_var_require_pos() { _shifu_list_append shifu_required_positionals "$1"; }
+_shifu_var_require_pos() {
+  _shifu_list_append shifu_required_positionals "$1"
+}
 
 _shifu_var_list() {
   _shifu_var_set "$1" ""
