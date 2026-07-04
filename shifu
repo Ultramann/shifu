@@ -162,27 +162,9 @@ shifu_cmd_args() {
   _shifu_cmd_args "$@"
 }
 
-_shifu_emit_completion() {
-  [ ${shifu_mode:-0} -ne $shifu_mode_args_comp ] && return
-  [ "$shifu_arg_completion_set" = true ] && _shifu_error "Can only add one completion per argument"
-  if [ "$shifu_last_arg_is_eager" = true ]; then
-    _shifu_append_on_new_line shifu_case_stmt '    [ \$# -ne 0 ] && shift'
-    shifu_case_stmt="$shifu_case_stmt || { $1; break; }"
-    if [ ${shifu_parse_stage:-0} -eq 0 ]; then
-      shifu_case_stmt="$shifu_case_stmt ;;"
-    else
-      shifu_case_stmt="$shifu_case_stmt;"
-    fi
-  else
-    shifu_defer_comp_case="${shifu_defer_comp_case:-}
-    [ \$# -ne 0 ] && shift || { $1; break; } ;;"
-  fi
-  shifu_arg_completion_set=true
-}
+shifu_cmd_cpte() { _shifu_comp_case_arm "shifu_add_cpts $*"; }
 
-shifu_cmd_cpte() { _shifu_emit_completion "shifu_add_cpts $*"; }
-
-shifu_cmd_cptf() { _shifu_emit_completion "$1"; }
+shifu_cmd_cptf() { _shifu_comp_case_arm "$1"; }
 
 shifu_cmd_cptp() {
   case ${1:-} in
@@ -191,7 +173,7 @@ shifu_cmd_cptp() {
     :glob:)  [ -z "${2:-}" ] && return; shifu_tmp_sentinel="SHIFU_COMP_PATH_GLOB:$2" ;;
     *) return ;;
   esac
-  _shifu_emit_completion "shifu_add_cpts \"$shifu_tmp_sentinel\""
+  _shifu_comp_case_arm "shifu_add_cpts \"$shifu_tmp_sentinel\""
 }
 
 shifu_add_cpts() {
@@ -486,6 +468,28 @@ _shifu_opt_build_comp_defer_parse() {
   _shifu_collect_option_names "$@"
   _shifu_opt_build shifu_defer_comp_case '
   ' '|' "$@"
+}
+
+# Construct the completion case arm for the current option/arg (completion pass
+# only), wrapping the command fragment $1 as { $1; break; } into shifu_case_stmt
+# (eager) or shifu_defer_comp_case (defer). $1 runs only when the arm is eval'd
+# during completion, to append matches: shifu_add_cpts ... (cpte/cptp) or fn (cptf).
+_shifu_comp_case_arm() {
+  [ ${shifu_mode:-0} -ne $shifu_mode_args_comp ] && return
+  [ "$shifu_arg_completion_set" = true ] && _shifu_error "Can only add one completion per argument"
+  if [ "$shifu_last_arg_is_eager" = true ]; then
+    _shifu_append_on_new_line shifu_case_stmt '    [ \$# -ne 0 ] && shift'
+    shifu_case_stmt="$shifu_case_stmt || { $1; break; }"
+    if [ ${shifu_parse_stage:-0} -eq 0 ]; then
+      shifu_case_stmt="$shifu_case_stmt ;;"
+    else
+      shifu_case_stmt="$shifu_case_stmt;"
+    fi
+  else
+    shifu_defer_comp_case="${shifu_defer_comp_case:-}
+    [ \$# -ne 0 ] && shift || { $1; break; } ;;"
+  fi
+  shifu_arg_completion_set=true
 }
 
 _shifu_cmd_optb() {
