@@ -470,10 +470,8 @@ _shifu_opt_build_comp_defer_parse() {
   ' '|' "$@"
 }
 
-# Construct the completion case arm for the current option/arg (completion pass
-# only), wrapping the command fragment $1 as { $1; break; } into shifu_case_stmt
-# (eager) or shifu_defer_comp_case (defer). $1 runs only when the arm is eval'd
-# during completion, to append matches: shifu_add_cpts ... (cpte/cptp) or fn (cptf).
+# Construct the completion case arm for the current option/arg. $1 is a command
+# fragment (e.g. shifu_add_cpts ... or a user fn) run when that arm is eval'd
 _shifu_comp_case_arm() {
   [ ${shifu_mode:-0} -ne $shifu_mode_args_comp ] && return
   [ "$shifu_arg_completion_set" = true ] && _shifu_error "Can only add one completion per argument"
@@ -861,19 +859,19 @@ _shifu_filter_matching_options() {
   done
 }
 
-# case-statement codegen: the one set of accessors for shifu_case_stmt /
-# shifu_defer_case. Nothing else builds those strings by hand.
-#   _shifu_case_open                    start a fresh statement (subject read from mode)
-#   _shifu_case_inline_deferred         inline accumulated deferred arms into a leaf statement
-#   _shifu_case_arm_help                emit the help-flag arm
-#   _shifu_case_arm_invalid             emit the invalid-option arm, open the positional branch
-#   _shifu_case_close                   finish the statement (default arm + esac)
-#   _shifu_case_arm_begin <scope> ..    open an option arm: select eager/defer buffer +
-#                                       escaping ($shifu_case_val), emit the flag pattern
-#   _shifu_case_arm_flag <var> <setval> binary-option body
-#   _shifu_case_arm_value <var>         value-option body (value guard + assign + =-forms)
-#   _shifu_case_arm_append <listvar>    repeatable-option body (value guard + list append)
-#   _shifu_case_arm_positional <var>    positional-argument body
+# case statement codegen: the one set of accessors for shifu_case_stmt / shifu_defer_case
+# Nothing else builds those strings by hand
+#   _shifu_case_open                      start a fresh statement (subject read from mode)
+#   _shifu_case_inline_deferred           inline accumulated deferred arms into a leaf statement
+#   _shifu_case_arm_help                  emit the help-flag arm
+#   _shifu_case_arm_invalid               emit the invalid-option arm, open the positional branch
+#   _shifu_case_close                     finish the statement (default arm + esac)
+#   _shifu_case_arm_begin <scope> ..      open an option arm: select eager/defer buffer +
+#                                         escaping ($shifu_case_val), emit the flag pattern
+#   _shifu_case_arm_flag <var> <setval>   binary-option body
+#   _shifu_case_arm_value <var>           value-option body (value guard + assign + =-forms)
+#   _shifu_case_arm_append <listvar>      repeatable-option body (value guard + list append)
+#   _shifu_case_arm_positional <var>      positional-argument body
 
 _shifu_case_open() {
   if [ $shifu_mode -eq $shifu_mode_args_comp ]; then
@@ -973,7 +971,7 @@ _shifu_guard_arg_order() {
   _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
 }
 
-# parsed-variable registration: seed a declared option/arg's shell variable.
+# parsed variable registration: seed a declared option/arg's shell variable
 #   _shifu_var_default <name> <value>   set a var to its pre-parse default
 #   _shifu_var_require <name>           mark a var required
 #   _shifu_var_require_pos <name>       mark a positional required
