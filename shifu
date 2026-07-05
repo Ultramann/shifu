@@ -79,7 +79,6 @@
 #   # ./intro --help    -> auto-generated help
 
 # config
-shifu_allow_options_anywhere=false
 shifu_complete_single_dash_options=false
 shifu_help_flags="-h --help"
 
@@ -289,8 +288,8 @@ _shifu_parse_args() {
   _shifu_args_parsed=0
   _shifu_n_args=$#
   while [ $# -ne 0 ]; do
-    [ "$_shifu_in_remaining" = true ] && break
     eval "$shifu_case_stmt" || _shifu_case_eval_error
+    [ "$_shifu_in_remaining" = true ] && break
     [ $# -eq $_shifu_n_args ] && _shifu_case_loop_error
     _shifu_n_args=$#
   done
@@ -969,7 +968,7 @@ _shifu_case_positional_close() {
   fi
   shifu_case_stmt="$shifu_case_stmt
     esac
-    [ \"\$_shifu_in_remaining\" = false ] && { _shifu_pos_idx=\$((_shifu_pos_idx + 1)); shift; _shifu_ack_arg; } ;;"
+    [ \"\$_shifu_in_remaining\" = true ] || { _shifu_pos_idx=\$((_shifu_pos_idx + 1)); shift; _shifu_ack_arg; } ;;"
 }
 
 _shifu_case_require_value() {
@@ -1034,15 +1033,6 @@ _shifu_var_set() {
 _shifu_append_on_new_line() {
   eval "$1=\"\$$1
 $2\""
-}
-
-_shifu_error_if_options() {
-  while [ $# -gt 0 ]; do
-    case "$1" in
-      -*) echo "No options allowed after any positional argument: $1"; return 1 ;;
-    esac
-    shift
-  done
 }
 
 _shifu_set_for_looping() {
