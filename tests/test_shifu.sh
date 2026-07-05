@@ -286,6 +286,15 @@ test_shifu_run_flags_anywhere() {
      "option=none one=one two=two repeated=[l_one][l_two] remaining=three four"
 }
 
+test_shifu_run_defer_option_after_positional() {
+  shifu_run shifu_test_root_cmd sub-two leaf-four fake -G defer_val -t test_val extra args
+  shifu_assert_zero exit_code $?
+  shifu_assert_strings_equal positional "$POSITIONAL_ARG" "fake"
+  shifu_assert_strings_equal defer_def "$DEFER_DEF" "defer_val"
+  shifu_assert_strings_equal test_arg "$TEST_ARG" "test_val"
+  shifu_assert_strings_equal remaining "$leaf_four_args" "extra args"
+}
+
 shifu_test_required_options_cmd() {
   shifu_cmd_name required-options
   shifu_cmd_subs shifu_test_leaf_three_cmd
