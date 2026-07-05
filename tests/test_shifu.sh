@@ -771,7 +771,22 @@ test_shifu_complete() {
      "leaf-three leaf-four" \
   -- leaf_options_through_equals_arg \
      shifu_test_root_cmd "--f sub-two --eager-test=some_value leaf-four" \
-     "--fake-arg"
+     "--fake-arg" \
+  -- option_value_after_positional \
+     shifu_test_all_options_cmd "cur_word one -A" \
+     "flag option arg" \
+  -- second_positional_after_option \
+     shifu_test_all_options_cmd "cur_word one -f" \
+     "positional arg two" \
+  -- option_names_after_positional \
+     shifu_test_all_options_cmd "--flag one" \
+     "--flag-option-bin --flag-option-req --flag-option-def" \
+  -- remaining_after_positionals \
+     shifu_test_all_options_cmd "cur_word one two r1" \
+     "remaining args" \
+  -- defer_value_after_positional \
+     shifu_test_root_cmd "cur_word sub-two leaf-four fake -G" \
+     "defer_one defer_two defer_three"
 }
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {

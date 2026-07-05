@@ -274,8 +274,8 @@ _shifu_parse_args() {
   shifu_mode=$shifu_mode_args_run
   shifu_parse_stage=0
   _shifu_pos_idx=0
-  _shifu_pos_count=0
-  _shifu_remaining_declared=false
+  shifu_pos_count=0
+  shifu_remaining_declared=false
   _shifu_in_remaining=false
   shifu_parse_eager="$1"; shifu_cmd="$2"; shift 2
   [ "$shifu_parse_eager" = true ] && shifu_required_variables_eager=""
@@ -477,19 +477,39 @@ _shifu_opt_build_comp_defer_parse() {
 _shifu_comp_case_arm() {
   [ ${shifu_mode:-0} -ne $shifu_mode_args_comp ] && return
   [ "$shifu_arg_completion_set" = true ] && _shifu_error "Can only add one completion per argument"
-  if [ "$shifu_last_arg_is_eager" = true ]; then
+  if [ ${shifu_parse_stage:-0} -ge 2 ]; then
+    shifu_comp_remaining_fragment="$1"
+  elif [ ${shifu_parse_stage:-0} -eq 1 ]; then
+    eval "shifu_comp_pos_fragment_$((shifu_pos_count - 1))=\$1"
+  elif [ "$shifu_last_arg_is_eager" = true ]; then
     _shifu_append_on_new_line shifu_case_stmt '    [ \$# -ne 0 ] && shift'
-    shifu_case_stmt="$shifu_case_stmt || { $1; break; }"
-    if [ ${shifu_parse_stage:-0} -eq 0 ]; then
-      shifu_case_stmt="$shifu_case_stmt ;;"
-    else
-      shifu_case_stmt="$shifu_case_stmt;"
-    fi
+    shifu_case_stmt="$shifu_case_stmt || { $1; break; } ;;"
   else
     shifu_defer_comp_case="${shifu_defer_comp_case:-}
     [ \$# -ne 0 ] && shift || { $1; break; } ;;"
   fi
   shifu_arg_completion_set=true
+}
+
+_shifu_comp_positional_close() {
+  shifu_case_stmt="$shifu_case_stmt
+  *)
+    if [ \$# -eq 0 ]; then
+      case \$_shifu_pos_idx in"
+  shifu_comp_pos_i=0
+  while [ $shifu_comp_pos_i -lt $shifu_pos_count ]; do
+    eval "shifu_comp_pos_fragment=\${shifu_comp_pos_fragment_$shifu_comp_pos_i:-}"
+    shifu_case_stmt="$shifu_case_stmt
+        $shifu_comp_pos_i) $shifu_comp_pos_fragment ;;"
+    shifu_comp_pos_i=$((shifu_comp_pos_i + 1))
+  done
+  [ -n "${shifu_comp_remaining_fragment:-}" ] && shifu_case_stmt="$shifu_case_stmt
+        *) $shifu_comp_remaining_fragment ;;"
+  shifu_case_stmt="$shifu_case_stmt
+      esac
+      break
+    fi
+    _shifu_pos_idx=\$((_shifu_pos_idx + 1)); shift ;;"
 }
 
 _shifu_cmd_optb() {
@@ -633,10 +653,11 @@ _shifu_cmd_argr() {
       if [ $shifu_parse_stage -eq 0 ]; then
         shifu_parse_stage=1
         _shifu_add_comp_eq_patterns
-        _shifu_append_on_new_line shifu_case_stmt "  *)"
       elif [ $shifu_parse_stage -gt 1 ]; then
         _shifu_error "No arguments after remaining are declared: $1"
       fi
+      eval "shifu_comp_pos_fragment_$shifu_pos_count=''"
+      shifu_pos_count=$((shifu_pos_count + 1))
       ;;
   esac
 }
@@ -652,7 +673,7 @@ _shifu_cmd_args() {
       [ $shifu_parse_stage -gt 1 ] && _shifu_error "Can only declare remaining arguments once: $1"
       [ $shifu_parse_stage -eq 0 ] && _shifu_case_arm_invalid
       shifu_parse_stage=2
-      _shifu_remaining_declared=true
+      shifu_remaining_declared=true
       ;;
     $shifu_mode_args_comp)
       _shifu_opt_comp_preamble
@@ -812,6 +833,11 @@ _shifu_complete_subcmd_names() {
 _shifu_complete_func_args() {
   shifu_mode=$shifu_mode_args_comp
   shifu_parse_stage=0
+  _shifu_pos_idx=0
+  shifu_pos_count=0
+  shifu_remaining_declared=false
+  _shifu_in_remaining=false
+  shifu_comp_remaining_fragment=''
   shifu_parse_eager="$1"; shifu_cmd="$2"; shift 2
   _shifu_args_parsed=0
   shifu_comp_eq_patterns=""
@@ -833,7 +859,7 @@ ${shifu_defer_comp_case:-}"
   if [ "$shifu_parse_eager" = true ]; then
     _shifu_append_on_new_line shifu_case_stmt "  *) _shifu_comp_done=true ;;"
   elif [ $shifu_parse_stage -ne 0 ]; then
-    _shifu_append_on_new_line shifu_case_stmt "    _shifu_comp_done=true ;;"
+    _shifu_comp_positional_close
   elif [ $shifu_arg_completion_set = true ]; then
     _shifu_append_on_new_line shifu_case_stmt "  *) _shifu_comp_done=true ;;"
   else
@@ -903,9 +929,9 @@ _shifu_case_arm_invalid() {
 
 _shifu_case_close() {
   [ $shifu_parse_stage -eq 0 ] && _shifu_case_arm_invalid
-  if [ $_shifu_pos_count -gt 0 ]; then
+  if [ $shifu_pos_count -gt 0 ]; then
     _shifu_case_positional_close
-  elif [ "$_shifu_remaining_declared" = true ]; then
+  elif [ "$shifu_remaining_declared" = true ]; then
     _shifu_append_on_new_line shifu_case_stmt "    _shifu_in_remaining=true ;;"
   else
     _shifu_append_on_new_line shifu_case_stmt "    break;;"
@@ -954,12 +980,12 @@ _shifu_case_positional_open() {
 
 _shifu_case_arm_positional() {
   shifu_case_stmt="$shifu_case_stmt
-      $_shifu_pos_count) $1=\$1 ;;"
-  _shifu_pos_count=$((_shifu_pos_count + 1))
+      $shifu_pos_count) $1=\$1 ;;"
+  shifu_pos_count=$((shifu_pos_count + 1))
 }
 
 _shifu_case_positional_close() {
-  if [ "$_shifu_remaining_declared" = true ]; then
+  if [ "$shifu_remaining_declared" = true ]; then
     shifu_case_stmt="$shifu_case_stmt
       *) _shifu_in_remaining=true ;;"
   else
