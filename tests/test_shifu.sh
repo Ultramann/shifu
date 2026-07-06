@@ -232,9 +232,9 @@ test_shifu_run_required_args_unset() {
                    "Missing positional argument POSITIONAL_ARG_1"
 }
 
-shifu_test_flags_anywhere_cmd() {
-  shifu_cmd_name flags-anywhere
-  shifu_cmd_func shifu_test_flags_anywhere_func
+shifu_test_options_after_positionals_cmd() {
+  shifu_cmd_name options-after-positionals
+  shifu_cmd_func shifu_test_options_after_positionals_func
   shifu_cmd_optd --opt -- OPTION none "value option"
   shifu_cmd_optd -l --list -- REPEATED... "" "repeatable option"
   shifu_cmd_argr ARG_ONE "first positional"
@@ -242,7 +242,7 @@ shifu_test_flags_anywhere_cmd() {
   shifu_cmd_args "remaining arguments"
 }
 
-shifu_test_flags_anywhere_func() {
+shifu_test_options_after_positionals_func() {
   printf 'option=%s one=%s two=%s repeated=' "$OPTION" "$ARG_ONE" "$ARG_TWO"
   while shifu_itr_list REPEATED; do
       printf '[%s]' "$REPEATED";
@@ -250,10 +250,10 @@ shifu_test_flags_anywhere_func() {
   printf ' remaining=%s' "$*"
 }
 
-test_shifu_run_flags_anywhere() {
+test_shifu_run_options_after_positionals() {
   run_test() {
     shifu_test_params @args expected -- "$@"
-    actual=$(shifu_run shifu_test_flags_anywhere_cmd $args 2>&1)
+    actual=$(shifu_run shifu_test_options_after_positionals_cmd $args 2>&1)
     shifu_assert_strings_equal output "$expected" "$actual"
   }
   shifu_parameterize_test run_test \
