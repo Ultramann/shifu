@@ -786,7 +786,10 @@ test_shifu_complete() {
      "remaining args" \
   -- defer_value_after_positional \
      shifu_test_root_cmd "cur_word sub-two leaf-four fake -G" \
-     "defer_one defer_two defer_three"
+     "defer_one defer_two defer_three" \
+  -- option_interleaved_between_positionals \
+     shifu_test_all_options_cmd "cur_word one -A flag two" \
+     "remaining args"
 }
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {
