@@ -232,6 +232,69 @@ test_shifu_run_required_args_unset() {
                    "Missing positional argument POSITIONAL_ARG_1"
 }
 
+shifu_test_options_after_positionals_cmd() {
+  shifu_cmd_name options-after-positionals
+  shifu_cmd_func shifu_test_options_after_positionals_func
+  shifu_cmd_optd --opt -- OPTION none "value option"
+  shifu_cmd_optd -l --list -- REPEATED... "" "repeatable option"
+  shifu_cmd_argr ARG_ONE "first positional"
+  shifu_cmd_argr ARG_TWO "second positional"
+  shifu_cmd_args "remaining arguments"
+}
+
+shifu_test_options_after_positionals_func() {
+  printf 'option=%s one=%s two=%s repeated=' "$OPTION" "$ARG_ONE" "$ARG_TWO"
+  while shifu_itr_list REPEATED; do
+      printf '[%s]' "$REPEATED";
+  done
+  printf ' remaining=%s' "$*"
+}
+
+test_shifu_run_options_after_positionals() {
+  run_test() {
+    shifu_test_params @args expected -- "$@"
+    actual=$(shifu_run shifu_test_options_after_positionals_cmd $args 2>&1)
+    shifu_assert_strings_equal output "$expected" "$actual"
+  }
+  shifu_parameterize_test run_test \
+  -- option_first \
+     "--opt val one two" \
+     "option=val one=one two=two repeated= remaining=" \
+  -- option_after_positionals \
+     "one two --opt val" \
+     "option=val one=one two=two repeated= remaining=" \
+  -- option_between_positionals \
+     "one --opt val two" \
+     "option=val one=one two=two repeated= remaining=" \
+  -- defaults \
+     "one two" \
+     "option=none one=one two=two repeated= remaining=" \
+  -- remaining \
+     "one two three four" \
+     "option=none one=one two=two repeated= remaining=three four" \
+  -- option_before_remaining \
+     "one two --opt val three four" \
+     "option=val one=one two=two repeated= remaining=three four" \
+  -- dash_data_in_remaining \
+     "one two three --opt val" \
+     "option=none one=one two=two repeated= remaining=three --opt val" \
+  -- repeatable_interspersed \
+     "-l l_one one -l l_two two" \
+     "option=none one=one two=two repeated=[l_one][l_two] remaining=" \
+  -- repeated_and_remaining \
+     "-l l_one one -l l_two two three four" \
+     "option=none one=one two=two repeated=[l_one][l_two] remaining=three four"
+}
+
+test_shifu_run_defer_option_after_positional() {
+  shifu_run shifu_test_root_cmd sub-two leaf-four fake -G defer_val -t test_val extra args
+  shifu_assert_zero exit_code $?
+  shifu_assert_strings_equal positional "$POSITIONAL_ARG" "fake"
+  shifu_assert_strings_equal defer_def "$DEFER_DEF" "defer_val"
+  shifu_assert_strings_equal test_arg "$TEST_ARG" "test_val"
+  shifu_assert_strings_equal remaining "$leaf_four_args" "extra args"
+}
+
 shifu_test_required_options_cmd() {
   shifu_cmd_name required-options
   shifu_cmd_subs shifu_test_leaf_three_cmd
@@ -435,70 +498,20 @@ Options
   shifu_assert_strings_equal error_message "$expected" "$actual"
 }
 
-test_shifu_run_bad_cmd_option_after_positional() {
-  expected="$(
-    echo 'No options allowed after any positional argument: -t'
-    printf 'Test leaf four cmd help
-
-Usage
-  leaf-four [OPTIONS] [POSITIONAL_ARG] ...[REMAINING]
-
-Arguments
-  POSITIONAL_ARG
-    positional argument help
-  REMAINING
-    remaining argument help
-
-Options
-  -f, --fake-arg [FAKE_ARG]
-    fake argument help
-    Default: fake_default
-  -t, --test-arg [TEST_ARG]
-    test argument help
-    Default: test_default
-  -h, --help
-    Show this help'
-  )"
-  actual=$(shifu_run shifu_test_leaf_four_cmd test -t fake)
-  shifu_assert_non_zero exit_code $?
-  shifu_assert_strings_equal error_message "$expected" "$actual"
+test_shifu_run_option_after_positional() {
+  shifu_run shifu_test_leaf_four_cmd test -t fake
+  shifu_assert_zero exit_code $?
+  shifu_assert_strings_equal positional "$POSITIONAL_ARG" "test"
+  shifu_assert_strings_equal test_arg "$TEST_ARG" "fake"
+  shifu_assert_empty remaining "$leaf_four_args"
 }
 
-test_shifu_run_bad_cmd_option_in_remaining() {
-  expected="$(
-    echo 'No options allowed after any positional argument: -t'
-    printf 'Test leaf four cmd help
-
-Usage
-  leaf-four [OPTIONS] [POSITIONAL_ARG] ...[REMAINING]
-
-Arguments
-  POSITIONAL_ARG
-    positional argument help
-  REMAINING
-    remaining argument help
-
-Options
-  -f, --fake-arg [FAKE_ARG]
-    fake argument help
-    Default: fake_default
-  -t, --test-arg [TEST_ARG]
-    test argument help
-    Default: test_default
-  -h, --help
-    Show this help'
-  )"
-  actual=$(shifu_run shifu_test_leaf_four_cmd fake -t test positional)
-  shifu_assert_non_zero exit_code $?
-  shifu_assert_strings_equal error_message "$expected" "$actual"
-}
-
-test_shifu_run_bad_cmd_option_w_allow_options_anywhere() {
-  shifu_allow_options_anywhere=true
+test_shifu_run_option_before_remaining() {
   shifu_run shifu_test_leaf_four_cmd fake -t test positional
   shifu_assert_zero exit_code $?
   shifu_assert_strings_equal positional "$POSITIONAL_ARG" "fake"
-  shifu_assert_strings_equal remaining "$leaf_four_args" "-t test positional"
+  shifu_assert_strings_equal test_arg "$TEST_ARG" "test"
+  shifu_assert_strings_equal remaining "$leaf_four_args" "positional"
 }
 
 test_shifu_run_args_invalid_option() {
@@ -758,7 +771,25 @@ test_shifu_complete() {
      "leaf-three leaf-four" \
   -- leaf_options_through_equals_arg \
      shifu_test_root_cmd "--f sub-two --eager-test=some_value leaf-four" \
-     "--fake-arg"
+     "--fake-arg" \
+  -- option_value_after_positional \
+     shifu_test_all_options_cmd "cur_word one -A" \
+     "flag option arg" \
+  -- second_positional_after_option \
+     shifu_test_all_options_cmd "cur_word one -f" \
+     "positional arg two" \
+  -- option_names_after_positional \
+     shifu_test_all_options_cmd "--flag one" \
+     "--flag-option-bin --flag-option-req --flag-option-def" \
+  -- remaining_after_positionals \
+     shifu_test_all_options_cmd "cur_word one two r1" \
+     "remaining args" \
+  -- defer_value_after_positional \
+     shifu_test_root_cmd "cur_word sub-two leaf-four fake -G" \
+     "defer_one defer_two defer_three" \
+  -- option_interleaved_between_positionals \
+     shifu_test_all_options_cmd "cur_word one -A flag two" \
+     "remaining args"
 }
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {

@@ -632,17 +632,6 @@ The option and argument declaration order in a command function matters:
 
 Shifu has a few variables that can be set after sourcing to change default behavior. Typically they are set just before calling `shifu_run`.
 
-#### `shifu_allow_options_anywhere`
-* Controls whether arguments starting with a dash are treated as errors
-* Type: bool
-  * `false`: options (arguments starting with `-`) are not allowed after positional arguments, shifu will error if it encounters one
-  * `true`: allows positional and remaining arguments that begin with a dash. Useful if flags need to be passed through cli arguments
-* Default: `false`
-* Example
-  ```sh
-  shifu_allow_options_anywhere=true
-  ```
-
 #### `shifu_complete_single_dash_options`
 * Controls tab completion behavior when current word is a single `-`
 * Type: bool
