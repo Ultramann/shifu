@@ -331,7 +331,7 @@ test_shifu_run_end_of_options() {
   -- dash_data_to_remaining \
      "one two -- -three -four" \
      "option=none one=one two=two remaining=[-three] [-four]" \
-  -- second_separator_is_operand \
+  -- second_separator_is_data \
      "one two -- --" \
      "option=none one=one two=two remaining=[--]" \
   -- separator_first_token \
@@ -848,6 +848,24 @@ test_shifu_complete() {
      "defer_one defer_two defer_three" \
   -- option_interleaved_between_positionals \
      shifu_test_all_options_cmd "cur_word one -A flag two" \
+     "remaining args" \
+  -- separator_not_counted_as_positional \
+     shifu_test_all_options_cmd "cur_word -- one" \
+     "positional arg two" \
+  -- no_option_names_after_separator \
+     shifu_test_all_options_cmd "cur_word one --" \
+     "positional arg two" \
+  -- dash_current_word_after_separator \
+     shifu_test_all_options_cmd "-A --" \
+     "positional arg one" \
+  -- known_option_as_data_after_separator \
+     shifu_test_all_options_cmd "cur_word one -- -two" \
+     "remaining args" \
+  -- remaining_after_data_positional \
+     shifu_test_all_options_cmd "cur_word one -- --two extra" \
+     "remaining args" \
+  -- remaining_source_after_separator \
+     shifu_test_all_options_cmd "cur_word one two --" \
      "remaining args"
 }
 
