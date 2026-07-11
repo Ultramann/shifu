@@ -788,8 +788,8 @@ _shifu_complete() {
   shifu_comp_option_names="${shifu_build_comp_defer_option_names:-}"
   _shifu_set_completing_option
   if [ "$shifu_completing_option" = true -a -n "${shifu_cmd_func:-}" ]; then
-    for shifu_comp_sep_word in "$@"; do
-      [ "$shifu_comp_sep_word" = -- ] && { shifu_completing_option=false; break; }
+    for shifu_comp_delim_word in "$@"; do
+      [ "$shifu_comp_delim_word" = -- ] && { shifu_completing_option=false; break; }
     done
   fi
   [ "$shifu_completing_option" = true ] && shifu_completions=""
@@ -863,14 +863,14 @@ ${shifu_defer_comp_case:-}"
   shifu_arg_completion_set=true
   shifu_last_arg_is_eager=true
   "$shifu_cmd"
-  shifu_comp_past_separator=false
+  shifu_comp_past_delimiter=false
   if [ "$shifu_parse_eager" = false ]; then
-    for shifu_comp_sep_word in "$@"; do
-      [ "$shifu_comp_sep_word" = -- ] && { shifu_comp_past_separator=true; break; }
+    for shifu_comp_delim_word in "$@"; do
+      [ "$shifu_comp_delim_word" = -- ] && { shifu_comp_past_delimiter=true; break; }
     done
   fi
   case "${shifu_current_word:-}" in
-    -*) [ "$shifu_parse_eager" = false ] && [ "$shifu_comp_past_separator" = false ] && return 0 ;;
+    -*) [ "$shifu_parse_eager" = false ] && [ "$shifu_comp_past_delimiter" = false ] && return 0 ;;
   esac
   if [ $shifu_parse_stage -eq 0 -a $shifu_arg_completion_set = false ]; then
     shifu_case_stmt="$shifu_case_stmt shift ;;"

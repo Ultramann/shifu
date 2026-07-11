@@ -316,10 +316,10 @@ test_shifu_run_end_of_options() {
     shifu_assert_strings_equal output "$expected" "$actual"
   }
   shifu_parameterize_test run_test \
-  -- separator_noop \
+  -- delimiter_noop \
      "-- one two" \
      "option=none one=one two=two remaining=" \
-  -- option_before_separator \
+  -- option_before_delimiter \
      "--opt val -- one two" \
      "option=val one=one two=two remaining=" \
   -- dashes_fill_positionals \
@@ -331,13 +331,13 @@ test_shifu_run_end_of_options() {
   -- dash_data_to_remaining \
      "one two -- -three -four" \
      "option=none one=one two=two remaining=[-three] [-four]" \
-  -- second_separator_is_data \
+  -- second_delimiter_is_data \
      "one two -- --" \
      "option=none one=one two=two remaining=[--]" \
-  -- separator_first_token \
+  -- delimiter_first_token \
      "-- --opt val" \
      "option=none one=--opt two=val remaining=" \
-  -- flags_anywhere_up_to_separator \
+  -- flags_anywhere_up_to_delimiter \
      "one --opt val -- two" \
      "option=val one=one two=two remaining="
 }
@@ -849,22 +849,22 @@ test_shifu_complete() {
   -- option_interleaved_between_positionals \
      shifu_test_all_options_cmd "cur_word one -A flag two" \
      "remaining args" \
-  -- separator_not_counted_as_positional \
+  -- delimiter_not_counted_as_positional \
      shifu_test_all_options_cmd "cur_word -- one" \
      "positional arg two" \
-  -- no_option_names_after_separator \
+  -- no_option_names_after_delimiter \
      shifu_test_all_options_cmd "cur_word one --" \
      "positional arg two" \
-  -- dash_current_word_after_separator \
+  -- dash_current_word_after_delimiter \
      shifu_test_all_options_cmd "-A --" \
      "positional arg one" \
-  -- known_option_as_data_after_separator \
+  -- known_option_as_data_after_delimiter \
      shifu_test_all_options_cmd "cur_word one -- -two" \
      "remaining args" \
   -- remaining_after_data_positional \
      shifu_test_all_options_cmd "cur_word one -- --two extra" \
      "remaining args" \
-  -- remaining_source_after_separator \
+  -- remaining_source_after_delimiter \
      shifu_test_all_options_cmd "cur_word one two --" \
      "remaining args"
 }

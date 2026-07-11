@@ -591,6 +591,21 @@ The option and argument declaration order in a command function matters:
 1. Positional arguments are parsed in declaration order
 1. Options must be declared before any positional arguments, and positional arguments before remaining arguments
 
+#### End-of-options delimiter (`--`)
+
+A bare `--` stops option parsing; every argument after it is treated as a non-option argument, even if it begins with `-`. These fill any positional arguments, then overflow into `$@`. Use it to pass a value that starts with a dash, or to forward flags to another command. Note that this delimiter is what you type when running a shifu CLI; it is unrelated to the `--` separator in an option declaration (like the `shifu_cmd_optb` line below), which sits between the option's flags and its parsing configuration.
+
+```sh
+shifu_cmd_optb -v --verbose -- VERBOSE false true "Verbose output"
+shifu_cmd_args "Arguments forwarded to the wrapped command"
+```
+
+```txt
+cli --verbose        # VERBOSE = true,  $@ = <empty>
+cli -- --verbose     # VERBOSE = false, $@ = --verbose
+cli -- -x file.txt   # VERBOSE = false, $@ = -x file.txt
+```
+
 ### Completion functions
 
 #### `shifu_cmd_cpte`
@@ -670,7 +685,7 @@ Shifu has a few variables that can be set after sourcing to change default behav
 
 #### `shifu_add_cpts`
 * Registers one or more strings to add as completions
-* Must only be called within functions passed to `shifu_cmd_cptf`
+* [x] Must only be called within functions passed to `shifu_cmd_cptf`
 * Example
   ```sh
   dynamic_completions() {
