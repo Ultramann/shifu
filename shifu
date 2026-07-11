@@ -277,6 +277,8 @@ _shifu_parse_args() {
   shifu_pos_count=0
   shifu_remaining_declared=false
   _shifu_in_remaining=false
+  _shifu_end_of_options=false
+  shifu_operand_stmt=""
   shifu_parse_eager="$1"; shifu_cmd="$2"; shift 2
   [ "$shifu_parse_eager" = true ] && shifu_required_variables_eager=""
   shifu_required_positionals=""
@@ -288,7 +290,11 @@ _shifu_parse_args() {
   _shifu_args_parsed=0
   _shifu_n_args=$#
   while [ $# -ne 0 ]; do
-    eval "$shifu_case_stmt" || _shifu_case_eval_error
+    if [ "$_shifu_end_of_options" = true ]; then
+      eval "$shifu_operand_stmt" || _shifu_case_eval_error
+    else
+      eval "$shifu_case_stmt" || _shifu_case_eval_error
+    fi
     [ "$_shifu_in_remaining" = true ] && break
     [ $# -eq $_shifu_n_args ] && _shifu_case_loop_error
     _shifu_n_args=$#
@@ -922,6 +928,8 @@ _shifu_case_arm_help() {
 }
 
 _shifu_case_arm_invalid() {
+  [ "${shifu_parse_eager:-true}" = false ] && shifu_case_stmt="$shifu_case_stmt
+  --) _shifu_end_of_options=true; shift; _shifu_ack_arg ;;"
   shifu_case_stmt="$shifu_case_stmt
   -*) echo \"Invalid option: \$1\"; _shifu_help \"\$shifu_cmd\" 1 ;;
   *)"
@@ -932,9 +940,12 @@ _shifu_case_close() {
   if [ $shifu_pos_count -gt 0 ]; then
     _shifu_case_positional_close
   elif [ "$shifu_remaining_declared" = true ]; then
-    _shifu_append_on_new_line shifu_case_stmt "    _shifu_in_remaining=true ;;"
+    shifu_case_stmt="$shifu_case_stmt
+    eval \"\$shifu_operand_stmt\" ;;"
+    shifu_operand_stmt="_shifu_in_remaining=true"
   else
     _shifu_append_on_new_line shifu_case_stmt "    break;;"
+    shifu_operand_stmt="echo \"Unexpected argument: \$1\"; _shifu_help \"\$shifu_cmd\" 1"
   fi
   _shifu_append_on_new_line shifu_case_stmt "esac"
 }
@@ -975,26 +986,27 @@ _shifu_case_arm_append() {
 
 _shifu_case_positional_open() {
   shifu_case_stmt="$shifu_case_stmt
-    case \$_shifu_pos_idx in"
+    eval \"\$shifu_operand_stmt\" ;;"
+  shifu_operand_stmt="case \$_shifu_pos_idx in"
 }
 
 _shifu_case_arm_positional() {
-  shifu_case_stmt="$shifu_case_stmt
-      $shifu_pos_count) $1=\$1 ;;"
+  shifu_operand_stmt="$shifu_operand_stmt
+  $shifu_pos_count) $1=\$1 ;;"
   shifu_pos_count=$((shifu_pos_count + 1))
 }
 
 _shifu_case_positional_close() {
   if [ "$shifu_remaining_declared" = true ]; then
-    shifu_case_stmt="$shifu_case_stmt
-      *) _shifu_in_remaining=true ;;"
+    shifu_operand_stmt="$shifu_operand_stmt
+  *) _shifu_in_remaining=true ;;"
   else
-    shifu_case_stmt="$shifu_case_stmt
-      *) echo \"Unexpected positional: \$1\"; _shifu_help \"\$shifu_cmd\" 1 ;;"
+    shifu_operand_stmt="$shifu_operand_stmt
+  *) echo \"Unexpected positional: \$1\"; _shifu_help \"\$shifu_cmd\" 1 ;;"
   fi
-  shifu_case_stmt="$shifu_case_stmt
-    esac
-    [ \"\$_shifu_in_remaining\" = true ] || { _shifu_pos_idx=\$((_shifu_pos_idx + 1)); shift; _shifu_ack_arg; } ;;"
+  shifu_operand_stmt="$shifu_operand_stmt
+esac
+[ \"\$_shifu_in_remaining\" = true ] || { _shifu_pos_idx=\$((_shifu_pos_idx + 1)); shift; _shifu_ack_arg; }"
 }
 
 _shifu_case_require_value() {

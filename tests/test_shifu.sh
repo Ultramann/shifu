@@ -72,15 +72,15 @@ shifu_test_leaf_func_one() {
 }
 
 shifu_test_leaf_func_two() {
-  leaf_two_args="$@"
+  leaf_two_args=$(shifu_test_format_args "$@")
 }
 
 shifu_test_leaf_three_func() {
-  leaf_three_args="$@"
+  leaf_three_args=$(shifu_test_format_args "$@")
 }
 
 shifu_test_leaf_func_four() {
-  leaf_four_args="$@"
+  leaf_four_args=$(shifu_test_format_args "$@")
 }
 
 shifu_test_all_options_cmd() {
@@ -153,7 +153,7 @@ test_shifu_run_good_cmd_defer_arg() {
   shifu_assert_zero exit_code $?
   shifu_assert_equal defer_bin "$DEFER_BIN" true
   shifu_assert_equal defer_def "$DEFER_DEF" defer_val
-  shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
+  shifu_assert_equal leaf_three_args "$leaf_three_args" "[one] [two]"
 }
 
 test_shifu_run_good_cmd_defer_and_eager_arg() {
@@ -162,7 +162,7 @@ test_shifu_run_good_cmd_defer_and_eager_arg() {
   shifu_assert_equal eager_test "$EAGER_TEST" "eager-val"
   shifu_assert_equal defer_bin "$DEFER_BIN" true
   shifu_assert_equal defer_def "$DEFER_DEF" defer_val
-  shifu_assert_equal leaf_three_args "$leaf_three_args" "one two"
+  shifu_assert_equal leaf_three_args "$leaf_three_args" "[one] [two]"
 }
 
 test_shifu_run_args_all_set() {
@@ -247,7 +247,7 @@ shifu_test_options_after_positionals_func() {
   while shifu_itr_list REPEATED; do
       printf '[%s]' "$REPEATED";
   done
-  printf ' remaining=%s' "$*"
+  printf ' remaining=%s' "$(shifu_test_format_args "$@")"
 }
 
 test_shifu_run_options_after_positionals() {
@@ -271,19 +271,19 @@ test_shifu_run_options_after_positionals() {
      "option=none one=one two=two repeated= remaining=" \
   -- remaining \
      "one two three four" \
-     "option=none one=one two=two repeated= remaining=three four" \
+     "option=none one=one two=two repeated= remaining=[three] [four]" \
   -- option_before_remaining \
      "one two --opt val three four" \
-     "option=val one=one two=two repeated= remaining=three four" \
+     "option=val one=one two=two repeated= remaining=[three] [four]" \
   -- dash_data_in_remaining \
      "one two three --opt val" \
-     "option=none one=one two=two repeated= remaining=three --opt val" \
+     "option=none one=one two=two repeated= remaining=[three] [--opt] [val]" \
   -- repeatable_interspersed \
      "-l l_one one -l l_two two" \
      "option=none one=one two=two repeated=[l_one][l_two] remaining=" \
   -- repeated_and_remaining \
      "-l l_one one -l l_two two three four" \
-     "option=none one=one two=two repeated=[l_one][l_two] remaining=three four"
+     "option=none one=one two=two repeated=[l_one][l_two] remaining=[three] [four]"
 }
 
 test_shifu_run_defer_option_after_positional() {
@@ -292,7 +292,66 @@ test_shifu_run_defer_option_after_positional() {
   shifu_assert_strings_equal positional "$POSITIONAL_ARG" "fake"
   shifu_assert_strings_equal defer_def "$DEFER_DEF" "defer_val"
   shifu_assert_strings_equal test_arg "$TEST_ARG" "test_val"
-  shifu_assert_strings_equal remaining "$leaf_four_args" "extra args"
+  shifu_assert_strings_equal remaining "$leaf_four_args" "[extra] [args]"
+}
+
+shifu_test_end_of_options_cmd() {
+  shifu_cmd_name end-of-options
+  shifu_cmd_func shifu_test_end_of_options_func
+  shifu_cmd_optd --opt -- OPTION none "value option"
+  shifu_cmd_argr ARG_ONE "first positional"
+  shifu_cmd_argr ARG_TWO "second positional"
+  shifu_cmd_args "remaining arguments"
+}
+
+shifu_test_end_of_options_func() {
+  printf 'option=%s one=%s two=%s remaining=%s' \
+    "$OPTION" "$ARG_ONE" "$ARG_TWO" "$(shifu_test_format_args "$@")"
+}
+
+test_shifu_run_end_of_options() {
+  run_test() {
+    shifu_test_params @args expected -- "$@"
+    actual=$(shifu_run shifu_test_end_of_options_cmd $args 2>&1)
+    shifu_assert_strings_equal output "$expected" "$actual"
+  }
+  shifu_parameterize_test run_test \
+  -- separator_noop \
+     "-- one two" \
+     "option=none one=one two=two remaining=" \
+  -- option_before_separator \
+     "--opt val -- one two" \
+     "option=val one=one two=two remaining=" \
+  -- dashes_fill_positionals \
+     "-- -one -two" \
+     "option=none one=-one two=-two remaining=" \
+  -- known_option_as_data \
+     "one -- --opt" \
+     "option=none one=one two=--opt remaining=" \
+  -- dash_data_to_remaining \
+     "one two -- -three -four" \
+     "option=none one=one two=two remaining=[-three] [-four]" \
+  -- second_separator_is_operand \
+     "one two -- --" \
+     "option=none one=one two=two remaining=[--]" \
+  -- separator_first_token \
+     "-- --opt val" \
+     "option=none one=--opt two=val remaining=" \
+  -- flags_anywhere_up_to_separator \
+     "one --opt val -- two" \
+     "option=val one=one two=two remaining="
+}
+
+shifu_test_end_of_options_no_args_cmd() {
+  shifu_cmd_name end-of-options-no-args
+  shifu_cmd_func no_op
+  shifu_cmd_optd --opt -- OPTION none "value option"
+}
+
+test_shifu_run_end_of_options_no_args_fails() {
+  actual=$(shifu_run shifu_test_end_of_options_no_args_cmd --opt val -- extra 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_string_contains error_message "$actual" "Unexpected argument: extra"
 }
 
 shifu_test_required_options_cmd() {
@@ -511,7 +570,7 @@ test_shifu_run_option_before_remaining() {
   shifu_assert_zero exit_code $?
   shifu_assert_strings_equal positional "$POSITIONAL_ARG" "fake"
   shifu_assert_strings_equal test_arg "$TEST_ARG" "test"
-  shifu_assert_strings_equal remaining "$leaf_four_args" "positional"
+  shifu_assert_strings_equal remaining "$leaf_four_args" "[positional]"
 }
 
 test_shifu_run_args_invalid_option() {
@@ -1227,6 +1286,16 @@ shifu_test_params() {
     shift
     ua_idx=$((ua_idx + 1))
   done
+}
+
+shifu_test_format_args() {
+  # format "$@" as bracketed, space-separated tokens, e.g. [one] [two]; empty for none.
+  # reveals argument boundaries that "$*" / var="$@" would collapse into one string
+  fa_out=""
+  for fa_arg in "$@"; do
+    fa_out="${fa_out:+$fa_out }[$fa_arg]"
+  done
+  printf '%s' "$fa_out"
 }
 
 shifu_assert_empty() {
