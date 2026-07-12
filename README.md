@@ -565,6 +565,8 @@ All option and argument functions accept a `variable` argument, the shell variab
 
 #### Notes
 
+##### Shared options in parent commands
+
 The signatures and examples above are for leaf commands (those using `shifu_cmd_func`). When you have options that are shared across subcommands, like a `--verbose` flag, you can declare them once in a parent command (those using `shifu_cmd_subs`) instead of repeating them in every subcommand.
 
 Option functions called in a parent command require a mode as the first argument. The mode changes when the option will be parsed, aka when it will be provided by the CLI user. The two available modes are:
@@ -583,6 +585,8 @@ Option functions called in a parent command require a mode as the first argument
   cli --config myconfig sub
   ```
 
+##### Positional and remaining argument declaration rules
+
 Positional and remaining argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) can only be used in leaf commands.
 
 The option and argument declaration order in a command function matters:
@@ -591,7 +595,7 @@ The option and argument declaration order in a command function matters:
 1. Positional arguments are parsed in declaration order
 1. Options must be declared before any positional arguments, and positional arguments before remaining arguments
 
-#### End-of-options delimiter (`--`)
+##### End-of-options delimiter (`--`)
 
 A bare `--` stops option parsing; every argument after it is treated as a non-option argument, even if it begins with `-`. These fill any positional arguments, then overflow into `$@`. Use it to pass a value that starts with a dash, or to forward flags to another command. Note that this delimiter is what you type when running a shifu CLI; it is unrelated to the `--` separator in an option declaration (like the `shifu_cmd_optb` line below), which sits between the option's flags and its parsing configuration.
 
