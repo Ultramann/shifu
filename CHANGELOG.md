@@ -10,15 +10,15 @@ The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Breaking
 
-* Removed the `shifu_allow_options_anywhere` configuration variable. To pass an argument that starts with a dash, use the newly added end-of-options delimiter, `--` ([#49](https://github.com/Ultramann/shifu/pull/49))
+* Removed the `shifu_allow_options_anywhere` configuration variable. To pass an argument that starts with a dash, use the newly added end-of-options delimiter, `--` ([#49])
 
 ### Added
 
-* Repeatable flags: suffix the variable name with `...` to make the flag repeatable, so each time it is used its argument is accrued instead of overwriting the previous value. A non-empty `<default>` becomes the first item in the list ([#45](https://github.com/Ultramann/shifu/pull/45))
-* `shifu_itr_list`: iterate over the arguments accrued by a repeatable flag in a `while` loop; the variable itself is not assigned the values ([#45](https://github.com/Ultramann/shifu/pull/45))
-* Equals as an option-value separator: long flags now accept `--flag=value` in addition to a space between the flag and its value ([#39](https://github.com/Ultramann/shifu/pull/39))
-* End-of-options delimiter (`--`): a bare `--` stops option parsing, and every argument after it is treated as a non-option argument, even if it begins with `-`. These fill any positional arguments, then overflow into `$@`. Use it to pass a value that starts with a dash, or to forward flags to another command. Tab completion is supported after `--` ([#49](https://github.com/Ultramann/shifu/pull/49))
-* Options may now appear after positional arguments, with tab completion support ([#48](https://github.com/Ultramann/shifu/pull/48))
+* Repeatable flags: suffix the variable name with `...` to make the flag repeatable, so each time it is used its argument is accrued instead of overwriting the previous value. A non-empty `<default>` becomes the first item in the list ([#45])
+* `shifu_itr_list`: iterate over the arguments accrued by a repeatable flag in a `while` loop; the variable itself is not assigned the values ([#45])
+* Equals as an option-value separator: long flags now accept `--flag=value` in addition to a space between the flag and its value ([#39])
+* End-of-options delimiter (`--`): a bare `--` stops option parsing, and every argument after it is treated as a non-option argument, even if it begins with `-`. These fill any positional arguments, then overflow into `$@`. Use it to pass a value that starts with a dash, or to forward flags to another command. Tab completion is supported after `--` ([#49])
+* Options may now appear after positional arguments, with tab completion support ([#48])
 
 ## [0.1.0] - 2026-03-29
 
@@ -37,3 +37,8 @@ The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/),
 [Unreleased]: https://github.com/Ultramann/shifu/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/Ultramann/shifu/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Ultramann/shifu/releases/tag/v0.1.0
+
+[#49]: https://github.com/Ultramann/shifu/pull/49
+[#48]: https://github.com/Ultramann/shifu/pull/48
+[#45]: https://github.com/Ultramann/shifu/pull/45
+[#39]: https://github.com/Ultramann/shifu/pull/39
