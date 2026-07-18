@@ -953,7 +953,8 @@ _shifu_filter_matching_options() {
 #   _shifu_case_open                      start a fresh statement (subject read from mode)
 #   _shifu_case_inline_deferred           inline accumulated deferred arms into a leaf statement
 #   _shifu_case_arm_help                  emit the help-flag arm
-#   _shifu_case_arm_invalid               emit the invalid-option arm, open the positional branch
+#   _shifu_case_arm_bundle                emit the -XYZ bundle arm, just before -*) so exact arms win
+#   _shifu_case_arm_invalid               emit the bundle arm + invalid-option arm, open the positional branch
 #   _shifu_case_close                     finish the statement (default arm + esac)
 #   _shifu_case_arm_begin <scope> ..      open an option arm: select eager/defer buffer +
 #                                         escaping ($shifu_case_val), emit the flag pattern
