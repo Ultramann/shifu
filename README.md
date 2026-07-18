@@ -689,7 +689,7 @@ Shifu has a few variables that can be set after sourcing to change default behav
 
 #### `shifu_add_cpts`
 * Registers one or more strings to add as completions
-* [x] Must only be called within functions passed to `shifu_cmd_cptf`
+* Must only be called within functions passed to `shifu_cmd_cptf`
 * Example
   ```sh
   dynamic_completions() {
