@@ -610,6 +610,25 @@ cli -- --verbose     # VERBOSE = false, $@ = --verbose
 cli -- -x file.txt   # VERBOSE = false, $@ = -x file.txt
 ```
 
+##### Bundling short options
+
+Short options, those with a single dash and one character, can be passed together, in a bundle, behind one dash:
+* A required/default option may end a bundle and the following argument will be parsed as the last option's value
+* An option declared with more than one character after its dash is matched exactly and takes precedence over bundling, so a flag declared as `-readonly` is always read whole, never as `-r -e ...`
+* A help flag triggers help from any position in a bundle, so both `-vh` and `-hv` print help and exit
+  * This also works if a different help flag is specified with [`shifu_help_flags`](#shifu_help_flags)
+
+```sh
+shifu_cmd_optb -a --all    -- ALL false true  "Process all"
+shifu_cmd_optb -l --long   -- LONG false true "Long output"
+shifu_cmd_optd -o --output -- OUTPUT none     "Output file"
+```
+
+```txt
+cli -al             # ALL = true, LONG = true, OUTPUT = none
+cli -alo out.txt    # ALL = true, LONG = true, OUTPUT = out.txt
+```
+
 ### Completion functions
 
 #### `shifu_cmd_cpte`
