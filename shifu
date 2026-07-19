@@ -572,6 +572,7 @@ _shifu_cmd_optb() {
         shifu_defer_help="${shifu_defer_help:-}\n    $4\n    Default: $2, set: $3"
       ;;
     $shifu_mode_args_comp)
+      _shifu_collect_short_flags bin "$@"
       if [ "$shifu_arg_scope" = eager ]; then
         _shifu_opt_comp_eager_parse "$@"
         shift $shifu_opt_count
@@ -887,6 +888,7 @@ _shifu_complete_func_args() {
   _shifu_end_of_options=false
   shifu_comp_remaining_fragment=''
   shifu_comp_arg_stmt=''
+  shifu_short_bin=""
   shifu_parse_eager="$1"; shifu_cmd="$2"; shift 2
   _shifu_args_parsed=0
   shifu_comp_eq_patterns=""
@@ -897,6 +899,9 @@ ${shifu_defer_comp_case:-}"
   fi
   shifu_arg_completion_set=true
   shifu_last_arg_is_eager=true
+  if [ "$shifu_parse_eager" = false ]; then
+    [ -n "${shifu_defer_short_bin:-}" ] && shifu_short_bin="${shifu_short_bin:+$shifu_short_bin|}$shifu_defer_short_bin"
+  fi
   "$shifu_cmd"
   shifu_comp_past_delimiter=false
   if [ "$shifu_parse_eager" = false ]; then
@@ -911,6 +916,7 @@ ${shifu_defer_comp_case:-}"
     shifu_case_stmt="$shifu_case_stmt shift ;;"
   fi
   _shifu_add_comp_eq_patterns
+  _shifu_case_arm_bundle
   if [ "$shifu_parse_eager" = true ]; then
     _shifu_append_on_new_line shifu_case_stmt "  *) _shifu_comp_done=true ;;"
   elif [ $shifu_parse_stage -ne 0 ]; then
