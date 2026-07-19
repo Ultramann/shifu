@@ -866,7 +866,19 @@ test_shifu_complete() {
      "remaining args" \
   -- remaining_source_after_delimiter \
      shifu_test_all_options_cmd "cur_word one two --" \
-     "remaining args"
+     "remaining args" \
+  -- positional_after_bundle \
+     shifu_test_bundle_cmd "cur_word -ab" \
+     "one two three" \
+  -- positional_after_long_bundle \
+     shifu_test_bundle_cmd "cur_word -abc" \
+     "one two three" \
+  -- positional_after_exact_multi \
+     shifu_test_bundle_cmd "cur_word -readonly" \
+     "one two three" \
+  -- subcmds_after_eager_bundle \
+     shifu_test_eager_root_cmd "cur_word sub-multi-eager -bc" \
+     "leaf-three leaf-four"
 }
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {
@@ -1290,18 +1302,18 @@ test_shifu_run_bundle_errors() {
 test_shifu_run_eager_bundle() {
   run_test() {
     shifu_test_params @args expected -- "$@"
-    shifu_run shifu_test_sub_multi_eager_cmd $args
+    shifu_run shifu_test_eager_root_cmd $args
     shifu_assert_zero exit_code $?
     shifu_assert_equal result "$BIN_OPT $ALT_OPT $DEF_OPT" "$expected"
   }
   shifu_parameterize_test run_test \
-  -- two_binaries "-bc leaf-three"         "true true default" \
-  -- value_ends   "-bcd custom leaf-three" "true true custom" \
-  -- separate     "-b -c leaf-three"       "true true default"
+  -- two_binaries "sub-multi-eager -bc leaf-three"         "true true default" \
+  -- value_ends   "sub-multi-eager -bcd custom leaf-three" "true true custom" \
+  -- separate     "sub-multi-eager -b -c leaf-three"       "true true default"
 }
 
 test_shifu_run_eager_bundle_dispatch() {
-  shifu_run shifu_test_sub_multi_eager_cmd -bc leaf-four one two three
+  shifu_run shifu_test_eager_root_cmd sub-multi-eager -bc leaf-four one two three
   shifu_assert_zero exit_code $?
   shifu_assert_equal bin_opt "$BIN_OPT" true
   shifu_assert_equal alt_opt "$ALT_OPT" true
