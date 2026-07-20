@@ -138,7 +138,7 @@ Arguments and help strings are scoped to each subcommand. Parent commands can al
 
 Below is a demo of [`examples/dispatch`](/examples/dispatch), a CLI with two subcommands, `hello` and `echo`, each with their own arguments. Annotated source code of the CLI can be found in the expandable section below the demo.
 
-![Quickstart](/assets/dispatch_demo.gif)
+![Dispatch](/assets/dispatch_demo.gif)
 
 <details>
 

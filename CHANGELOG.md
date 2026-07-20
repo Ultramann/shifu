@@ -6,6 +6,10 @@ The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+* Bundled short options: a single dash followed by multiple, a bundle of, short options is expanded, so `-abc` is equivalent to `-a -b -c`. A required or option with default may end a bundle and will consume the next argument (`-abo file`). Exact multi-character single-dash flags such as `-readonly` still take precedence, and a help flag shows help from any position in a bundle ([#53])
+
 ## [0.2.0] - 2026-07-12
 
 ### Breaking
@@ -38,6 +42,7 @@ The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/),
 [0.2.0]: https://github.com/Ultramann/shifu/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Ultramann/shifu/releases/tag/v0.1.0
 
+[#53]: https://github.com/Ultramann/shifu/pull/53
 [#49]: https://github.com/Ultramann/shifu/pull/49
 [#48]: https://github.com/Ultramann/shifu/pull/48
 [#45]: https://github.com/Ultramann/shifu/pull/45
