@@ -98,16 +98,6 @@ _shifu_setup() {
   _shifu_help_short_chars
 }
 
-_shifu_help_short_chars() {
-  shifu_help_short=""
-  _shifu_set_for_looping shifu_help_flags_list shifu_help_flags
-  for shifu_help_flag in $shifu_help_flags_list; do
-    case "$shifu_help_flag" in
-      -?) _shifu_append_short shifu_help_short "${shifu_help_flag#-}" ;;
-    esac
-  done
-}
-
 # api
 shifu_run() {
   _shifu_setup
@@ -196,24 +186,6 @@ shifu_list_delim='#=|=#'
 
 _shifu_append_list() {
   eval "$1=\"\${$1:-}\$2\$shifu_list_delim\""
-}
-
-_shifu_append_short() {
-  eval "$1=\"\${$1:+\$$1|}\$2\""
-}
-
-_shifu_collect_short_flags() {
-  shifu_csf_kind="$1"; shift
-  while [ $# -gt 0 ] && [ "$1" != -- ]; do
-    case "$1" in
-      -?) if [ "$shifu_arg_scope" = defer ]; then
-            _shifu_append_short "shifu_defer_short_$shifu_csf_kind" "${1#-}"
-          else
-            _shifu_append_short "shifu_short_$shifu_csf_kind" "${1#-}"
-          fi ;;
-    esac
-    shift
-  done
 }
 
 shifu_itr_list() {
@@ -469,6 +441,16 @@ _shifu_help_display_flags() {
   done
 }
 
+_shifu_help_short_chars() {
+  shifu_help_short=""
+  _shifu_set_for_looping shifu_help_flags_list shifu_help_flags
+  for shifu_help_flag in $shifu_help_flags_list; do
+    case "$shifu_help_flag" in
+      -?) _shifu_append_short shifu_help_short "${shifu_help_flag#-}" ;;
+    esac
+  done
+}
+
 _shifu_opt_help_parse() {
   _shifu_opt_build shifu_help_options '\n  ' ', ' "$@"
 }
@@ -563,7 +545,7 @@ _shifu_cmd_optb() {
       ;;
     $shifu_mode_args_run)
       _shifu_case_arm_begin "$shifu_arg_scope" "$@"
-      _shifu_collect_short_flags bin "$@"
+      _shifu_collect_short_flags "$@"
       shift $shifu_opt_count
       _shifu_guard_arg_order "$1"
       _shifu_var_default "$1" "$2"
@@ -572,7 +554,7 @@ _shifu_cmd_optb() {
         shifu_defer_help="${shifu_defer_help:-}\n    $4\n    Default: $2, set: $3"
       ;;
     $shifu_mode_args_comp)
-      _shifu_collect_short_flags bin "$@"
+      _shifu_collect_short_flags "$@"
       if [ "$shifu_arg_scope" = eager ]; then
         _shifu_opt_comp_eager_parse "$@"
         shift $shifu_opt_count
@@ -951,6 +933,23 @@ _shifu_filter_matching_options() {
       "$shifu_filter_current_word"*)
         _shifu_list_append shifu_completions "$shifu_filter_option" ;;
     esac
+  done
+}
+
+_shifu_append_short() {
+  eval "$1=\"\${$1:+\$$1|}\$2\""
+}
+
+_shifu_collect_short_flags() {
+  while [ $# -gt 0 ] && [ "$1" != -- ]; do
+    case "$1" in
+      -?) if [ "$shifu_arg_scope" = defer ]; then
+            _shifu_append_short shifu_defer_short_bin "${1#-}"
+          else
+            _shifu_append_short shifu_short_bin "${1#-}"
+          fi ;;
+    esac
+    shift
   done
 }
 
