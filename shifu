@@ -95,6 +95,7 @@ _shifu_setup() {
   _shifu_validate_help_flags
   _shifu_help_case_pattern
   _shifu_help_display_flags
+  _shifu_help_short_chars
 }
 
 # api
@@ -243,6 +244,7 @@ _shifu_run() {
   _shifu_load_cur_cmd "$1"
   shifu_cmd="$1"; shift
   shifu_required_variables=""
+  shifu_defer_short_bin=""
   while [ $# -ne 0 -a -n "${shifu_cmd_subs:-}" ]; do
     _shifu_parse_args true "$shifu_cur_cmd" "$@"
     shifu_mode=$shifu_mode_cmds_run
@@ -279,11 +281,15 @@ _shifu_parse_args() {
   _shifu_in_remaining=false
   _shifu_end_of_options=false
   shifu_arg_stmt=""
+  shifu_short_bin=""
   shifu_parse_eager="$1"; shifu_cmd="$2"; shift 2
   [ "$shifu_parse_eager" = true ] && shifu_required_variables_eager=""
   shifu_required_positionals=""
   _shifu_case_open
   _shifu_case_inline_deferred
+  if [ "$shifu_parse_eager" = false ]; then
+    [ -n "${shifu_defer_short_bin:-}" ] && shifu_short_bin="${shifu_short_bin:+$shifu_short_bin|}$shifu_defer_short_bin"
+  fi
   _shifu_case_arm_help
   "$shifu_cmd"
   _shifu_case_close
@@ -435,6 +441,16 @@ _shifu_help_display_flags() {
   done
 }
 
+_shifu_help_short_chars() {
+  shifu_help_short=""
+  _shifu_set_for_looping shifu_help_flags_list shifu_help_flags
+  for shifu_help_flag in $shifu_help_flags_list; do
+    case "$shifu_help_flag" in
+      -?) _shifu_append_short shifu_help_short "${shifu_help_flag#-}" ;;
+    esac
+  done
+}
+
 _shifu_opt_help_parse() {
   _shifu_opt_build shifu_help_options '\n  ' ', ' "$@"
 }
@@ -529,6 +545,7 @@ _shifu_cmd_optb() {
       ;;
     $shifu_mode_args_run)
       _shifu_case_arm_begin "$shifu_arg_scope" "$@"
+      _shifu_collect_short_flags "$@"
       shift $shifu_opt_count
       _shifu_guard_arg_order "$1"
       _shifu_var_default "$1" "$2"
@@ -537,6 +554,7 @@ _shifu_cmd_optb() {
         shifu_defer_help="${shifu_defer_help:-}\n    $4\n    Default: $2, set: $3"
       ;;
     $shifu_mode_args_comp)
+      _shifu_collect_short_flags "$@"
       if [ "$shifu_arg_scope" = eager ]; then
         _shifu_opt_comp_eager_parse "$@"
         shift $shifu_opt_count
@@ -852,6 +870,7 @@ _shifu_complete_func_args() {
   _shifu_end_of_options=false
   shifu_comp_remaining_fragment=''
   shifu_comp_arg_stmt=''
+  shifu_short_bin=""
   shifu_parse_eager="$1"; shifu_cmd="$2"; shift 2
   _shifu_args_parsed=0
   shifu_comp_eq_patterns=""
@@ -862,6 +881,9 @@ ${shifu_defer_comp_case:-}"
   fi
   shifu_arg_completion_set=true
   shifu_last_arg_is_eager=true
+  if [ "$shifu_parse_eager" = false ]; then
+    [ -n "${shifu_defer_short_bin:-}" ] && shifu_short_bin="${shifu_short_bin:+$shifu_short_bin|}$shifu_defer_short_bin"
+  fi
   "$shifu_cmd"
   shifu_comp_past_delimiter=false
   if [ "$shifu_parse_eager" = false ]; then
@@ -876,6 +898,7 @@ ${shifu_defer_comp_case:-}"
     shifu_case_stmt="$shifu_case_stmt shift ;;"
   fi
   _shifu_add_comp_eq_patterns
+  _shifu_case_arm_bundle
   if [ "$shifu_parse_eager" = true ]; then
     _shifu_append_on_new_line shifu_case_stmt "  *) _shifu_comp_done=true ;;"
   elif [ $shifu_parse_stage -ne 0 ]; then
@@ -913,12 +936,30 @@ _shifu_filter_matching_options() {
   done
 }
 
+_shifu_append_short() {
+  eval "$1=\"\${$1:+\$$1|}\$2\""
+}
+
+_shifu_collect_short_flags() {
+  while [ $# -gt 0 ] && [ "$1" != -- ]; do
+    case "$1" in
+      -?) if [ "$shifu_arg_scope" = defer ]; then
+            _shifu_append_short shifu_defer_short_bin "${1#-}"
+          else
+            _shifu_append_short shifu_short_bin "${1#-}"
+          fi ;;
+    esac
+    shift
+  done
+}
+
 # case statement codegen: the one set of accessors for shifu_case_stmt / shifu_defer_case
 # Nothing else builds those strings by hand
 #   _shifu_case_open                      start a fresh statement (subject read from mode)
 #   _shifu_case_inline_deferred           inline accumulated deferred arms into a leaf statement
 #   _shifu_case_arm_help                  emit the help-flag arm
-#   _shifu_case_arm_invalid               emit the invalid-option arm, open the positional branch
+#   _shifu_case_arm_bundle                emit the -XYZ bundle arm, just before -*) so exact arms win
+#   _shifu_case_arm_invalid               emit the bundle arm + invalid-option arm, open the positional branch
 #   _shifu_case_close                     finish the statement (default arm + esac)
 #   _shifu_case_arm_begin <scope> ..      open an option arm: select eager/defer buffer +
 #                                         escaping ($shifu_case_val), emit the flag pattern
@@ -945,9 +986,32 @@ _shifu_case_arm_help() {
   _shifu_append_on_new_line shifu_case_stmt "  $shifu_help_pattern) _shifu_help \"$shifu_cmd\" 0 ;; "
 }
 
+_shifu_case_arm_bundle() {
+  shifu_bundle_bin="$shifu_short_bin"
+  [ -n "${shifu_help_short:-}" ] && shifu_bundle_bin="${shifu_bundle_bin:+$shifu_bundle_bin|}$shifu_help_short"
+  [ -n "$shifu_bundle_bin" ] || return 0
+  if [ $shifu_mode -eq $shifu_mode_args_comp ]; then
+    shifu_bundle_ack=""
+    shifu_bundle_default="_shifu_comp_done=true"
+  else
+    shifu_bundle_ack="; _shifu_args_parsed=\$((_shifu_args_parsed - 1))"
+    shifu_bundle_default="echo \"Invalid option: \$1\"; _shifu_help \"\$shifu_cmd\" 1"
+  fi
+  shifu_case_stmt="$shifu_case_stmt
+  -[!-]?*)
+    _shifu_body=\"\${1#-}\"; _shifu_tail=\"\${_shifu_body#?}\"; _shifu_head=\"\${_shifu_body%\"\$_shifu_tail\"}\"
+    case \"\$_shifu_head\" in"
+  [ -n "$shifu_bundle_bin" ] && shifu_case_stmt="$shifu_case_stmt
+    $shifu_bundle_bin) shift; set -- \"-\$_shifu_head\" \"-\$_shifu_tail\" \"\$@\"$shifu_bundle_ack ;;"
+  shifu_case_stmt="$shifu_case_stmt
+    *) $shifu_bundle_default ;;
+  esac ;;"
+}
+
 _shifu_case_arm_invalid() {
   [ "${shifu_parse_eager:-true}" = false ] && shifu_case_stmt="$shifu_case_stmt
   --) _shifu_end_of_options=true; shift; _shifu_ack_arg ;;"
+  _shifu_case_arm_bundle
   shifu_case_stmt="$shifu_case_stmt
   -*) echo \"Invalid option: \$1\"; _shifu_help \"\$shifu_cmd\" 1 ;;
   *)"

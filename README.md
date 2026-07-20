@@ -138,7 +138,7 @@ Arguments and help strings are scoped to each subcommand. Parent commands can al
 
 Below is a demo of [`examples/dispatch`](/examples/dispatch), a CLI with two subcommands, `hello` and `echo`, each with their own arguments. Annotated source code of the CLI can be found in the expandable section below the demo.
 
-![Quickstart](/assets/dispatch_demo.gif)
+![Dispatch](/assets/dispatch_demo.gif)
 
 <details>
 
@@ -610,6 +610,25 @@ cli -- --verbose     # VERBOSE = false, $@ = --verbose
 cli -- -x file.txt   # VERBOSE = false, $@ = -x file.txt
 ```
 
+##### Bundling short options
+
+Short options, those with a single dash and one character, can be passed together, in a bundle, behind one dash:
+* A required/default option may end a bundle and the following argument will be parsed as the last option's value
+* An option declared with more than one character after its dash is matched exactly and takes precedence over bundling, so a flag declared as `-readonly` is always read whole, never as `-r -e ...`
+* A help flag triggers help from any position in a bundle, so both `-vh` and `-hv` print help and exit
+  * This also works if a different help flag is specified with [`shifu_help_flags`](#shifu_help_flags)
+
+```sh
+shifu_cmd_optb -a --all    -- ALL false true  "Process all"
+shifu_cmd_optb -l --long   -- LONG false true "Long output"
+shifu_cmd_optd -o --output -- OUTPUT none     "Output file"
+```
+
+```txt
+cli -al             # ALL = true, LONG = true, OUTPUT = none
+cli -alo out.txt    # ALL = true, LONG = true, OUTPUT = out.txt
+```
+
 ### Completion functions
 
 #### `shifu_cmd_cpte`
@@ -689,7 +708,7 @@ Shifu has a few variables that can be set after sourcing to change default behav
 
 #### `shifu_add_cpts`
 * Registers one or more strings to add as completions
-* [x] Must only be called within functions passed to `shifu_cmd_cptf`
+* Must only be called within functions passed to `shifu_cmd_cptf`
 * Example
   ```sh
   dynamic_completions() {
