@@ -8,7 +8,7 @@ The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-* Bundled short options: a single dash followed by multiple, a bundle of, short options is expanded, so `-abc` is equivalent to `-a -b -c`. A required or option with default may end a bundle and will consume the next argument (`-abo file`). Exact multi-character single-dash flags such as `-readonly` still take precedence, and a help flag shows help from any position in a bundle ([#53])
+* Bundled short options: a single dash followed by a bundle of short options is expanded, so `-abc` is equivalent to `-a -b -c`. A required or defaulted option may end a bundle and will consume the next argument (`-abo file`). Exact multi-character single-dash flags such as `-readonly` still take precedence, and a help flag in any bundle position will short-circuit to showing the help ([#53])
 
 ## [0.2.0] - 2026-07-12
 
