@@ -585,15 +585,15 @@ Option functions called in a parent command require a mode as the first argument
   cli --config myconfig sub
   ```
 
-##### Positional and remaining argument declaration rules
+##### Passing option values
 
-Positional and remaining argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) can only be used in leaf commands.
+A value option can read its value in a few ways:
 
-The option and argument declaration order in a command function matters:
-1. Help is generated in declaration order
-1. Help strings from parent commands' deferred options are similarly deferred to the end of the generated help string
-1. Positional arguments are parsed in declaration order
-1. Options must be declared before any positional arguments, and positional arguments before remaining arguments
+* From the next argument: `-o value`, `--opt value`
+* Specified with `=`: `-o=value`, `--opt=value`
+* Attached to a short flag: `-ovalue`
+
+These forms work for required, defaulted, and repeatable value options.
 
 ##### End-of-options delimiter (`--`)
 
@@ -628,6 +628,16 @@ shifu_cmd_optd -o --output -- OUTPUT none     "Output file"
 cli -al             # ALL = true, LONG = true, OUTPUT = none
 cli -alo out.txt    # ALL = true, LONG = true, OUTPUT = out.txt
 ```
+
+##### Positional and remaining argument declaration rules
+
+Positional and remaining argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) can only be used in leaf commands.
+
+The option and argument declaration order in a command function matters:
+1. Help is generated in declaration order
+1. Help strings from parent commands' deferred options are similarly deferred to the end of the generated help string
+1. Positional arguments are parsed in declaration order
+1. Options must be declared before any positional arguments, and positional arguments before remaining arguments
 
 ### Completion functions
 
