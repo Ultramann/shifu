@@ -973,9 +973,9 @@ _shifu_collect_short_flags() {
 #   _shifu_case_close                     finish the statement (default arm + esac)
 #   _shifu_case_arm_begin <scope> ..      open an option arm: select eager/defer buffer +
 #                                         escaping ($shifu_case_val), emit the flag pattern
-#   _shifu_case_arm_flag <var> <setval>   binary-option body
+#   _shifu_case_arm_flag <var> <set_val>  binary-option body
 #   _shifu_case_arm_value <var>           value-option body (value guard + assign + =-forms)
-#   _shifu_case_arm_append <listvar>      repeatable-option body (value guard + list append)
+#   _shifu_case_arm_append <list_var>     repeatable-option body (value guard + list append + =-forms)
 #   _shifu_case_arm_positional <var>      positional-argument body
 
 _shifu_case_open() {
@@ -1070,12 +1070,13 @@ _shifu_case_arm_flag() {
 _shifu_case_arm_value() {
   _shifu_case_require_value
   _shifu_case_write " $1=$shifu_case_val; shift 2; _shifu_ack_arg 2 ;;"
-  _shifu_case_arm_equals "$1"
+  _shifu_case_arm_equals value "$1"
 }
 
 _shifu_case_arm_append() {
   _shifu_case_require_value
   _shifu_case_write " _shifu_append_list ${1}_LIST \"$shifu_case_val\"; shift 2; _shifu_ack_arg 2 ;;"
+  _shifu_case_arm_equals append "$1"
 }
 
 _shifu_case_positional_open() {
@@ -1112,17 +1113,22 @@ _shifu_case_require_value() {
 }
 
 _shifu_case_arm_equals() {
-  shifu_eq_var="$1"
+  shifu_eq_kind="$1"; shifu_eq_var="$2"
+  if [ "$shifu_eq_kind" = append ]; then
+    shifu_eq_body="_shifu_append_list ${shifu_eq_var}_LIST \"\\\${1#*=}\""
+  else
+    shifu_eq_body="$shifu_eq_var=\\\${1#*=}"
+  fi
   _shifu_set_for_looping shifu_eq_list shifu_eq_saved_args
   for shifu_eq_flag in $shifu_eq_list; do
     case "$shifu_eq_flag" in
       --) break ;;
-      --*)
+      --*|-?)
         if [ "$shifu_case_scope" = eager ]; then
-          _shifu_append_on_new_line shifu_case_stmt "  $shifu_eq_flag=*) $shifu_eq_var=\\\${1#*=}; shift; _shifu_ack_arg ;;"
+          _shifu_append_on_new_line shifu_case_stmt "  $shifu_eq_flag=*) $shifu_eq_body; shift; _shifu_ack_arg ;;"
         else
           shifu_defer_case="$shifu_defer_case
-  $shifu_eq_flag=*) $shifu_eq_var=\\\${1#*=}; shift; _shifu_ack_arg ;;"
+  $shifu_eq_flag=*) $shifu_eq_body; shift; _shifu_ack_arg ;;"
         fi ;;
     esac
   done
