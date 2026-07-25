@@ -9,7 +9,7 @@ The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 * Bundled short options: a single dash followed by a bundle of short options is expanded, so `-abc` is equivalent to `-a -b -c`. A required or defaulted option may end a bundle and will consume the next argument (`-abo file`). Exact multi-character, single-dash flags such as `-readonly` still take precedence, and a help flag in any bundle position will short-circuit to showing the help ([#53])
-* Attached short option values: a option's short flag accepts its value attached directly to it, so `-ofile` is equivalent to `-o file`, including at the tail of a bundle (`-abofile`). The `=` separator now works on short flags (`-o=file`) and on repeatable flags (`-i=one`, `--list=one`) as well, not only on non-repeatable long flags ([#54])
+* Attached short option values: an option's short flag accepts its value attached directly to it, so `-ofile` is equivalent to `-o file`, including at the tail of a bundle (`-abofile`). The `=` separator now works on short flags (`-o=file`) and on repeatable flags (`-i=one`, `--list=one`) ([#54])
 
 ## [0.2.0] - 2026-07-12
 
