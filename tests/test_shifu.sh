@@ -445,12 +445,6 @@ test_shifu_run_defer_and_eager_equals_value() {
             EAGER_TEST "custom_eager"
 }
 
-test_shifu_run_short_flag_equals_errors() {
-  actual=$(shifu_run shifu_test_all_options_cmd -d=bad_value 2>&1)
-  shifu_assert_non_zero exit_code $?
-  shifu_assert_string_contains error_message "$actual" "Invalid option"
-}
-
 test_shifu_run_optb_equals_errors() {
   actual=$(shifu_run shifu_test_all_options_cmd \
     -a req_flag_value --option-req req_option_value \
@@ -878,7 +872,13 @@ test_shifu_complete() {
      "one two three" \
   -- subcmds_after_eager_bundle \
      shifu_test_eager_root_cmd "cur_word sub-multi-eager -bc" \
-     "leaf-three leaf-four"
+     "leaf-three leaf-four" \
+  -- positional_after_attached \
+     shifu_test_bundle_cmd "cur_word -otwo" \
+     "one two three" \
+  -- positional_after_attached_bundle \
+     shifu_test_bundle_cmd "cur_word -abotwo" \
+     "one two three"
 }
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {
@@ -1236,6 +1236,9 @@ test_shifu_run_optd_list() {
   -- no_args          shifu_test_list_optd_cmd            ""                    "" \
   -- single           shifu_test_list_optd_cmd            "--item one"          "one," \
   -- multiple         shifu_test_list_optd_cmd            "--item a -i b -i c"  "a,b,c," \
+  -- attached         shifu_test_list_optd_cmd            "-ione -itwo"         "one,two," \
+  -- long_equals      shifu_test_list_optd_cmd            "--item=one"          "one," \
+  -- short_equals     shifu_test_list_optd_cmd            "-i=one"              "one," \
   -- default_no_args  shifu_test_list_optd_w_default_cmd  ""                    "zero," \
   -- default_w_args   shifu_test_list_optd_w_default_cmd  "-i one"              "zero,one,"
 }
@@ -1267,12 +1270,17 @@ test_shifu_run_bundle() {
     shifu_assert_equal parsed "$_shifu_args_parsed" "$expected_parsed"
   }
   shifu_parameterize_test run_test \
-  -- bundle_two   "-ab one"       "true true false none false one"   2 \
-  -- bundle_three "-abc one"      "true true true none false one"    2 \
-  -- value_ends   "-abo two one"  "true true false two false one"    3 \
-  -- exact_multi  "-readonly one" "false false false none true one"  2 \
-  -- delimiter    "-- -ab one"    "false false false none false -ab" 2 \
-  -- after_pos    "one -ab"       "true true false none false one"   2
+  -- bundle_two    "-ab one"       "true true false none false one"   2 \
+  -- bundle_three  "-abc one"      "true true true none false one"    2 \
+  -- value_ends    "-abo two one"  "true true false two false one"    3 \
+  -- exact_multi   "-readonly one" "false false false none true one"  2 \
+  -- delimiter     "-- -ab one"    "false false false none false -ab" 2 \
+  -- after_pos     "one -ab"       "true true false none false one"   2 \
+  -- attached      "-otwo one"     "false false false two false one"  2 \
+  -- attached_tail "-abotwo one"   "true true false two false one"    2 \
+  -- attached_mid  "-aob one"      "true false false b false one"     2 \
+  -- attached_eq   "-o=two one"    "false false false two false one"  2 \
+  -- value_ends_eq "-abo=two one"  "true true false two false one"    2
 }
 
 test_shifu_run_bundle_help() {

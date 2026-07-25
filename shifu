@@ -245,6 +245,7 @@ _shifu_run() {
   shifu_cmd="$1"; shift
   shifu_required_variables=""
   shifu_defer_short_bin=""
+  shifu_defer_short_val=""
   while [ $# -ne 0 -a -n "${shifu_cmd_subs:-}" ]; do
     _shifu_parse_args true "$shifu_cur_cmd" "$@"
     shifu_mode=$shifu_mode_cmds_run
@@ -282,6 +283,7 @@ _shifu_parse_args() {
   _shifu_end_of_options=false
   shifu_arg_stmt=""
   shifu_short_bin=""
+  shifu_short_val=""
   shifu_parse_eager="$1"; shifu_cmd="$2"; shift 2
   [ "$shifu_parse_eager" = true ] && shifu_required_variables_eager=""
   shifu_required_positionals=""
@@ -289,6 +291,7 @@ _shifu_parse_args() {
   _shifu_case_inline_deferred
   if [ "$shifu_parse_eager" = false ]; then
     [ -n "${shifu_defer_short_bin:-}" ] && shifu_short_bin="${shifu_short_bin:+$shifu_short_bin|}$shifu_defer_short_bin"
+    [ -n "${shifu_defer_short_val:-}" ] && shifu_short_val="${shifu_short_val:+$shifu_short_val|}$shifu_defer_short_val"
   fi
   _shifu_case_arm_help
   "$shifu_cmd"
@@ -545,7 +548,7 @@ _shifu_cmd_optb() {
       ;;
     $shifu_mode_args_run)
       _shifu_case_arm_begin "$shifu_arg_scope" "$@"
-      _shifu_collect_short_flags "$@"
+      _shifu_collect_short_bin "$@"
       shift $shifu_opt_count
       _shifu_guard_arg_order "$1"
       _shifu_var_default "$1" "$2"
@@ -554,7 +557,7 @@ _shifu_cmd_optb() {
         shifu_defer_help="${shifu_defer_help:-}\n    $4\n    Default: $2, set: $3"
       ;;
     $shifu_mode_args_comp)
-      _shifu_collect_short_flags "$@"
+      _shifu_collect_short_bin "$@"
       if [ "$shifu_arg_scope" = eager ]; then
         _shifu_opt_comp_eager_parse "$@"
         shift $shifu_opt_count
@@ -580,6 +583,7 @@ _shifu_cmd_optd() {
       ;;
     $shifu_mode_args_run)
       _shifu_case_arm_begin "$shifu_arg_scope" "$@"
+      _shifu_collect_short_val "$@"
       shift $shifu_opt_count
       _shifu_guard_arg_order "$1"
       if [ "$shifu_arg_scope" = eager ]; then
@@ -599,6 +603,7 @@ _shifu_cmd_optd() {
       ;;
     $shifu_mode_args_comp)
       shifu_eq_saved_args="$*"
+      _shifu_collect_short_val "$@"
       if [ "$shifu_arg_scope" = eager ]; then
         _shifu_opt_comp_eager_parse "$@"
         shift $shifu_opt_count
@@ -625,6 +630,7 @@ _shifu_cmd_optr() {
       ;;
     $shifu_mode_args_run)
       _shifu_case_arm_begin "$shifu_arg_scope" "$@"
+      _shifu_collect_short_val "$@"
       shift $shifu_opt_count
       _shifu_guard_arg_order "$1"
       _shifu_var_require "$1"
@@ -634,6 +640,7 @@ _shifu_cmd_optr() {
       ;;
     $shifu_mode_args_comp)
       shifu_eq_saved_args="$*"
+      _shifu_collect_short_val "$@"
       if [ "$shifu_arg_scope" = eager ]; then
         _shifu_opt_comp_eager_parse "$@"
         shift $shifu_opt_count
@@ -871,6 +878,7 @@ _shifu_complete_func_args() {
   shifu_comp_remaining_fragment=''
   shifu_comp_arg_stmt=''
   shifu_short_bin=""
+  shifu_short_val=""
   shifu_parse_eager="$1"; shifu_cmd="$2"; shift 2
   _shifu_args_parsed=0
   shifu_comp_eq_patterns=""
@@ -883,6 +891,7 @@ ${shifu_defer_comp_case:-}"
   shifu_last_arg_is_eager=true
   if [ "$shifu_parse_eager" = false ]; then
     [ -n "${shifu_defer_short_bin:-}" ] && shifu_short_bin="${shifu_short_bin:+$shifu_short_bin|}$shifu_defer_short_bin"
+    [ -n "${shifu_defer_short_val:-}" ] && shifu_short_val="${shifu_short_val:+$shifu_short_val|}$shifu_defer_short_val"
   fi
   "$shifu_cmd"
   shifu_comp_past_delimiter=false
@@ -941,16 +950,25 @@ _shifu_append_short() {
 }
 
 _shifu_collect_short_flags() {
+  shifu_csf_eager="$1"; shifu_csf_defer="$2"; shift 2
   while [ $# -gt 0 ] && [ "$1" != -- ]; do
     case "$1" in
       -?) if [ "$shifu_arg_scope" = defer ]; then
-            _shifu_append_short shifu_defer_short_bin "${1#-}"
+            _shifu_append_short "$shifu_csf_defer" "${1#-}"
           else
-            _shifu_append_short shifu_short_bin "${1#-}"
+            _shifu_append_short "$shifu_csf_eager" "${1#-}"
           fi ;;
     esac
     shift
   done
+}
+
+_shifu_collect_short_bin() {
+  _shifu_collect_short_flags shifu_short_bin shifu_defer_short_bin "$@"
+}
+
+_shifu_collect_short_val() {
+  _shifu_collect_short_flags shifu_short_val shifu_defer_short_val "$@"
 }
 
 # case statement codegen: the one set of accessors for shifu_case_stmt / shifu_defer_case
@@ -963,9 +981,9 @@ _shifu_collect_short_flags() {
 #   _shifu_case_close                     finish the statement (default arm + esac)
 #   _shifu_case_arm_begin <scope> ..      open an option arm: select eager/defer buffer +
 #                                         escaping ($shifu_case_val), emit the flag pattern
-#   _shifu_case_arm_flag <var> <setval>   binary-option body
+#   _shifu_case_arm_flag <var> <set_val>  binary-option body
 #   _shifu_case_arm_value <var>           value-option body (value guard + assign + =-forms)
-#   _shifu_case_arm_append <listvar>      repeatable-option body (value guard + list append)
+#   _shifu_case_arm_append <list_var>     repeatable-option body (value guard + list append + =-forms)
 #   _shifu_case_arm_positional <var>      positional-argument body
 
 _shifu_case_open() {
@@ -989,7 +1007,7 @@ _shifu_case_arm_help() {
 _shifu_case_arm_bundle() {
   shifu_bundle_bin="$shifu_short_bin"
   [ -n "${shifu_help_short:-}" ] && shifu_bundle_bin="${shifu_bundle_bin:+$shifu_bundle_bin|}$shifu_help_short"
-  [ -n "$shifu_bundle_bin" ] || return 0
+  [ -n "${shifu_short_val:-}$shifu_bundle_bin" ] || return 0
   if [ $shifu_mode -eq $shifu_mode_args_comp ]; then
     shifu_bundle_ack=""
     shifu_bundle_default="_shifu_comp_done=true"
@@ -1001,6 +1019,8 @@ _shifu_case_arm_bundle() {
   -[!-]?*)
     _shifu_body=\"\${1#-}\"; _shifu_tail=\"\${_shifu_body#?}\"; _shifu_head=\"\${_shifu_body%\"\$_shifu_tail\"}\"
     case \"\$_shifu_head\" in"
+  [ -n "${shifu_short_val:-}" ] && shifu_case_stmt="$shifu_case_stmt
+    $shifu_short_val) shift; set -- \"-\$_shifu_head\" \"\$_shifu_tail\" \"\$@\"$shifu_bundle_ack ;;"
   [ -n "$shifu_bundle_bin" ] && shifu_case_stmt="$shifu_case_stmt
     $shifu_bundle_bin) shift; set -- \"-\$_shifu_head\" \"-\$_shifu_tail\" \"\$@\"$shifu_bundle_ack ;;"
   shifu_case_stmt="$shifu_case_stmt
@@ -1058,12 +1078,13 @@ _shifu_case_arm_flag() {
 _shifu_case_arm_value() {
   _shifu_case_require_value
   _shifu_case_write " $1=$shifu_case_val; shift 2; _shifu_ack_arg 2 ;;"
-  _shifu_case_arm_equals "$1"
+  _shifu_case_arm_equals value "$1"
 }
 
 _shifu_case_arm_append() {
   _shifu_case_require_value
   _shifu_case_write " _shifu_append_list ${1}_LIST \"$shifu_case_val\"; shift 2; _shifu_ack_arg 2 ;;"
+  _shifu_case_arm_equals append "$1"
 }
 
 _shifu_case_positional_open() {
@@ -1100,17 +1121,22 @@ _shifu_case_require_value() {
 }
 
 _shifu_case_arm_equals() {
-  shifu_eq_var="$1"
+  shifu_eq_kind="$1"; shifu_eq_var="$2"
+  if [ "$shifu_eq_kind" = append ]; then
+    shifu_eq_body="_shifu_append_list ${shifu_eq_var}_LIST \"\\\${1#*=}\""
+  else
+    shifu_eq_body="$shifu_eq_var=\\\${1#*=}"
+  fi
   _shifu_set_for_looping shifu_eq_list shifu_eq_saved_args
   for shifu_eq_flag in $shifu_eq_list; do
     case "$shifu_eq_flag" in
       --) break ;;
-      --*)
+      --*|-?)
         if [ "$shifu_case_scope" = eager ]; then
-          _shifu_append_on_new_line shifu_case_stmt "  $shifu_eq_flag=*) $shifu_eq_var=\\\${1#*=}; shift; _shifu_ack_arg ;;"
+          _shifu_append_on_new_line shifu_case_stmt "  $shifu_eq_flag=*) $shifu_eq_body; shift; _shifu_ack_arg ;;"
         else
           shifu_defer_case="$shifu_defer_case
-  $shifu_eq_flag=*) $shifu_eq_var=\\\${1#*=}; shift; _shifu_ack_arg ;;"
+  $shifu_eq_flag=*) $shifu_eq_body; shift; _shifu_ack_arg ;;"
         fi ;;
     esac
   done
