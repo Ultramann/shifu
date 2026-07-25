@@ -1279,7 +1279,8 @@ test_shifu_run_bundle() {
   -- attached      "-otwo one"     "false false false two false one"  2 \
   -- attached_tail "-abotwo one"   "true true false two false one"    2 \
   -- attached_mid  "-aob one"      "true false false b false one"     2 \
-  -- attached_eq   "-o=two one"    "false false false two false one"  2
+  -- attached_eq   "-o=two one"    "false false false two false one"  2 \
+  -- value_ends_eq "-abo=two one"  "true true false two false one"    2
 }
 
 test_shifu_run_bundle_help() {
