@@ -586,20 +586,16 @@ _shifu_cmd_optd() {
       _shifu_collect_short_val "$@"
       shift $shifu_opt_count
       _shifu_guard_arg_order "$1"
-      if [ "$shifu_arg_scope" = eager ]; then
-        _shifu_strip_list_suffix "$1"
-        if [ "$shifu_is_list" = true ]; then
-          _shifu_var_list "$shifu_list_var" "$2"
-          _shifu_case_arm_append "$shifu_list_var"
-        else
-          _shifu_var_default "$1" "$2"
-          _shifu_case_arm_value "$1"
-        fi
+      _shifu_strip_list_suffix "$1"
+      if [ "$shifu_is_list" = true ]; then
+        _shifu_var_list "$shifu_list_var" "$2"
+        _shifu_case_arm_append "$shifu_list_var"
       else
         _shifu_var_default "$1" "$2"
         _shifu_case_arm_value "$1"
-        shifu_defer_help="${shifu_defer_help:-} [$1]\n    $3\n    Default: $2"
       fi
+      [ "$shifu_arg_scope" = defer ] && \
+        shifu_defer_help="${shifu_defer_help:-} [$1]\n    $3\n    Default: $2"
       ;;
     $shifu_mode_args_comp)
       shifu_eq_saved_args="$*"
