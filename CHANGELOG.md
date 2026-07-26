@@ -11,6 +11,10 @@ The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/),
 * Bundled short options: a single dash followed by a bundle of short options is expanded, so `-abc` is equivalent to `-a -b -c`. A required or defaulted option may end a bundle and will consume the next argument (`-abo file`). Exact multi-character, single-dash flags such as `-readonly` still take precedence, and a help flag in any bundle position will short-circuit to showing the help ([#53])
 * Attached short option values: an option's short flag accepts its value attached directly to it, so `-ofile` is equivalent to `-o file`, including at the tail of a bundle (`-abofile`). The `=` separator now works on short flags (`-o=file`) and on repeatable flags (`-i=one`, `--list=one`) ([#54])
 
+### Fixed
+
+* Repeatable options, `VAR...`, declared with `:defer:` no longer error with "Invalid variable name"; they now accrue values like a repeatable option declared in a leaf command ([#56])
+
 ## [0.2.0] - 2026-07-12
 
 ### Breaking
@@ -43,6 +47,7 @@ The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/),
 [0.2.0]: https://github.com/Ultramann/shifu/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Ultramann/shifu/releases/tag/v0.1.0
 
+[#56]: https://github.com/Ultramann/shifu/pull/56
 [#54]: https://github.com/Ultramann/shifu/pull/54
 [#53]: https://github.com/Ultramann/shifu/pull/53
 [#49]: https://github.com/Ultramann/shifu/pull/49
