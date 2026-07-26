@@ -1243,6 +1243,49 @@ test_shifu_run_optd_list() {
   -- default_w_args   shifu_test_list_optd_w_default_cmd  "-i one"              "zero,one,"
 }
 
+shifu_test_defer_list_cmd() {
+  shifu_cmd_name defer-list
+  shifu_cmd_subs shifu_test_scoped_list_leaf_cmd
+
+  shifu_cmd_optd :defer: -l --list -- PARENT_LIST... "" "a deferred repeatable option"
+}
+
+shifu_test_eager_list_cmd() {
+  shifu_cmd_name eager-list
+  shifu_cmd_subs shifu_test_scoped_list_leaf_cmd
+
+  shifu_cmd_optd :eager: -l --list -- PARENT_LIST... "" "an eager repeatable option"
+}
+
+shifu_test_scoped_list_leaf_cmd() {
+  shifu_cmd_name leaf
+  shifu_cmd_func shifu_test_scoped_list_func
+}
+
+shifu_test_scoped_list_func() {
+  result=""
+  while shifu_itr_list PARENT_LIST; do
+    result="$result$PARENT_LIST,"
+  done
+  echo "$result"
+}
+
+test_shifu_run_scoped_repeatable_option() {
+  run_test() {
+    shifu_test_params cmd @cmd_args expected -- "$@"
+    actual=$(shifu_run $cmd $cmd_args 2>&1)
+    shifu_assert_zero exit_code $?
+    shifu_assert_strings_equal output "$expected" "$actual"
+  }
+  shifu_parameterize_test run_test \
+  -- defer_space  shifu_test_defer_list_cmd  "leaf -l one -l two"  "one,two," \
+  -- defer_attch  shifu_test_defer_list_cmd  "leaf -lone -ltwo"    "one,two," \
+  -- defer_eq     shifu_test_defer_list_cmd  "leaf -l=one -l=two"  "one,two," \
+  -- eager_space  shifu_test_eager_list_cmd  "-l one -l two leaf"  "one,two," \
+  -- eager_attch  shifu_test_eager_list_cmd  "-lone -ltwo leaf"    "one,two," \
+  -- eager_eq     shifu_test_eager_list_cmd  "-l=one -l=two leaf"  "one,two,"
+}
+
 shifu_test_bundle_cmd() {
   shifu_cmd_name bundle
   shifu_cmd_func shifu_test_bundle_func
