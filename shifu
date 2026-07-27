@@ -760,18 +760,23 @@ Instructions
 
 _shifu_generate_bash_tab_completion() {
   echo "_${shifu_cmd_name}_completion() {
-  current=\"\${COMP_WORDS[\${#COMP_WORDS[@]}-1]}\"
+  local cword=\$COMP_CWORD
+  current=\"\${COMP_WORDS[cword]}\"
+  if [ \"\${COMP_WORDS[cword-1]}\" = \"=\" ]; then
+    full_words=( \"\${COMP_WORDS[@]:1:cword-2}\" )
+    completions=\$($shifu_cmd_name --shifu-complete \"\$current\" \"\${full_words[@]}\")
+    COMPREPLY=( \$(compgen -W \"\$completions\" -- \"\$current\") )
+    return
+  fi
+  if [ \"\$current\" = \"=\" ]; then
+    full_words=( \"\${COMP_WORDS[@]:1:cword-1}\" )
+    completions=\$($shifu_cmd_name --shifu-complete \"\" \"\${full_words[@]}\")
+    prefixed=\"\"
+    for value in \$completions; do prefixed=\"\$prefixed =\$value\"; done
+    COMPREPLY=( \$(compgen -W \"\$prefixed\" -- \"=\") )
+    return
+  fi
   full_words=( \"\${COMP_WORDS[@]:1:\${#COMP_WORDS[@]}-2}\" )
-  case \"\$current\" in
-    -*=*)
-      flag=\"\${current%%=*}\"
-      full_words+=( \"\$flag\" )
-      completions=\$($shifu_cmd_name --shifu-complete \"\${current#*=}\" \"\${full_words[@]}\")
-      prefixed=\"\"
-      for value in \$completions; do prefixed=\"\$prefixed \$flag=\$value\"; done
-      COMPREPLY=( \$(compgen -W \"\$prefixed\" -- \"\$current\") )
-      return ;;
-  esac
   completions=\$($shifu_cmd_name --shifu-complete \"\$current\" \"\${full_words[@]}\")
   case \"\$completions\" in
     SHIFU_COMP_PATH_FILES) COMPREPLY=( \$(compgen -f -- \"\$current\") ) ;;
@@ -781,7 +786,6 @@ _shifu_generate_bash_tab_completion() {
        compopt +o filenames 2>/dev/null ;;
   esac
 }
-COMP_WORDBREAKS=\"\${COMP_WORDBREAKS//=/}\"
 complete -o filenames -F _${shifu_cmd_name}_completion $shifu_cmd_name"
 }
 
