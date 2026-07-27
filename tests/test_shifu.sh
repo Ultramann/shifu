@@ -881,6 +881,24 @@ test_shifu_complete() {
      "one two three"
 }
 
+test_shifu_bash_comp_words() {
+  [ -n "${BASH_VERSION:-}" ] || return 0
+  eval "$(shifu_run shifu_test_all_options_cmd --tab-completion bash)"
+  run_test() {
+    shifu_test_params line cur words -- "$@"
+    COMP_LINE="$line"; COMP_POINT="${#line}"   # cursor at end of line
+    _shifu_comp_words
+    shifu_assert_strings_equal cur "$cur" "$shifu_comp_cur"
+    shifu_assert_strings_equal words "$words" "${shifu_comp_words[*]}"
+  }
+  shifu_parameterize_test run_test \
+  -- space_empty  "all -a "              ""    "-a" \
+  -- partial      "all -a fl"            "fl"  "-a" \
+  -- eq_empty     "all --option-def="    ""    "--option-def" \
+  -- eq_partial   "all --option-def=cu"  "cu"  "--option-def" \
+  -- short_eq     "all -d=cu"            "cu"  "-d"
+}
+
 test_shifu_complete_single_dash_with_config_shows_all_options() {
   shifu_complete_single_dash_options=true
   expected="-f -a -d --option-bin --option-req --option-def -F --flag-option-bin -A --flag-option-req -D --flag-option-def -h --help"
