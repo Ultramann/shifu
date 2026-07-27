@@ -886,17 +886,37 @@ test_shifu_bash_comp_words() {
   eval "$(shifu_run shifu_test_all_options_cmd --tab-completion bash)"
   run_test() {
     shifu_test_params line cur words -- "$@"
-    COMP_LINE="$line"; COMP_POINT="${#line}"   # cursor at end of line
+    COMP_LINE="$line"; COMP_POINT="${#line}"  # cursor at end of line
     _shifu_comp_words
     shifu_assert_strings_equal cur "$cur" "$shifu_comp_cur"
     shifu_assert_strings_equal words "$words" "${shifu_comp_words[*]}"
   }
   shifu_parameterize_test run_test \
-  -- space_empty  "all -a "              ""    "-a" \
-  -- partial      "all -a fl"            "fl"  "-a" \
-  -- eq_empty     "all --option-def="    ""    "--option-def" \
-  -- eq_partial   "all --option-def=cu"  "cu"  "--option-def" \
-  -- short_eq     "all -d=cu"            "cu"  "-d"
+  -- space_empty     "all -a "                ""      "-a" \
+  -- partial         "all -a part"            "part"  "-a" \
+  -- eq_empty        "all --option-def="      ""      "--option-def" \
+  -- eq_partial      "all --option-def=part"  "part"  "--option-def" \
+  -- short_eq        "all -d=part"            "part"  "-d" \
+  -- short_eq_empty  "all -d="                 ""     "-d"
+}
+
+test_shifu_zsh_comp_words() {
+  [ -n "${ZSH_VERSION:-}" ] || shifu_skip_test
+  eval "$(shifu_run shifu_test_all_options_cmd --tab-completion zsh)"
+  run_test() {
+    shifu_test_params @wordline current expected_cur expected_words -- "$@"
+    eval 'words=( $wordline )'  # array literal hidden from the ash/dash parsers
+    CURRENT=$current
+    _shifu_comp_words
+    shifu_assert_strings_equal cur "$expected_cur" "$shifu_comp_cur"
+    shifu_assert_strings_equal words "$expected_words" "${shifu_comp_words[*]}"
+  }
+  shifu_parameterize_test run_test \
+  -- partial         "all -a part"            3  "part"  "-a" \
+  -- eq_empty        "all --option-def="      2  ""      "--option-def" \
+  -- eq_partial      "all --option-def=part"  2  "part"  "--option-def" \
+  -- short_eq        "all -d=part"            2  "part"  "-d" \
+  -- short_eq_empty  "all -d="                2  ""      "-d"
 }
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {
