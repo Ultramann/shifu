@@ -754,6 +754,12 @@ test_shifu_complete() {
   -- func_args_positional_enum \
      shifu_test_all_options_cmd "cur_word -f -A flag" \
      "positional arg one" \
+  -- func_args_positional_enum_eq_long \
+     shifu_test_all_options_cmd "cur_word -f --flag-option-req=flag" \
+     "positional arg one" \
+  -- func_args_positional_enum_eq_short \
+     shifu_test_all_options_cmd "cur_word -f -A=flag" \
+     "positional arg one" \
   -- func_args_option_func \
      shifu_test_all_options_cmd "cur_word -f -D" \
      "flag option default" \
