@@ -892,12 +892,14 @@ test_shifu_bash_comp_words() {
     shifu_assert_strings_equal words "$words" "${shifu_comp_words[*]}"
   }
   shifu_parameterize_test run_test \
-  -- space_empty     "all -a "                ""      "-a" \
-  -- partial         "all -a part"            "part"  "-a" \
-  -- eq_empty        "all --option-def="      ""      "--option-def" \
-  -- eq_partial      "all --option-def=part"  "part"  "--option-def" \
-  -- short_eq        "all -d=part"            "part"  "-d" \
-  -- short_eq_empty  "all -d="                 ""     "-d"
+  -- space_empty     "all -a "                     ""      "-a" \
+  -- partial         "all -a part"                 "part"  "-a" \
+  -- eq_empty        "all --option-def="           ""      "--option-def" \
+  -- eq_partial      "all --option-def=part"       "part"  "--option-def" \
+  -- short_eq        "all -d=part"                 "part"  "-d" \
+  -- short_eq_empty  "all -d="                     ""      "-d" \
+  -- eq_nested       "all --option-def=a=b"        "a=b"   "--option-def" \
+  -- eq_preceding    "all -a x --option-def=part"  "part"  "-a x --option-def"
 }
 
 test_shifu_zsh_comp_words() {
@@ -912,11 +914,13 @@ test_shifu_zsh_comp_words() {
     shifu_assert_strings_equal words "$expected_words" "${shifu_comp_words[*]}"
   }
   shifu_parameterize_test run_test \
-  -- partial         "all -a part"            3  "part"  "-a" \
-  -- eq_empty        "all --option-def="      2  ""      "--option-def" \
-  -- eq_partial      "all --option-def=part"  2  "part"  "--option-def" \
-  -- short_eq        "all -d=part"            2  "part"  "-d" \
-  -- short_eq_empty  "all -d="                2  ""      "-d"
+  -- partial         "all -a part"                 3  "part"  "-a" \
+  -- eq_empty        "all --option-def="           2  ""      "--option-def" \
+  -- eq_partial      "all --option-def=part"       2  "part"  "--option-def" \
+  -- short_eq        "all -d=part"                 2  "part"  "-d" \
+  -- short_eq_empty  "all -d="                     2  ""      "-d" \
+  -- eq_nested       "all --option-def=a=b"        2  "a=b"   "--option-def" \
+  -- eq_preceding    "all -a x --option-def=part"  4  "part"  "-a x --option-def"
 }
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {
