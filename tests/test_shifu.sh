@@ -754,6 +754,12 @@ test_shifu_complete() {
   -- func_args_positional_enum \
      shifu_test_all_options_cmd "cur_word -f -A flag" \
      "positional arg one" \
+  -- func_args_positional_enum_eq_long \
+     shifu_test_all_options_cmd "cur_word -f --flag-option-req=flag" \
+     "positional arg one" \
+  -- func_args_positional_enum_eq_short \
+     shifu_test_all_options_cmd "cur_word -f -A=flag" \
+     "positional arg one" \
   -- func_args_option_func \
      shifu_test_all_options_cmd "cur_word -f -D" \
      "flag option default" \
@@ -879,6 +885,48 @@ test_shifu_complete() {
   -- positional_after_attached_bundle \
      shifu_test_bundle_cmd "cur_word -abotwo" \
      "one two three"
+}
+
+test_shifu_bash_comp_words() {
+  [ -n "${BASH_VERSION:-}" ] || shifu_skip_test
+  eval "$(shifu_run shifu_test_all_options_cmd --tab-completion bash)"
+  run_test() {
+    shifu_test_params line cur words -- "$@"
+    COMP_LINE="$line"; COMP_POINT="${#line}"  # cursor at end of line
+    _shifu_comp_words
+    shifu_assert_strings_equal cur "$cur" "$shifu_comp_cur"
+    shifu_assert_strings_equal words "$words" "${shifu_comp_words[*]}"
+  }
+  shifu_parameterize_test run_test \
+  -- space_empty     "all -a "                     ""      "-a" \
+  -- partial         "all -a part"                 "part"  "-a" \
+  -- eq_empty        "all --option-def="           ""      "--option-def" \
+  -- eq_partial      "all --option-def=part"       "part"  "--option-def" \
+  -- short_eq        "all -d=part"                 "part"  "-d" \
+  -- short_eq_empty  "all -d="                     ""      "-d" \
+  -- eq_nested       "all --option-def=a=b"        "a=b"   "--option-def" \
+  -- eq_preceding    "all -a x --option-def=part"  "part"  "-a x --option-def"
+}
+
+test_shifu_zsh_comp_words() {
+  [ -n "${ZSH_VERSION:-}" ] || shifu_skip_test
+  eval "$(shifu_run shifu_test_all_options_cmd --tab-completion zsh)"
+  run_test() {
+    shifu_test_params @wordline current expected_cur expected_words -- "$@"
+    eval 'words=( $wordline )'  # array literal hidden from the ash/dash parsers
+    CURRENT=$current
+    _shifu_comp_words
+    shifu_assert_strings_equal cur "$expected_cur" "$shifu_comp_cur"
+    shifu_assert_strings_equal words "$expected_words" "${shifu_comp_words[*]}"
+  }
+  shifu_parameterize_test run_test \
+  -- partial         "all -a part"                 3  "part"  "-a" \
+  -- eq_empty        "all --option-def="           2  ""      "--option-def" \
+  -- eq_partial      "all --option-def=part"       2  "part"  "--option-def" \
+  -- short_eq        "all -d=part"                 2  "part"  "-d" \
+  -- short_eq_empty  "all -d="                     2  ""      "-d" \
+  -- eq_nested       "all --option-def=a=b"        2  "a=b"   "--option-def" \
+  -- eq_preceding    "all -a x --option-def=part"  4  "part"  "-a x --option-def"
 }
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {
@@ -1381,10 +1429,16 @@ test_shifu_run_defer_bundle() {
 }
 
 # Testing utilities
+shifu_skip_test() {
+  # skip current test, or parameterized case
+  echo "SHIFU_TEST_SKIPPED"
+  exit 0
+}
+
 shifu_parameterize_test() {
   # run test function over many test cases, test cases are separated with --.
   # Test case args that contain multiple words should be passed as a single string
-  # and # unpacked with an @-prefixed name in shifu_test_params for word-splitting.
+  # and unpacked with an @-prefixed name in shifu_test_params for word-splitting
   # Usage:
   # shifu_parameterize_test <test function> \
   # -- <case_name> args...
@@ -1412,16 +1466,21 @@ shifu_parameterize_test() {
       exit $errors
     )
     pt_case_errors=$?
-    if [ $pt_case_errors -eq 0 ]; then
-      pt_passed=$((pt_passed + 1))
-      if [ "${shifu_verbose_tests:-}" = true ]; then
-        printf "   $shifu_green%-4s$shifu_reset%s\n" "+" "$pt_case_name"
-      fi
-    else
-      pt_failed=$((pt_failed + 1))
-      printf "   $shifu_red%-4s$shifu_reset%s\n" "x" "$pt_case_name"
-      [ -n "$pt_case_output" ] && echo "$pt_case_output"
-    fi
+    case "$pt_case_output" in
+      *SHIFU_TEST_SKIPPED*) ;;
+      *)
+        if [ $pt_case_errors -eq 0 ]; then
+          pt_passed=$((pt_passed + 1))
+          if [ "${shifu_verbose_tests:-}" = true ]; then
+            printf "   $shifu_green%-4s$shifu_reset%s\n" "+" "$pt_case_name"
+          fi
+        else
+          pt_failed=$((pt_failed + 1))
+          printf "   $shifu_red%-4s$shifu_reset%s\n" "x" "$pt_case_name"
+          [ -n "$pt_case_output" ] && echo "$pt_case_output"
+        fi
+        ;;
+    esac
     shift $pt_count
   done
   echo "PARAMETERIZED_TEST_COUNTS $pt_passed $pt_failed"
@@ -1579,6 +1638,7 @@ shifu_run_test() {
 shifu_run_test_and_report() {
   # 1: test function
   test_func=$1
+  test_skipped=false
   test_output=$(shifu_run_test "$test_func")
   test_result=$?
   pt_last_line=${test_output##*"
@@ -1595,6 +1655,10 @@ shifu_run_test_and_report() {
       n_failed=$(($n_failed + $pt_failed))
       n_tests=$(($n_tests + $pt_passed + $pt_failed))
       ;;
+    SHIFU_TEST_SKIPPED*)
+      test_output=""
+      test_skipped=true
+      ;;
     *)
       n_tests=$(($n_tests + 1))
       if [ $test_result -eq 0 ]; then
@@ -1604,10 +1668,12 @@ shifu_run_test_and_report() {
       fi
       ;;
   esac
-  if [ $test_result -eq 0 ]; then
-    shifu_report_success "$test_func"
-  else
-    shifu_report_failure "$test_func"
+  if [ "$test_skipped" != true ]; then
+    if [ $test_result -eq 0 ]; then
+      shifu_report_success "$test_func"
+    else
+      shifu_report_failure "$test_func"
+    fi
   fi
   [ -n "$test_output" ] && echo "$test_output"
 }
