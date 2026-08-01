@@ -759,46 +759,58 @@ Instructions
 }
 
 _shifu_generate_bash_tab_completion() {
-  echo "_${shifu_cmd_name}_completion() {
-  local cword=\$COMP_CWORD
-  current=\"\${COMP_WORDS[cword]}\"
-  if [ \"\${COMP_WORDS[cword-1]}\" = \"=\" ]; then
-    full_words=( \"\${COMP_WORDS[@]:1:cword-2}\" )
-    completions=\$($shifu_cmd_name --shifu-complete \"\$current\" \"\${full_words[@]}\")
-    COMPREPLY=( \$(compgen -W \"\$completions\" -- \"\$current\") )
-    return
-  fi
-  if [ \"\$current\" = \"=\" ]; then
-    full_words=( \"\${COMP_WORDS[@]:1:cword-1}\" )
-    completions=\$($shifu_cmd_name --shifu-complete \"\" \"\${full_words[@]}\")
-    prefixed=\"\"
-    for value in \$completions; do prefixed=\"\$prefixed =\$value\"; done
-    COMPREPLY=( \$(compgen -W \"\$prefixed\" -- \"=\") )
-    return
-  fi
-  full_words=( \"\${COMP_WORDS[@]:1:\${#COMP_WORDS[@]}-2}\" )
-  completions=\$($shifu_cmd_name --shifu-complete \"\$current\" \"\${full_words[@]}\")
+  echo "_shifu_comp_words() {
+  local line words
+  line=\"\${COMP_LINE:0:COMP_POINT}\"
+  # split on whitespace ourselves instead of relying on COMP_WORDS, which
+  # splits on = inconsistently across bash versions
+  read -ra words <<< \"\$line\"
+  case \"\$line\" in
+    *[![:space:]]) shifu_comp_cur=\"\${words[\${#words[@]}-1]}\"
+                   shifu_comp_words=( \"\${words[@]:1:\${#words[@]}-2}\" ) ;;
+    *)             shifu_comp_cur=\"\"
+                   shifu_comp_words=( \"\${words[@]:1}\" ) ;;
+  esac
+  case \"\$shifu_comp_cur\" in
+    -*=*) shifu_comp_words+=( \"\${shifu_comp_cur%%=*}\" )
+          shifu_comp_cur=\"\${shifu_comp_cur#*=}\" ;;
+  esac
+}
+_${shifu_cmd_name}_completion() {
+  local shifu_comp_cur shifu_comp_words completions
+  _shifu_comp_words
+  completions=\$($shifu_cmd_name --shifu-complete \"\$shifu_comp_cur\" \"\${shifu_comp_words[@]}\")
   case \"\$completions\" in
-    SHIFU_COMP_PATH_FILES) COMPREPLY=( \$(compgen -f -- \"\$current\") ) ;;
-    SHIFU_COMP_PATH_DIRS) COMPREPLY=( \$(compgen -d -- \"\$current\") ) ;;
-    SHIFU_COMP_PATH_GLOB:*) COMPREPLY=( \$(compgen -f -X \"!\${completions#SHIFU_COMP_PATH_GLOB:}\" -- \"\$current\") ) ;;
-    *) COMPREPLY=( \$(compgen -W \"\$completions\" -- \"\$current\") )
-       compopt +o filenames 2>/dev/null ;;
+    SHIFU_COMP_PATH_FILES)  COMPREPLY=( \$(compgen -f -- \"\$shifu_comp_cur\") ) ;;
+    SHIFU_COMP_PATH_DIRS)   COMPREPLY=( \$(compgen -d -- \"\$shifu_comp_cur\") ) ;;
+    SHIFU_COMP_PATH_GLOB:*) COMPREPLY=( \$(compgen -f -X \"!\${completions#SHIFU_COMP_PATH_GLOB:}\" \
+                            -- \"\$shifu_comp_cur\") ) ;;
+    *)                      COMPREPLY=( \$(compgen -W \"\$completions\" -- \"\$shifu_comp_cur\") )
+                            compopt +o filenames 2>/dev/null ;;
   esac
 }
 complete -o filenames -F _${shifu_cmd_name}_completion $shifu_cmd_name"
 }
 
 _shifu_generate_zsh_tab_completion() {
-  echo "_${shifu_cmd_name}_completion() {
-  current=\"\${words[\$CURRENT]}\"
-  full_words=( \"\${words[@]:1:\${#words[@]}-2}\" )
-  completions=\$($shifu_cmd_name --shifu-complete \"\$current\" \"\${full_words[@]}\")
+  echo "_shifu_comp_words() {
+  shifu_comp_cur=\"\${words[\$CURRENT]}\"
+  shifu_comp_words=( \"\${words[@]:1:\$((CURRENT-2))}\" )
+  case \"\$shifu_comp_cur\" in
+    -*=*) shifu_comp_words+=( \"\${shifu_comp_cur%%=*}\" )
+          shifu_comp_cur=\"\${shifu_comp_cur#*=}\" ;;
+  esac
+}
+_${shifu_cmd_name}_completion() {
+  local shifu_comp_cur shifu_comp_words completions
+  _shifu_comp_words
+  case \"\${words[\$CURRENT]}\" in -*=*) compset -P '*=' ;; esac
+  completions=\$($shifu_cmd_name --shifu-complete \"\$shifu_comp_cur\" \"\${shifu_comp_words[@]}\")
   case \"\$completions\" in
-    SHIFU_COMP_PATH_FILES) _files -g '*(D)' ;;
-    SHIFU_COMP_PATH_DIRS) _files -g '*(D/)' ;;
+    SHIFU_COMP_PATH_FILES)  _files -g '*(D)' ;;
+    SHIFU_COMP_PATH_DIRS)   _files -g '*(D/)' ;;
     SHIFU_COMP_PATH_GLOB:*) _path_files -g \"\${completions#SHIFU_COMP_PATH_GLOB:}\" ;;
-    *) compadd -q -- \${=completions} ;;
+    *)                      compadd -q -- \${=completions} ;;
   esac
 }
 compdef _${shifu_cmd_name}_completion $shifu_cmd_name"
