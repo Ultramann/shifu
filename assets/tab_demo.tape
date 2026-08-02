@@ -13,7 +13,14 @@ Set CursorBlink false
 Set Framerate 40
 Set TypingSpeed 50ms
 
-Env PS1 "$(tput setaf 39)\$ $(tput sgr0)"
+Set Theme {
+  "background": "#000000",
+  "foreground": "#f1f6fb",
+  "cursor": "#f1f6fb",
+  "red": "#ee8377"
+}
+
+Env PS1 "\[$(tput setaf 1)\]\$ \[$(tput sgr0)\]"
 
 Hide
 Type 'eval "$(examples/tab --tab-completion bash)"'

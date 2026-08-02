@@ -12,8 +12,14 @@ Set Padding 50
 Set CursorBlink false
 Set Framerate 40
 Set TypingSpeed 50ms
+Set Theme {
+  "background": "#000000",
+  "foreground": "#f1f6fb",
+  "cursor": "#f1f6fb",
+  "red": "#ee8377"
+}
 
-Env PS1 "$(tput setaf 39)\$ $(tput sgr0)"
+Env PS1 "\[$(tput setaf 1)\]\$ \[$(tput sgr0)\]"
 
 Type "examples/dispatch -h"
 Sleep 200ms
@@ -32,7 +38,7 @@ Sleep 200ms
 Enter
 Sleep 500ms
 
-Type "examples/dispatch hello -D -n World"
+Type "examples/dispatch hello -Dn World"
 Sleep 200ms
 Enter
 Sleep 3000ms
@@ -49,9 +55,7 @@ Sleep 200ms
 Enter
 Sleep 500ms
 
-Type "examples/dispatch echo -D --required 'provided' \"
-Enter
-Type "-d 'not default' example"
+Type "examples/dispatch echo -Dd 'not default' -r 'provided' example"
 Sleep 200ms
 Enter
 Sleep 3000ms
