@@ -910,7 +910,8 @@ test_shifu_bash_comp_words() {
 
 test_shifu_zsh_comp_words() {
   [ -n "${ZSH_VERSION:-}" ] || shifu_skip_test
-  eval "$(shifu_run shifu_test_all_options_cmd --tab-completion zsh)"
+  # discard the "command not found: compdef"
+  eval "$(shifu_run shifu_test_all_options_cmd --tab-completion zsh)" 2>/dev/null
   run_test() {
     shifu_test_params @wordline current expected_cur expected_words -- "$@"
     eval 'words=( $wordline )'  # array literal hidden from the ash/dash parsers
