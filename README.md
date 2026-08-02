@@ -102,8 +102,6 @@ The diagram below shows how shifu connects this CLI script to parse the command 
     }
 ```
 
-This example only demonstrates how to parse one option with a default value, but shifu supports several option and argument types: binary options, options with defaults, required options, positional arguments, and remaining arguments. See the [Option and argument functions](#option-and-argument-functions) API section for details.
-
 ## Argument parsing
 
 Shifu parses command line arguments into shell variables for the target function. Five argument types are supported, letting CLI authors accept expressive, flexible input from their users.
