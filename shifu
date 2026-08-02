@@ -661,7 +661,7 @@ _shifu_cmd_argr() {
       elif [ $shifu_help_stage -gt 1 ]; then
         _shifu_error "No arguments after remaining are declared: $1"
       fi
-      shifu_help_usage="${shifu_help_usage:-} [$1]"
+      shifu_help_usage="${shifu_help_usage:-} $1"
       shifu_help_arguments="${shifu_help_arguments:-}\n  $1\n    $2"
       ;;
     $shifu_mode_args_run)

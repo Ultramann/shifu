@@ -655,7 +655,7 @@ test_shifu_help() {
 These are all the fancy things you can do with the all command
 
 Usage
-  all [OPTIONS] [POSITIONAL_ARG_1] [POSITIONAL_ARG_2] ...[REMAINING]
+  all [OPTIONS] POSITIONAL_ARG_1 POSITIONAL_ARG_2 ...[REMAINING]
 
 Arguments
   POSITIONAL_ARG_1
