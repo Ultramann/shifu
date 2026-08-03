@@ -1,0 +1,73 @@
+# VHS tape file for generating demo gif. Run from repo root with
+#    vhs assets/tab_demo_light.tape
+# https://github.com/charmbracelet/vhs
+
+Output assets/tab_demo_light.gif
+
+Set Shell "bash"
+Set FontSize 22
+Set Width 1200
+Set Height 650
+Set Padding 50
+Set CursorBlink false
+Set Framerate 40
+Set TypingSpeed 50ms
+
+Set Theme {
+  "background": "#f6f8fa",
+  "foreground": "#202328",
+  "cursor": "#202328",
+  "red": "#be3535"
+}
+
+Env PS1 "\[$(tput setaf 1)\]\$ \[$(tput sgr0)\]"
+
+Hide
+Type 'eval "$(examples/tab --tab-completion bash)"'
+Enter
+Ctrl+l
+Show
+
+Type "examples/tab -h"
+Sleep 200ms
+Enter
+Sleep 3000ms
+
+Ctrl+l
+
+Type "examples/tab "
+Sleep 500ms
+Tab 2
+Sleep 500ms
+Type "c"
+Tab
+Sleep 500ms
+Type "--"
+Sleep 500ms
+Tab 2
+Sleep 500ms
+Type "e"
+Sleep 500ms
+Tab 2
+Sleep 500ms
+Tab
+Sleep 500ms
+Type "m"
+Sleep 500ms
+Tab
+Sleep 500ms
+Type "--f"
+Sleep 500ms
+Tab
+Sleep 500ms
+Tab
+Sleep 500ms
+Type "t"
+Sleep 500ms
+Tab
+Sleep 500ms
+Tab 2
+Sleep 500ms
+Type "r"
+Tab
+Sleep 1500ms

@@ -8,13 +8,13 @@ The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-* Bundled short options: a single dash followed by a bundle of short options is expanded, so `-abc` is equivalent to `-a -b -c`. A required or defaulted option may end a bundle and will consume the next argument (`-abo file`). Exact multi-character, single-dash flags such as `-readonly` still take precedence, and a help flag in any bundle position will short-circuit to showing the help ([#53])
-* Attached short option values: an option's short flag accepts its value attached directly to it, so `-ofile` is equivalent to `-o file`, including at the tail of a bundle (`-abofile`). The `=` separator now works on short flags (`-o=file`) and on repeatable flags (`-i=one`, `--list=one`) ([#54])
+* Bundled short options: a single dash followed by a bundle of short options is expanded, so `-abc` is equivalent to `-a -b -c`. A required option or one with a default may end a bundle and will consume the next argument (`-abo file`). Exact multi-character, single-dash flags such as `-readonly` still take precedence, and a help flag in any bundle position will short-circuit to showing the help ([#53])
+* Attached short option values: an option's short flag accepts its value attached directly to it, so `-ofile` is equivalent to `-o file`, including at the tail of a bundle (`-abofile`). The `=` specifier now works on short flags (`-o=file`) and on repeatable flags (`-i=one`, `--list=one`) ([#54])
 
 ### Fixed
 
 * Repeatable options, `VAR...`, declared with `:defer:` no longer error with "Invalid variable name"; they now accrue values like a repeatable option declared in a leaf command ([#56])
-* Tab completion for option values now works when the value is attached with `=`, so `--opt=<TAB>` and `-o=<TAB>` complete the same values as with space-separated form, in both bash and zsh ([#57])
+* Tab completion for option values now works when the value is specified with `=`, so `--opt=<TAB>` and `-o=<TAB>` complete the same values as with space-separated form, in both bash and zsh ([#57])
 
 ## [0.2.0] - 2026-07-12
 
@@ -26,7 +26,7 @@ The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/),
 
 * Repeatable flags: suffix the variable name with `...` to make the flag repeatable, so each time it is used its argument is accrued instead of overwriting the previous value. A non-empty `<default>` becomes the first item in the list ([#45])
 * `shifu_itr_list`: iterate over the arguments accrued by a repeatable flag in a `while` loop; the variable itself is not assigned the values ([#45])
-* Equals as an option-value separator: long flags now accept `--flag=value` in addition to a space between the flag and its value ([#39])
+* Equals as an option-value specifier: long flags now accept `--flag=value` in addition to a space between the flag and its value ([#39])
 * End-of-options delimiter (`--`): a bare `--` stops option parsing, and every argument after it is treated as a non-option argument, even if it begins with `-`. These fill any positional arguments, then overflow into `$@`. Use it to pass a value that starts with a dash, or to forward flags to another command. Tab completion is supported after `--` ([#49])
 * Options may now appear after positional arguments, with tab completion support ([#48])
 

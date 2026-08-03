@@ -1,8 +1,8 @@
 # VHS tape file for generating demo gif. Run from repo root with
-#    vhs assets/tab_demo.tape
+#    vhs assets/tab_demo_dark.tape
 # https://github.com/charmbracelet/vhs
 
-Output assets/tab_demo.gif
+Output assets/tab_demo_dark.gif
 
 Set Shell "bash"
 Set FontSize 22
@@ -13,7 +13,14 @@ Set CursorBlink false
 Set Framerate 40
 Set TypingSpeed 50ms
 
-Env PS1 "$(tput setaf 39)\$ $(tput sgr0)"
+Set Theme {
+  "background": "#161b22",
+  "foreground": "#f1f6fb",
+  "cursor": "#f1f6fb",
+  "red": "#ee8377"
+}
+
+Env PS1 "\[$(tput setaf 1)\]\$ \[$(tput sgr0)\]"
 
 Hide
 Type 'eval "$(examples/tab --tab-completion bash)"'

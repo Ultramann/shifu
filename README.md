@@ -1,6 +1,6 @@
 <p align="center">
-  <img src="./assets/banner-dark.svg#gh-dark-mode-only" width="65%">
-  <img src="./assets/banner-light.svg#gh-light-mode-only" width="65%">
+  <img src="./assets/banner_dark.svg#gh-dark-mode-only" width="65%">
+  <img src="./assets/banner_light.svg#gh-light-mode-only" width="65%">
 </p>
 
 **SH**ell **I**nterface **F**ramework **U**tility, shifu, is a declarative framework that makes creating powerful CLIs from shell scripts simple. Shifu provides:
@@ -20,6 +20,7 @@ Shell scripts are great for gluing terminal programs together. But adding subcom
 
 * [Installation](#installation)
 * [Quickstart](#quickstart)
+* [Argument parsing](#argument-parsing)
 * [Subcommands](#subcommands)
 * [Tab completion](#tab-completion)
 * [FAQ](#faq)
@@ -42,6 +43,8 @@ Below is a very minimal, introductory shifu CLI script.
 [`examples/intro`](/examples/intro)
 
 ```sh
+#! /bin/sh
+
 . "${0%/*}"/shifu || exit 1
 
 intro_cmd() {
@@ -101,7 +104,109 @@ The diagram below shows how shifu connects this CLI script to parse the command 
     }
 ```
 
-This example only demonstrates how to parse one option with a default value, but shifu supports several option and argument types: binary options, options with defaults, required options, positional arguments, and remaining arguments. See the [Option and argument functions](#option-and-argument-functions) API section for details.
+## Argument parsing
+
+Shifu parses command line arguments into shell variables for the target function. Five argument types are supported, letting CLI authors accept expressive, flexible input from their users.
+
+| Type                | Description                                                     | Example   |
+| ------------------- | --------------------------------------------------------------- | --------- |
+| Binary flag         | Sets to one value when the flag is present, another when absent | `-v`      |
+| Option with default | Value set from the option using a default when omitted          | `-o file` |
+| Required option     | Value set from the option that must be provided                 | `-n name` |
+| Positional argument | Value set by position rather than an option                     | `file`    |
+| Remaining arguments | Any extra arguments, collected for the function                 | `a b c`   |
+
+Every example below uses this command.
+
+[`examples/parse`](/examples/parse)
+
+```sh
+#! /bin/sh
+
+. "${0%/*}"/shifu || exit 1
+
+parse_cmd() {
+  shifu_cmd_name parse
+  shifu_cmd_func parse_function
+  shifu_cmd_help "An argument parsing shifu example"
+  shifu_cmd_long "Reads SOURCE and writes to OUTPUT, demonstrating how shifu parses
+option values, bundled short options, interspersed options and arguments, and the
+end-of-options delimiter"
+
+  shifu_cmd_optb -v --verbose -- VERBOSE false true "Verbose output"
+  shifu_cmd_optb -f --force   -- FORCE   false true "Force overwrite"
+  shifu_cmd_optd -o --output  -- OUTPUT  stdout     "Output destination"
+  shifu_cmd_optr -n --name    -- NAME               "Run name"
+  shifu_cmd_argr SOURCE "File to read"
+  shifu_cmd_args "Extra files"
+}
+
+parse_function() {
+  printf 'VERBOSE=%s, FORCE=%s, OUTPUT=%s, NAME=%s, SOURCE=%s, $@=(%s)\n' \
+    "$VERBOSE" "$FORCE" "$OUTPUT" "$NAME" "$SOURCE" "$*"
+}
+
+shifu_run parse_cmd "$@"
+```
+
+### Option values
+
+An option that takes a value can read it from the next argument, attached to a short flag, or specified with an `=`.
+
+```sh
+parse -n report in.txt      # NAME=report, from the next argument
+parse -nreport in.txt       # NAME=report, attached to the short flag
+parse -n=report in.txt      # NAME=report, short flag with =
+parse --name report in.txt  # NAME=report, long form
+parse --name=report in.txt  # NAME=report, long form with =
+```
+
+These forms work for any such option, whether required, repeatable, or with a default.
+
+### Combining short options
+
+Short options, those with a single dash and one character, can be passed together, in a bundle, behind one dash:
+* A required/default option may end a bundle and the following argument will be parsed as the last option's value
+* An option declared with more than one character after its dash is matched exactly and takes precedence over bundling, so a flag declared as `-readonly` is always read whole, never as `-r -e ...`
+* A help flag triggers help from any position in a bundle, so both `-vh` and `-hv` print help and exit
+  * This also works if a different help flag is specified with [`shifu_help_flags`](#shifu_help_flags)
+
+```sh
+parse -vf -n report in.txt  # VERBOSE=true, FORCE=true, NAME=report
+parse -vfn report in.txt    # VERBOSE=true, FORCE=true, NAME=report
+parse -vfnreport in.txt     # VERBOSE=true, FORCE=true, NAME=report
+parse -vh in.txt            # prints help
+```
+
+### Interspersed options and arguments
+
+Options may appear before or after positional arguments. Non-option arguments fill positionals in declaration order, then overflow into remaining arguments. Once an argument overflows into the remaining arguments, any later option is captured as data rather than parsed.
+
+```sh
+parse -n report in.txt -v
+  # VERBOSE=true, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=in.txt, $@=()
+parse in.txt -vf -n report
+  # VERBOSE=true, FORCE=true, OUTPUT=stdout, NAME=report, SOURCE=in.txt, $@=()
+parse -n report -v in.txt a.txt b.txt
+  # VERBOSE=true, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=in.txt, $@=(a.txt b.txt)
+parse -n report in.txt a.txt -v
+  # VERBOSE=false, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=in.txt, $@=(a.txt -v)
+```
+
+### End-of-options delimiter
+
+A bare `--` stops option parsing; every argument after it is treated as a non-option argument, even if it begins with `-`, filling positional arguments and then overflowing into `$@`. Use it to pass a value that starts with a dash, or to forward flags to another command. Note that this delimiter is what you type when running a shifu CLI; it is unrelated to the `--` separator in an option declaration (like the `shifu_cmd_optb` lines in the `parse` command above), which sits between the option's flags and its parsing configuration.
+
+```sh
+parse -n report -- -v in.txt
+  # VERBOSE=false, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=-v, $@=(in.txt)
+parse -n report -- -weird.txt
+  # VERBOSE=false, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=-weird.txt, $@=()
+parse -n report -- --output out.txt
+  # VERBOSE=false, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=--output, $@=(out.txt)
+parse -n report in.txt -- --flag
+  # VERBOSE=false, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=in.txt, $@=(--flag)
+```
 
 ## Subcommands
 
@@ -138,7 +243,12 @@ Arguments and help strings are scoped to each subcommand. Parent commands can al
 
 Below is a demo of [`examples/dispatch`](/examples/dispatch), a CLI with two subcommands, `hello` and `echo`, each with their own arguments. Annotated source code of the CLI can be found in the expandable section below the demo.
 
-![Dispatch](/assets/dispatch_demo.gif)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="/assets/dispatch_demo_dark.gif">
+  <img src="/assets/dispatch_demo_light.gif" alt="Dispatch">
+</picture>
+
+<br>
 
 <details>
 
@@ -195,7 +305,6 @@ echo_cmd() {
   cmd_func dispatch_echo
   cmd_help "An echo subcommand"
   cmd_long "A subcommand that prints results of parsed arguments"
-
   # Add options and positional argument
   cmd_optr -r --required -- REQUIRED   "Example required option w/ argument"
   cmd_optd -d --default  -- DEFAULT    "default" "Example option w/ argument"
@@ -250,7 +359,12 @@ By default, subcommand and option names can be tab completed. Shifu also provide
 
 Below is a demo of [`examples/tab`](/examples/tab) showing tab completion capabilities. Source code and instructions to run the example can be found in the expandable section below the demo.
 
-![Tab completion](/assets/tab_demo.gif)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="/assets/tab_demo_dark.gif">
+  <img src="/assets/tab_demo_light.gif" alt="Tab completion">
+</picture>
+
+<br>
 
 <details>
 
@@ -495,8 +609,8 @@ All option and argument functions accept a `variable` argument, the shell variab
   shifu_cmd_optd -o --output -- OUTPUT "out" "Output file"
   ```
   ```txt
-  cli                   # OUTPUT="out"
-  cli --output result   # OUTPUT="result"
+  cli                   # OUTPUT=out
+  cli --output result   # OUTPUT=result
   ```
 * Repeatable flag
   * Suffix the variable name with `...` to make the flag repeatable: each time it is used, its argument is accrued instead of overwriting the previous value
@@ -528,7 +642,7 @@ All option and argument functions accept a `variable` argument, the shell variab
   ```
   ```txt
   cli             # error: missing required option
-  cli --env dev   # ENV="dev"
+  cli --env dev   # ENV=dev
   ```
 
 #### `shifu_cmd_argr`
@@ -544,7 +658,7 @@ All option and argument functions accept a `variable` argument, the shell variab
   ```
   ```txt
   cli              # error: missing required argument
-  cli myfile.txt   # TARGET="myfile.txt"
+  cli myfile.txt   # TARGET=myfile.txt
   ```
 
 #### `shifu_cmd_args`
@@ -560,7 +674,7 @@ All option and argument functions accept a `variable` argument, the shell variab
   ```
   ```txt
   cli                 # $@ is empty
-  cli one two three   # $@ = one two three
+  cli one two three   # $@=(one two three)
   ```
 
 #### Notes
@@ -584,50 +698,6 @@ Option functions called in a parent command require a mode as the first argument
   ```txt
   cli --config myconfig sub
   ```
-
-##### Passing option values
-
-A value option can read its value in a few ways:
-
-* From the next argument: `-o value`, `--opt value`
-* Specified with `=`: `-o=value`, `--opt=value`
-* Attached to a short flag: `-ovalue`
-
-These forms work for required, defaulted, and repeatable value options.
-
-##### End-of-options delimiter (`--`)
-
-A bare `--` stops option parsing; every argument after it is treated as a non-option argument, even if it begins with `-`. These fill any positional arguments, then overflow into `$@`. Use it to pass a value that starts with a dash, or to forward flags to another command. Note that this delimiter is what you type when running a shifu CLI; it is unrelated to the `--` separator in an option declaration (like the `shifu_cmd_optb` line below), which sits between the option's flags and its parsing configuration.
-
-```sh
-shifu_cmd_optb -v --verbose -- VERBOSE false true "Verbose output"
-shifu_cmd_args "Arguments forwarded to the wrapped command"
-```
-
-```txt
-cli --verbose        # VERBOSE = true,  $@ = <empty>
-cli -- --verbose     # VERBOSE = false, $@ = --verbose
-cli -- -x file.txt   # VERBOSE = false, $@ = -x file.txt
-```
-
-##### Bundling short options
-
-Short options, those with a single dash and one character, can be passed together, in a bundle, behind one dash:
-* A required/default option may end a bundle and the following argument will be parsed as the last option's value
-* An option declared with more than one character after its dash is matched exactly and takes precedence over bundling, so a flag declared as `-readonly` is always read whole, never as `-r -e ...`
-* A help flag triggers help from any position in a bundle, so both `-vh` and `-hv` print help and exit
-  * This also works if a different help flag is specified with [`shifu_help_flags`](#shifu_help_flags)
-
-```sh
-shifu_cmd_optb -a --all    -- ALL false true  "Process all"
-shifu_cmd_optb -l --long   -- LONG false true "Long output"
-shifu_cmd_optd -o --output -- OUTPUT none     "Output file"
-```
-
-```txt
-cli -al             # ALL = true, LONG = true, OUTPUT = none
-cli -alo out.txt    # ALL = true, LONG = true, OUTPUT = out.txt
-```
 
 ##### Positional and remaining argument declaration rules
 
