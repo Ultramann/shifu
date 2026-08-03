@@ -153,8 +153,8 @@ Short options, those with a single dash and one character, can be passed togethe
 * A help flag triggers help from any position in a bundle, so both `-vh` and `-hv` print help and exit
   * This also works if a different help flag is specified with [`shifu_help_flags`](#shifu_help_flags)
 
-```txt
-parse -vf -n report in.txt  # VERBOSE = true, FORCE = true
+```sh
+parse -vf -n report in.txt  # VERBOSE = true, FORCE = true, NAME = report
 parse -vfn report in.txt    # VERBOSE = true, FORCE = true, NAME = report
 parse -vfnreport in.txt     # VERBOSE = true, FORCE = true, NAME = report
 parse -vh in.txt            # prints help
@@ -164,22 +164,30 @@ parse -vh in.txt            # prints help
 
 Options may appear before or after positional arguments. Non-option arguments fill positionals in declaration order, then overflow into remaining arguments. Once an argument overflows into the remaining arguments, any later option is captured as data rather than parsed.
 
-```txt
-parse -n report in.txt -v              # NAME = report, SOURCE = in.txt, VERBOSE = true
-parse in.txt -vf -n report             # NAME = report, SOURCE = in.txt, VERBOSE = true, FORCE = true
-parse -n report -v in.txt a.txt b.txt  # NAME = report, SOURCE = in.txt, VERBOSE = true, $@ = a.txt b.txt
-parse -n report in.txt a.txt -v        # NAME = report, SOURCE = in.txt, $@ = a.txt -v (-v is data, not parsed)
+```sh
+parse -n report in.txt -v
+  # VERBOSE = true, FORCE = false, OUTPUT = stdout, NAME = report, SOURCE = in.txt, $@ = empty
+parse in.txt -vf -n report
+  # VERBOSE = true, FORCE = true, OUTPUT = stdout, NAME = report, SOURCE = in.txt, $@ = empty
+parse -n report -v in.txt a.txt b.txt
+  # VERBOSE = true, FORCE = false, OUTPUT = stdout, NAME = report, SOURCE = in.txt, $@ = a.txt b.txt
+parse -n report in.txt a.txt -v
+  # VERBOSE = false, FORCE = false, OUTPUT = stdout, NAME = report, SOURCE = in.txt, $@ = a.txt -v
 ```
 
 ### End-of-options delimiter
 
 A bare `--` stops option parsing; every argument after it is treated as a non-option argument, even if it begins with `-`. These fill any positional arguments, then overflow into `$@`. Use it to pass a value that starts with a dash, or to forward flags to another command. Note that this delimiter is what you type when running a shifu CLI; it is unrelated to the `--` separator in an option declaration (like the `shifu_cmd_optb` lines in the `parse` command above), which sits between the option's flags and its parsing configuration.
 
-```txt
-parse -n report -- -v in.txt         # SOURCE = -v, $@ = in.txt (-v is data, not toggled)
-parse -n report -- -weird.txt        # SOURCE = -weird.txt (a value that starts with a dash)
-parse -n report -- --output out.txt  # SOURCE = --output, $@ = out.txt (--output not parsed)
-parse -n report in.txt -- --flag     # SOURCE = in.txt, $@ = --flag (forwarded to another command)
+```sh
+parse -n report -- -v in.txt
+  # VERBOSE = false, FORCE = false, OUTPUT = stdout, NAME = report, SOURCE = -v, $@ = in.txt
+parse -n report -- -weird.txt
+  # VERBOSE = false, FORCE = false, OUTPUT = stdout, NAME = report, SOURCE = -weird.txt, $@ = empty
+parse -n report -- --output out.txt
+  # VERBOSE = false, FORCE = false, OUTPUT = stdout, NAME = report, SOURCE = --output, $@ = out.txt
+parse -n report in.txt -- --flag
+  # VERBOSE = false, FORCE = false, OUTPUT = stdout, NAME = report, SOURCE = in.txt, $@ = --flag
 ```
 
 ## Subcommands
