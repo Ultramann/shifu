@@ -43,6 +43,8 @@ Below is a very minimal, introductory shifu CLI script.
 [`examples/intro`](/examples/intro)
 
 ```sh
+#! /bin/sh
+
 . "${0%/*}"/shifu || exit 1
 
 intro_cmd() {
@@ -119,16 +121,32 @@ Every example below uses this command.
 [`examples/parse`](/examples/parse)
 
 ```sh
+#! /bin/sh
+
+. "${0%/*}"/shifu || exit 1
+
 parse_cmd() {
   shifu_cmd_name parse
   shifu_cmd_func parse_function
-  shifu_cmd_optb -v --verbose -- VERBOSE false true "Verbose output"      # binary flag
-  shifu_cmd_optb -f --force   -- FORCE   false true "Force overwrite"     # binary flag
-  shifu_cmd_optd -o --output  -- OUTPUT  stdout     "Output destination"  # option with default
-  shifu_cmd_optr -n --name    -- NAME               "Run name"            # required option
-  shifu_cmd_argr SOURCE "File to read"                                    # positional argument
-  shifu_cmd_args "Extra files"                                            # remaining arguments
+  shifu_cmd_help "An argument parsing shifu example"
+  shifu_cmd_long "Reads SOURCE and writes to OUTPUT, demonstrating how shifu parses
+option values, bundled short options, interspersed options and arguments, and the
+end-of-options delimiter"
+
+  shifu_cmd_optb -v --verbose -- VERBOSE false true "Verbose output"
+  shifu_cmd_optb -f --force   -- FORCE   false true "Force overwrite"
+  shifu_cmd_optd -o --output  -- OUTPUT  stdout     "Output destination"
+  shifu_cmd_optr -n --name    -- NAME               "Run name"
+  shifu_cmd_argr SOURCE "File to read"
+  shifu_cmd_args "Extra files"
 }
+
+parse_function() {
+  printf 'VERBOSE=%s, FORCE=%s, OUTPUT=%s, NAME=%s, SOURCE=%s, $@=(%s)\n' \
+    "$VERBOSE" "$FORCE" "$OUTPUT" "$NAME" "$SOURCE" "$*"
+}
+
+shifu_run parse_cmd "$@"
 ```
 
 ### Option values

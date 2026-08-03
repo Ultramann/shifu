@@ -19,12 +19,8 @@ end-of-options delimiter"
 }
 
 parse_function() {
-  echo "VERBOSE: $VERBOSE"
-  echo "FORCE:   $FORCE"
-  echo "NAME:    $NAME"
-  echo "OUTPUT:  $OUTPUT"
-  echo "SOURCE:  $SOURCE"
-  echo "\$@:     $*"
+  printf 'VERBOSE=%s, FORCE=%s, OUTPUT=%s, NAME=%s, SOURCE=%s, $@=(%s)\n' \
+    "$VERBOSE" "$FORCE" "$OUTPUT" "$NAME" "$SOURCE" "$*"
 }
 
 shifu_run parse_cmd "$@"
