@@ -1,8 +1,8 @@
 # VHS tape file for generating demo gif. Run from repo root with
-#    vhs assets/dispatch_demo.tape
+#    vhs assets/dispatch_demo_dark.tape
 # https://github.com/charmbracelet/vhs
 
-Output assets/dispatch_demo.gif
+Output assets/dispatch_demo_dark.gif
 
 Set Shell "bash"
 Set FontSize 22
@@ -13,7 +13,7 @@ Set CursorBlink false
 Set Framerate 40
 Set TypingSpeed 50ms
 Set Theme {
-  "background": "#000000",
+  "background": "#161b22",
   "foreground": "#f1f6fb",
   "cursor": "#f1f6fb",
   "red": "#ee8377"
