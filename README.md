@@ -135,12 +135,12 @@ parse_cmd() {
 
 An option that takes a value can read it from the next argument, attached to a short flag, or specified with an `=`.
 
-```txt
-parse -n report in.txt      # NAME = report, from the next argument
-parse -nreport in.txt       # NAME = report, attached to the short flag
-parse -n=report in.txt      # NAME = report, short flag with =
-parse --name report in.txt  # NAME = report, long form
-parse --name=report in.txt  # NAME = report, long form with =
+```sh
+parse -n report in.txt      # NAME=report, from the next argument
+parse -nreport in.txt       # NAME=report, attached to the short flag
+parse -n=report in.txt      # NAME=report, short flag with =
+parse --name report in.txt  # NAME=report, long form
+parse --name=report in.txt  # NAME=report, long form with =
 ```
 
 These forms work for any such option, whether required, repeatable, or with a default.
@@ -154,9 +154,9 @@ Short options, those with a single dash and one character, can be passed togethe
   * This also works if a different help flag is specified with [`shifu_help_flags`](#shifu_help_flags)
 
 ```sh
-parse -vf -n report in.txt  # VERBOSE = true, FORCE = true, NAME = report
-parse -vfn report in.txt    # VERBOSE = true, FORCE = true, NAME = report
-parse -vfnreport in.txt     # VERBOSE = true, FORCE = true, NAME = report
+parse -vf -n report in.txt  # VERBOSE=true, FORCE=true, NAME=report
+parse -vfn report in.txt    # VERBOSE=true, FORCE=true, NAME=report
+parse -vfnreport in.txt     # VERBOSE=true, FORCE=true, NAME=report
 parse -vh in.txt            # prints help
 ```
 
@@ -166,13 +166,13 @@ Options may appear before or after positional arguments. Non-option arguments fi
 
 ```sh
 parse -n report in.txt -v
-  # VERBOSE = true, FORCE = false, OUTPUT = stdout, NAME = report, SOURCE = in.txt, $@ = empty
+  # VERBOSE=true, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=in.txt, $@ = empty
 parse in.txt -vf -n report
-  # VERBOSE = true, FORCE = true, OUTPUT = stdout, NAME = report, SOURCE = in.txt, $@ = empty
+  # VERBOSE=true, FORCE=true, OUTPUT=stdout, NAME=report, SOURCE=in.txt, $@ = empty
 parse -n report -v in.txt a.txt b.txt
-  # VERBOSE = true, FORCE = false, OUTPUT = stdout, NAME = report, SOURCE = in.txt, $@ = a.txt b.txt
+  # VERBOSE=true, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=in.txt, $@ = a.txt b.txt
 parse -n report in.txt a.txt -v
-  # VERBOSE = false, FORCE = false, OUTPUT = stdout, NAME = report, SOURCE = in.txt, $@ = a.txt -v
+  # VERBOSE=false, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=in.txt, $@ = a.txt -v
 ```
 
 ### End-of-options delimiter
@@ -181,13 +181,13 @@ A bare `--` stops option parsing; every argument after it is treated as a non-op
 
 ```sh
 parse -n report -- -v in.txt
-  # VERBOSE = false, FORCE = false, OUTPUT = stdout, NAME = report, SOURCE = -v, $@ = in.txt
+  # VERBOSE=false, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=-v, $@ = in.txt
 parse -n report -- -weird.txt
-  # VERBOSE = false, FORCE = false, OUTPUT = stdout, NAME = report, SOURCE = -weird.txt, $@ = empty
+  # VERBOSE=false, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=-weird.txt, $@ = empty
 parse -n report -- --output out.txt
-  # VERBOSE = false, FORCE = false, OUTPUT = stdout, NAME = report, SOURCE = --output, $@ = out.txt
+  # VERBOSE=false, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=--output, $@ = out.txt
 parse -n report in.txt -- --flag
-  # VERBOSE = false, FORCE = false, OUTPUT = stdout, NAME = report, SOURCE = in.txt, $@ = --flag
+  # VERBOSE=false, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=in.txt, $@ = --flag
 ```
 
 ## Subcommands
@@ -581,8 +581,8 @@ All option and argument functions accept a `variable` argument, the shell variab
   shifu_cmd_optd -o --output -- OUTPUT "out" "Output file"
   ```
   ```txt
-  cli                   # OUTPUT="out"
-  cli --output result   # OUTPUT="result"
+  cli                   # OUTPUT=out
+  cli --output result   # OUTPUT=result
   ```
 * Repeatable flag
   * Suffix the variable name with `...` to make the flag repeatable: each time it is used, its argument is accrued instead of overwriting the previous value
@@ -614,7 +614,7 @@ All option and argument functions accept a `variable` argument, the shell variab
   ```
   ```txt
   cli             # error: missing required option
-  cli --env dev   # ENV="dev"
+  cli --env dev   # ENV=dev
   ```
 
 #### `shifu_cmd_argr`
@@ -630,7 +630,7 @@ All option and argument functions accept a `variable` argument, the shell variab
   ```
   ```txt
   cli              # error: missing required argument
-  cli myfile.txt   # TARGET="myfile.txt"
+  cli myfile.txt   # TARGET=myfile.txt
   ```
 
 #### `shifu_cmd_args`
