@@ -348,10 +348,16 @@ shifu_test_end_of_options_no_args_cmd() {
   shifu_cmd_optd --opt -- OPTION none "value option"
 }
 
-test_shifu_run_end_of_options_no_args_fails() {
-  actual=$(shifu_run shifu_test_end_of_options_no_args_cmd --opt val -- extra 2>&1)
-  shifu_assert_non_zero exit_code $?
-  shifu_assert_string_contains error_message "$actual" "Unexpected argument: extra"
+test_shifu_run_no_args_extra_fails() {
+  run_test() {
+    shifu_test_params @cmd_args expected_error -- "$@"
+    actual=$(shifu_run shifu_test_end_of_options_no_args_cmd $cmd_args 2>&1)
+    shifu_assert_non_zero exit_code $?
+    shifu_assert_string_contains error_message "$actual" "$expected_error"
+  }
+  shifu_parameterize_test run_test \
+  -- bare_extra       "--opt val extra"     "Unexpected argument: extra" \
+  -- after_delimiter  "--opt val -- extra"  "Unexpected argument: extra"
 }
 
 shifu_test_required_options_cmd() {
