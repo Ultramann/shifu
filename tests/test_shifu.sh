@@ -42,6 +42,7 @@ shifu_test_leaf_one_cmd() {
   shifu_cmd_name leaf-one
   shifu_cmd_help "Test leaf one cmd help"
   shifu_cmd_func shifu_test_leaf_func_one
+  shifu_cmd_args "remaining argument help"
 }
 
 shifu_test_leaf_two_cmd() {
@@ -54,6 +55,7 @@ shifu_test_leaf_three_cmd() {
   shifu_cmd_name leaf-three
   shifu_cmd_help "Test leaf three cmd help"
   shifu_cmd_func shifu_test_leaf_three_func
+  shifu_cmd_args "remaining argument help"
 }
 
 shifu_test_leaf_four_cmd() {
@@ -730,6 +732,13 @@ Options
 
 test_shifu_help_defer() {
   expected='Test leaf three cmd help
+
+Usage
+  leaf-three [OPTIONS] ...[REMAINING]
+
+Arguments
+  REMAINING
+    remaining argument help
 
 Options
   -g, --defer-bin
