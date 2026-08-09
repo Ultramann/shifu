@@ -243,12 +243,12 @@ Arguments and help strings are scoped to each subcommand. Parent commands can al
 
 Below is a demo of [`examples/dispatch`](/examples/dispatch), a CLI with two subcommands, `hello` and `echo`, each with their own arguments. Annotated source code of the CLI can be found in the expandable section below the demo.
 
+<p>
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="/assets/dispatch_demo_dark.gif">
   <img src="/assets/dispatch_demo_light.gif" alt="Dispatch">
 </picture>
-
-<br>
+</p>
 
 <details>
 
@@ -359,12 +359,12 @@ By default, subcommand and option names can be tab completed. Shifu also provide
 
 Below is a demo of [`examples/tab`](/examples/tab) showing tab completion capabilities. Source code and instructions to run the example can be found in the expandable section below the demo.
 
+<p>
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="/assets/tab_demo_dark.gif">
   <img src="/assets/tab_demo_light.gif" alt="Tab completion">
 </picture>
-
-<br>
+</p>
 
 <details>
 
