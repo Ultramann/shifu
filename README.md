@@ -701,7 +701,7 @@ Option functions called in a parent command require a mode as the first argument
 
 ##### Positional and remaining argument declaration rules
 
-Positional and remaining argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) can only be used in leaf commands.
+Positional and remaining argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) can only be used in leaf commands. A leaf command that does not declare `shifu_cmd_args` rejects extra arguments with an error.
 
 The option and argument declaration order in a command function matters:
 1. Help is generated in declaration order
