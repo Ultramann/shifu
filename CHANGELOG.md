@@ -15,6 +15,8 @@ The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/),
 
 * Repeatable options, `VAR...`, declared with `:defer:` no longer error with "Invalid variable name"; they now accrue values like a repeatable option declared in a leaf command ([#56])
 * Tab completion for option values now works when the value is specified with `=`, so `--opt=<TAB>` and `-o=<TAB>` complete the same values as with space-separated form, in both bash and zsh ([#57])
+* Leaf commands without `shifu_cmd_args` now error on any extra arguments instead of silently forwarding them to the command function via `$@` ([#59])
+* Under `set -u`, leaf commands declaring `shifu_cmd_args` without a preceding positional (`shifu_cmd_argr`) no longer exit with an "unbound variable" error ([#59])
 
 ## [0.2.0] - 2026-07-12
 
@@ -48,6 +50,7 @@ The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/),
 [0.2.0]: https://github.com/Ultramann/shifu/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Ultramann/shifu/releases/tag/v0.1.0
 
+[#59]: https://github.com/Ultramann/shifu/pull/59
 [#57]: https://github.com/Ultramann/shifu/pull/57
 [#56]: https://github.com/Ultramann/shifu/pull/56
 [#54]: https://github.com/Ultramann/shifu/pull/54

@@ -694,8 +694,8 @@ _shifu_cmd_args() {
   case ${shifu_mode:-0} in
     $shifu_mode_help_run)
       shifu_help_stage=2
-      shifu_help_usage="$shifu_help_usage ...[REMAINING]"
-      shifu_help_arguments="$shifu_help_arguments\n  REMAINING\n    $1"
+      shifu_help_usage="${shifu_help_usage:-} ...[REMAINING]"
+      shifu_help_arguments="${shifu_help_arguments:-}\n  REMAINING\n    $1"
       ;;
     $shifu_mode_args_run)
       [ $shifu_parse_stage -gt 1 ] && _shifu_error "Can only declare remaining arguments once: $1"
@@ -1069,7 +1069,12 @@ _shifu_case_close() {
     eval \"\$shifu_arg_stmt\" ;;"
     shifu_arg_stmt="_shifu_in_remaining=true"
   else
-    _shifu_append_on_new_line shifu_case_stmt "    break;;"
+    if [ "$shifu_parse_eager" = true ]; then
+      _shifu_append_on_new_line shifu_case_stmt "    break;;"
+    else
+      shifu_case_stmt="$shifu_case_stmt
+    echo \"Unexpected argument: \$1\"; _shifu_help \"\$shifu_cmd\" 1 ;;"
+    fi
     shifu_arg_stmt="echo \"Unexpected argument: \$1\"; _shifu_help \"\$shifu_cmd\" 1"
   fi
   _shifu_append_on_new_line shifu_case_stmt "esac"
