@@ -567,17 +567,18 @@ These instructions can also be found by running
 
 ### Option and argument functions
 
-There are five option and argument declaration functions:
+There are six option and argument declaration functions:
 
 | Type     | Function         | Parses                       |
 |----------|------------------|------------------------------|
 | Option   | `shifu_cmd_optb` | Binary option                |
 | Option   | `shifu_cmd_optd` | Option with default          |
+| Option   | `shifu_cmd_opto` | Optional-value option        |
 | Option   | `shifu_cmd_optr` | Required option              |
 | Argument | `shifu_cmd_argr` | Required positional argument |
 | Argument | `shifu_cmd_args` | Remaining arguments          |
 
-Option functions (`shifu_cmd_optb`, `shifu_cmd_optd`, `shifu_cmd_optr`) parse flagged arguments into variables. They take one or more flags (e.g. `-v`, `--verbose`) before a required `--` separator, followed by parsing configuration. Argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) parse positional arguments by order of declaration.
+Option functions (`shifu_cmd_optb`, `shifu_cmd_optd`, `shifu_cmd_opto`, `shifu_cmd_optr`) parse flagged arguments into variables. They take one or more flags (e.g. `-v`, `--verbose`) before a required `--` separator, followed by parsing configuration. Argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) parse positional arguments by order of declaration.
 
 All option and argument functions accept a `variable` argument, the shell variable name that will be set when parsing, and a `help` string used in generated help output.
 
@@ -628,6 +629,61 @@ All option and argument functions accept a `variable` argument, the shell variab
     cli                          # ITEM has no values
     cli --item a --item b -i c   # ITEM has values: a, b, c
     ```
+
+#### `shifu_cmd_opto`
+* Optional-value option
+* The flag may be absent, take a value, or appear bare (provided, but with no value)
+* Signature
+  ```sh
+  shifu_cmd_opto <flags> -- <variable> <default> <bare_value> <help>
+  ```
+* The `<bare_value>` slot sets how the flag takes its value and what a bare flag does; it can be a literal, `:greedy:`, or `:strict:`
+  * a literal (e.g. `always`)
+    * a value attaches with `=` only
+    * a bare flag sets `<variable>` to the literal
+    ```sh
+    shifu_cmd_opto --color -- COLOR auto always "When to colorize output"
+    ```
+    ```txt
+    cli               # COLOR=auto
+    cli --color=none  # COLOR=none
+    cli --color none  # COLOR=always, "none" not consumed as the value
+    cli --color       # COLOR=always
+    ```
+  * `:greedy:`
+    * greedily consumes the next argument as the value
+    * a value can also attach with `=`
+      * a value beginning with `-` is never consumed as the next argument; use this form instead
+    * a bare flag sets no value, detect it with `shifu_bare_opt`
+    ```sh
+    shifu_cmd_opto --color -- COLOR auto :greedy: "When to colorize output"
+    ```
+    ```txt
+    cli               # COLOR=auto
+    cli --color=none  # COLOR=none
+    cli --color none  # COLOR=none
+    cli --color       # shifu_bare_opt COLOR is true
+    ```
+  * `:strict:`
+    * strictly never consumes the next argument
+    * a value attaches with `=` only
+    * a bare flag sets no value, detect it with `shifu_bare_opt`
+    ```sh
+    shifu_cmd_opto --color -- COLOR auto :strict: "When to colorize output"
+    ```
+    ```txt
+    cli               # COLOR=auto
+    cli --color=none  # COLOR=none
+    cli --color none  # shifu_bare_opt COLOR is true, "none" not consumed as the value
+    cli --color       # shifu_bare_opt COLOR is true
+    ```
+* Detect a bare flag in the leaf function with [`shifu_bare_opt`](#shifu_bare_opt)
+  ```sh
+  cli_func() {
+    shifu_bare_opt COLOR && { list_modes; exit; }
+    colorize "$COLOR"
+  }
+  ```
 
 #### `shifu_cmd_optr`
 * Required option
@@ -783,6 +839,22 @@ Shifu has a few variables that can be set after sourcing to change default behav
     while shifu_itr_list ITEM; do
       echo "$ITEM"
     done
+  }
+  ```
+
+#### `shifu_bare_opt`
+* True when the given variable's [`shifu_cmd_opto`](#shifu_cmd_opto) flag is bare, the flag alone with no value passed
+    * Holds even for a literal `<bare_value>`, so a bare flag stays distinguishable from the same value passed explicitly
+* Call in the leaf function to detect a bare flag
+* Example
+  ```sh
+  shifu_cmd_opto --color -- COLOR auto :greedy: "When to colorize output"
+
+  run_func() {
+    if shifu_bare_opt COLOR; then
+      list_modes
+      exit 1
+    fi
   }
   ```
 
