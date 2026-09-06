@@ -439,6 +439,32 @@ test_shifu_run_optr_equals_value() {
   -- empty   "--option-req="              ""
 }
 
+shifu_test_opto_value_cmd() {
+  shifu_cmd_name colorize
+  shifu_cmd_func shifu_test_opto_value_func
+  shifu_cmd_opto --color -- COLOR auto always "when to colorize"
+  shifu_cmd_args "remaining help"
+}
+
+shifu_test_opto_value_func() {
+  opto_remaining=$(shifu_test_format_args "$@")
+}
+
+test_shifu_run_opto_value() {
+  run_test() {
+    shifu_test_params @args color remaining -- "$@"
+    shifu_run shifu_test_opto_value_cmd $args
+    shifu_assert_zero   exit_code  $?
+    shifu_assert_equal  color      "$COLOR"           "$color"
+    shifu_assert_equal  remaining  "$opto_remaining"  "$remaining"
+  }
+  shifu_parameterize_test run_test \
+  -- absent  ""               auto    ""      \
+  -- bare    "--color"        always  ""      \
+  -- equals  "--color=never"  never   ""      \
+  -- space   "--color one"    always  "[one]"
+}
+
 test_shifu_run_defer_and_eager_equals_value() {
   run_test() {
     shifu_test_params @cmd_args var expected -- "$@"
