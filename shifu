@@ -57,6 +57,8 @@
 #     iterate args accrued by a repeatable optd flag; call in a while
 #     loop with <var> (without ...), each pass sets <var> to the next
 #     accrued value
+#   shifu_bare_opt <var>
+#     true when <var>'s opto flag was passed bare; call in the leaf function
 #   shifu_add_cpts <word>...
 #     append words to completions; used inside cptf functions
 #   shifu_less
@@ -184,12 +186,6 @@ shifu_cmd_cptp() {
   _shifu_comp_case_arm "shifu_add_cpts \"$shifu_tmp_sentinel\""
 }
 
-shifu_add_cpts() {
-  for completion in "$@"; do
-    _shifu_list_append shifu_completions "$completion"
-  done
-}
-
 shifu_list_delim='#=|=#'
 
 _shifu_append_list() {
@@ -208,6 +204,16 @@ shifu_itr_list() {
   shifu_itr_temp="${shifu_itr_temp#*$shifu_list_delim}"
 }
 
+shifu_bare_opt() {
+  eval "[ \"\${_shifu_bare_$1:-}\" = true ]"
+}
+
+shifu_add_cpts() {
+  for completion in "$@"; do
+    _shifu_list_append shifu_completions "$completion"
+  done
+}
+
 shifu_less() {
   cmd_name() { shifu_cmd_name "$@"; }
   cmd_help() { shifu_cmd_help "$@"; }
@@ -223,8 +229,9 @@ shifu_less() {
   cmd_cpte() { shifu_cmd_cpte "$@"; }
   cmd_cptf() { shifu_cmd_cptf "$@"; }
   cmd_cptp() { shifu_cmd_cptp "$@"; }
-  add_cpts() { shifu_add_cpts "$@"; }
   itr_list() { shifu_itr_list "$@"; }
+  bare_opt() { shifu_bare_opt "$@"; }
+  add_cpts() { shifu_add_cpts "$@"; }
 }
 
 # helpers
@@ -339,6 +346,10 @@ _shifu_parse_args() {
 
 _shifu_ack_arg() {
   _shifu_args_parsed=$((_shifu_args_parsed + ${1:-1}))
+}
+
+_shifu_mark_bare() {
+  eval "_shifu_bare_$1=true"
 }
 
 _shifu_clear_cmd_vars() {
@@ -1163,7 +1174,7 @@ _shifu_case_arm_append() {
 }
 
 _shifu_case_arm_opto_value() {
-  _shifu_case_write ") $1=$2; shift; _shifu_ack_arg ;;"
+  _shifu_case_write ") $1=$2; _shifu_mark_bare $1; shift; _shifu_ack_arg ;;"
   _shifu_case_arm_equals value "$1"
 }
 

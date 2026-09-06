@@ -455,25 +455,26 @@ shifu_test_opto_value_func() {
 
 test_shifu_run_opto_value() {
   run_test() {
-    shifu_test_params @args var value remaining -- "$@"
+    shifu_test_params @args var value bare remaining -- "$@"
     shifu_run shifu_test_opto_value_cmd $args
     shifu_assert_zero exit_code $?
     eval "shifu_assert_equal $var \"\$$var\" \"$value\""
+    shifu_assert_equal bare "$(shifu_bare_opt "$var" && echo yes || echo no)" "$bare"
     shifu_assert_equal remaining "$opto_remaining" "$remaining"
   }
   shifu_parameterize_test run_test \
-  -- literal_absent  ""                 LITERAL  none    ""       \
-  -- literal_bare    "--literal"        LITERAL  always  ""       \
-  -- literal_equals  "--literal=never"  LITERAL  never   ""       \
-  -- literal_space   "--literal one"    LITERAL  always  "[one]"  \
-  -- greedy_absent   ""                 GREEDY   none    ""       \
-  -- greedy_bare     "--greedy"         GREEDY   none    ""       \
-  -- greedy_equals   "--greedy=never"   GREEDY   never   ""       \
-  -- greedy_space    "--greedy one"     GREEDY   one     ""       \
-  -- strict_absent   ""                 STRICT   none    ""       \
-  -- strict_bare     "--strict"         STRICT   none    ""       \
-  -- strict_equals   "--strict=never"   STRICT   never   ""       \
-  -- strict_space    "--strict one"     STRICT   none    "[one]"
+  -- literal_absent  ""                 LITERAL  none    no   ""       \
+  -- literal_bare    "--literal"        LITERAL  always  yes  ""       \
+  -- literal_equals  "--literal=never"  LITERAL  never   no   ""       \
+  -- literal_space   "--literal one"    LITERAL  always  yes  "[one]"  \
+  -- greedy_absent   ""                 GREEDY   none    no   ""       \
+  -- greedy_bare     "--greedy"         GREEDY   none    yes  ""       \
+  -- greedy_equals   "--greedy=never"   GREEDY   never   no   ""       \
+  -- greedy_space    "--greedy one"     GREEDY   one     no   ""       \
+  -- strict_absent   ""                 STRICT   none    no   ""       \
+  -- strict_bare     "--strict"         STRICT   none    yes  ""       \
+  -- strict_equals   "--strict=never"   STRICT   never   no   ""       \
+  -- strict_space    "--strict one"     STRICT   none    yes  "[one]"
 }
 
 test_shifu_run_defer_and_eager_equals_value() {
