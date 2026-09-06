@@ -94,9 +94,10 @@ shifu_test_all_options_cmd() {
   shifu_cmd_optb -f -- FLAG_BIN 0 1      "binary flag help"
   shifu_cmd_optr -a -- FLAG_REQ          "required flag help"
   shifu_cmd_optd -d -- FLAG_DEF def_flag "default argument flag help"
-  shifu_cmd_optb --option-bin -- OPTION_BIN 0 1     "binary option help"
-  shifu_cmd_optr --option-req -- OPTION_REQ         "required option help"
-  shifu_cmd_optd --option-def -- OPTION_DEF def_opt "default argument option help"
+  shifu_cmd_optb --option-bin  -- OPTION_BIN 0 1                 "binary option help"
+  shifu_cmd_optr --option-req  -- OPTION_REQ                     "required option help"
+  shifu_cmd_optd --option-def  -- OPTION_DEF def_opt             "default argument option help"
+  shifu_cmd_opto --option-opto -- OPTION_OPTO def_opto bare_opto "optional value option help"
   shifu_cmd_optb -F --flag-option-bin -- FLAG_OPTION_BIN 0 1 "binary flag/option help"
   shifu_cmd_optr -A --flag-option-req -- FLAG_OPTION_REQ     "required flag/option help"
   shifu_cmd_cpte flag option arg
@@ -442,7 +443,9 @@ test_shifu_run_optr_equals_value() {
 shifu_test_opto_value_cmd() {
   shifu_cmd_name colorize
   shifu_cmd_func shifu_test_opto_value_func
-  shifu_cmd_opto --color -- COLOR auto always "when to colorize"
+  shifu_cmd_opto --literal -- LITERAL none always   "literal opto"
+  shifu_cmd_opto --greedy  -- GREEDY  none :greedy: "greedy opto"
+  shifu_cmd_opto --strict  -- STRICT  none :strict: "strict opto"
   shifu_cmd_args "remaining help"
 }
 
@@ -452,17 +455,25 @@ shifu_test_opto_value_func() {
 
 test_shifu_run_opto_value() {
   run_test() {
-    shifu_test_params @args color remaining -- "$@"
+    shifu_test_params @args var value remaining -- "$@"
     shifu_run shifu_test_opto_value_cmd $args
-    shifu_assert_zero   exit_code  $?
-    shifu_assert_equal  color      "$COLOR"           "$color"
-    shifu_assert_equal  remaining  "$opto_remaining"  "$remaining"
+    shifu_assert_zero exit_code $?
+    eval "shifu_assert_equal $var \"\$$var\" \"$value\""
+    shifu_assert_equal remaining "$opto_remaining" "$remaining"
   }
   shifu_parameterize_test run_test \
-  -- absent  ""               auto    ""      \
-  -- bare    "--color"        always  ""      \
-  -- equals  "--color=never"  never   ""      \
-  -- space   "--color one"    always  "[one]"
+  -- literal_absent  ""                 LITERAL  none    ""       \
+  -- literal_bare    "--literal"        LITERAL  always  ""       \
+  -- literal_equals  "--literal=never"  LITERAL  never   ""       \
+  -- literal_space   "--literal one"    LITERAL  always  "[one]"  \
+  -- greedy_absent   ""                 GREEDY   none    ""       \
+  -- greedy_bare     "--greedy"         GREEDY   none    ""       \
+  -- greedy_equals   "--greedy=never"   GREEDY   never   ""       \
+  -- greedy_space    "--greedy one"     GREEDY   one     ""       \
+  -- strict_absent   ""                 STRICT   none    ""       \
+  -- strict_bare     "--strict"         STRICT   none    ""       \
+  -- strict_equals   "--strict=never"   STRICT   never   ""       \
+  -- strict_space    "--strict one"     STRICT   none    "[one]"
 }
 
 test_shifu_run_defer_and_eager_equals_value() {
@@ -718,6 +729,9 @@ Options
   --option-def [OPTION_DEF]
     default argument option help
     Default: def_opt
+  --option-opto [OPTION_OPTO]
+    optional value option help
+    Default: def_opto
   -F, --flag-option-bin
     binary flag/option help
     Default: 0, set: 1
@@ -815,7 +829,7 @@ test_shifu_complete() {
      shifu_test_root_cmd "cur_word -e" "" \
   -- func_args_options \
      shifu_test_all_options_cmd "--op" \
-     "--option-bin --option-req --option-def" \
+     "--option-bin --option-req --option-def --option-opto" \
   -- func_args_flags \
      shifu_test_all_options_cmd "-f" "-f" \
   -- func_args_flag_options \
@@ -823,7 +837,7 @@ test_shifu_complete() {
      "--flag-option-bin --flag-option-req --flag-option-def" \
   -- single_dash_double_dash_only \
      shifu_test_all_options_cmd "-" \
-     "--option-bin --option-req --option-def --flag-option-bin --flag-option-req --flag-option-def --help" \
+     "--option-bin --option-req --option-def --option-opto --flag-option-bin --flag-option-req --flag-option-def --help" \
   -- options_only_when_dash \
      shifu_test_all_options_cmd "cur_word" "positional arg one" \
   -- defer_option_names \
@@ -973,7 +987,7 @@ test_shifu_zsh_comp_words() {
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {
   shifu_complete_single_dash_options=true
-  expected="-f -a -d --option-bin --option-req --option-def -F --flag-option-bin -A --flag-option-req -D --flag-option-def -h --help"
+  expected="-f -a -d --option-bin --option-req --option-def --option-opto -F --flag-option-bin -A --flag-option-req -D --flag-option-def -h --help"
   actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
