@@ -652,6 +652,7 @@ _shifu_cmd_opto() {
       _shifu_var_default "$1" "$2"
       case "$3" in
         :greedy:) _shifu_case_arm_opto_greedy "$1" ;;
+        :strict:) _shifu_case_arm_opto_strict "$1" ;;
         *) _shifu_case_arm_opto_literal "$1" "$3" ;;
       esac
       [ "$shifu_arg_scope" = defer ] && \
@@ -1075,6 +1076,7 @@ _shifu_collect_short_val() {
 #   _shifu_case_arm_append <list_var>         repeatable-option body (value guard + list append + =-forms)
 #   _shifu_case_arm_opto_literal <var> <lit>  literal-opto body (bare sets <lit> + =-forms)
 #   _shifu_case_arm_opto_greedy <var>         greedy-opto body (next token is the value unless -; + =-forms)
+#   _shifu_case_arm_opto_strict <var>         strict-opto body (bare sets no value + =-forms)
 #   _shifu_case_arm_positional <var>          positional-argument body
 
 _shifu_case_open() {
@@ -1194,6 +1196,11 @@ _shifu_case_arm_opto_greedy() {
   else
     shifu_defer_case="${shifu_defer_case:-}) if [ \\\$# -ge 2 ] && case \\\$2 in -*) false ;; *) true ;; esac; then $1=\\\$2; shift 2; _shifu_ack_arg 2; else _shifu_mark_bare $1; shift; _shifu_ack_arg; fi ;;"
   fi
+  _shifu_case_arm_equals value "$1"
+}
+
+_shifu_case_arm_opto_strict() {
+  _shifu_case_write ") _shifu_mark_bare $1; shift; _shifu_ack_arg ;;"
   _shifu_case_arm_equals value "$1"
 }
 
