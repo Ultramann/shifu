@@ -650,7 +650,10 @@ _shifu_cmd_opto() {
       shift $shifu_opt_count
       _shifu_guard_arg_order "$1"
       _shifu_var_default "$1" "$2"
-      _shifu_case_arm_opto_value "$1" "$3"
+      case "$3" in
+        :greedy:) _shifu_case_arm_opto_greedy "$1" ;;
+        *) _shifu_case_arm_opto_literal "$1" "$3" ;;
+      esac
       [ "$shifu_arg_scope" = defer ] && \
         shifu_defer_help="${shifu_defer_help:-} [$1]\n    $4\n    Default: $2"
       ;;
@@ -661,11 +664,17 @@ _shifu_cmd_opto() {
         _shifu_opt_comp_eager_parse "$@"
         shift $shifu_opt_count
         _shifu_error_if_invalid_arg_order "$1" $shifu_parse_stage
-        shifu_case_stmt="$shifu_case_stmt)"
+        case "$3" in
+          :greedy:) shifu_case_stmt="$shifu_case_stmt) shift;" ;;
+          *) shifu_case_stmt="$shifu_case_stmt)" ;;
+        esac
       else
         _shifu_opt_build_comp_defer_parse "$@"
         shift $shifu_opt_count
-        shifu_defer_comp_case="${shifu_defer_comp_case:-}) shift ;;"
+        case "$3" in
+          :greedy:) shifu_defer_comp_case="${shifu_defer_comp_case:-}) shift;" ;;
+          *) shifu_defer_comp_case="${shifu_defer_comp_case:-}) shift ;;" ;;
+        esac
       fi
       _shifu_add_equals_comp_case_arms shifu_comp_eq_patterns
       ;;
@@ -1053,19 +1062,20 @@ _shifu_collect_short_val() {
 
 # case statement codegen: the one set of accessors for shifu_case_stmt / shifu_defer_case
 # Nothing else builds those strings by hand
-#   _shifu_case_open                        start a fresh statement (subject read from mode)
-#   _shifu_case_inline_deferred             inline accumulated deferred arms into a leaf statement
-#   _shifu_case_arm_help                    emit the help-flag arm
-#   _shifu_case_arm_bundle                  emit the -XYZ bundle arm, just before -*) so exact arms win
-#   _shifu_case_arm_invalid                 emit the bundle arm + invalid-option arm, open the positional branch
-#   _shifu_case_close                       finish the statement (default arm + esac)
-#   _shifu_case_arm_begin <scope> ..        open an option arm: select eager/defer buffer +
-#                                           escaping ($shifu_case_val), emit the flag pattern
-#   _shifu_case_arm_flag <var> <set_val>    binary-option body
-#   _shifu_case_arm_value <var>             value-option body (value guard + assign + =-forms)
-#   _shifu_case_arm_append <list_var>       repeatable-option body (value guard + list append + =-forms)
-#   _shifu_case_arm_opto_value <var> <lit>  optional-value body (bare sets <lit> + =-forms)
-#   _shifu_case_arm_positional <var>        positional-argument body
+#   _shifu_case_open                          start a fresh statement (subject read from mode)
+#   _shifu_case_inline_deferred               inline accumulated deferred arms into a leaf statement
+#   _shifu_case_arm_help                      emit the help-flag arm
+#   _shifu_case_arm_bundle                    emit the -XYZ bundle arm, just before -*) so exact arms win
+#   _shifu_case_arm_invalid                   emit the bundle arm + invalid-option arm, open the positional branch
+#   _shifu_case_close                         finish the statement (default arm + esac)
+#   _shifu_case_arm_begin <scope> ..          open an option arm: select eager/defer buffer +
+#                                             escaping ($shifu_case_val), emit the flag pattern
+#   _shifu_case_arm_flag <var> <set_val>      binary-option body
+#   _shifu_case_arm_value <var>               value-option body (value guard + assign + =-forms)
+#   _shifu_case_arm_append <list_var>         repeatable-option body (value guard + list append + =-forms)
+#   _shifu_case_arm_opto_literal <var> <lit>  literal-opto body (bare sets <lit> + =-forms)
+#   _shifu_case_arm_opto_greedy <var>         greedy-opto body (next token is the value unless -; + =-forms)
+#   _shifu_case_arm_positional <var>          positional-argument body
 
 _shifu_case_open() {
   if [ $shifu_mode -eq $shifu_mode_args_comp ]; then
@@ -1173,8 +1183,17 @@ _shifu_case_arm_append() {
   _shifu_case_arm_equals append "$1"
 }
 
-_shifu_case_arm_opto_value() {
+_shifu_case_arm_opto_literal() {
   _shifu_case_write ") $1=$2; _shifu_mark_bare $1; shift; _shifu_ack_arg ;;"
+  _shifu_case_arm_equals value "$1"
+}
+
+_shifu_case_arm_opto_greedy() {
+  if [ "$shifu_case_scope" = eager ]; then
+    shifu_case_stmt="$shifu_case_stmt) if [ \$# -ge 2 ] && case \$2 in -*) false ;; *) true ;; esac; then $1=\$2; shift 2; _shifu_ack_arg 2; else _shifu_mark_bare $1; shift; _shifu_ack_arg; fi ;;"
+  else
+    shifu_defer_case="${shifu_defer_case:-}) if [ \\\$# -ge 2 ] && case \\\$2 in -*) false ;; *) true ;; esac; then $1=\\\$2; shift 2; _shifu_ack_arg 2; else _shifu_mark_bare $1; shift; _shifu_ack_arg; fi ;;"
+  fi
   _shifu_case_arm_equals value "$1"
 }
 
