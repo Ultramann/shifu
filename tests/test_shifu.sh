@@ -1397,16 +1397,19 @@ shifu_test_bundle_cmd() {
   shifu_cmd_optb -a -- BIN_ONE false true "first binary"
   shifu_cmd_optb -b -- BIN_TWO false true "second binary"
   shifu_cmd_optb -c -- BIN_THREE false true "third binary"
+  shifu_cmd_optb -readonly -- READONLY false true "multi-char single dash"
   shifu_cmd_optd -o --output -- VALUE_OPT none "value option"
   shifu_cmd_optd -l --list -- LIST_OPT... "" "list option"
-  shifu_cmd_optb -readonly -- READONLY false true "multi-char single dash"
+  shifu_cmd_opto -p -- LIT_OPT    none always   "literal opto"
+  shifu_cmd_opto -g -- GREEDY_OPT none :greedy: "greedy opto"
+  shifu_cmd_opto -s -- STRICT_OPT none :strict: "strict opto"
   shifu_cmd_argr POS_ONE "positional"
   shifu_cmd_cpte one two three
   shifu_cmd_args "remaining"
 }
 
 shifu_test_bundle_func() {
-  bundle_result="$BIN_ONE $BIN_TWO $BIN_THREE $VALUE_OPT $READONLY $POS_ONE"
+  bundle_result="$BIN_ONE $BIN_TWO $BIN_THREE $VALUE_OPT $READONLY $LIT_OPT $GREEDY_OPT $STRICT_OPT $POS_ONE"
 }
 
 test_shifu_run_bundle() {
@@ -1418,17 +1421,30 @@ test_shifu_run_bundle() {
     shifu_assert_equal parsed "$_shifu_args_parsed" "$expected_parsed"
   }
   shifu_parameterize_test run_test \
-  -- bundle_two    "-ab one"       "true true false none false one"   2 \
-  -- bundle_three  "-abc one"      "true true true none false one"    2 \
-  -- value_ends    "-abo two one"  "true true false two false one"    3 \
-  -- exact_multi   "-readonly one" "false false false none true one"  2 \
-  -- delimiter     "-- -ab one"    "false false false none false -ab" 2 \
-  -- after_pos     "one -ab"       "true true false none false one"   2 \
-  -- attached      "-otwo one"     "false false false two false one"  2 \
-  -- attached_tail "-abotwo one"   "true true false two false one"    2 \
-  -- attached_mid  "-aob one"      "true false false b false one"     2 \
-  -- attached_eq   "-o=two one"    "false false false two false one"  2 \
-  -- value_ends_eq "-abo=two one"  "true true false two false one"    2
+  -- bundle_two            "-ab one"         "true true false none false none none none one"    2 \
+  -- bundle_three          "-abc one"        "true true true none false none none none one"     2 \
+  -- value_ends            "-abo auto one"   "true true false auto false none none none one"    3 \
+  -- exact_multi           "-readonly one"   "false false false none true none none none one"   2 \
+  -- delimiter             "-- -ab one"      "false false false none false none none none -ab"  2 \
+  -- after_pos             "one -ab"         "true true false none false none none none one"    2 \
+  -- attached              "-oauto one"      "false false false auto false none none none one"  2 \
+  -- attached_tail         "-aboauto one"    "true true false auto false none none none one"    2 \
+  -- attached_mid          "-aob one"        "true false false b false none none none one"      2 \
+  -- attached_eq           "-o=auto one"     "false false false auto false none none none one"  2 \
+  -- value_ends_eq         "-abo=auto one"   "true true false auto false none none none one"    2 \
+  -- opto_lit_bare         "-abp one"        "true true false none false always none none one"  2 \
+  -- opto_lit_equals       "-abp=never one"  "true true false none false never none none one"   2 \
+  -- opto_lit_continue     "-abpc one"       "true true true none false always none none one"   2 \
+  -- opto_lit_first        "-pab one"        "true true false none false always none none one"  2 \
+  -- opto_lit_reparse      "-abpoauto one"   "true true false auto false always none none one"  2 \
+  -- opto_greedy_next      "-abg auto one"   "true true false none false none auto none one"    3 \
+  -- opto_greedy_attached  "-abgauto one"    "true true false none false none auto none one"    2 \
+  -- opto_greedy_equals    "-abg=never one"  "true true false none false none never none one"   2 \
+  -- opto_greedy_bare      "-abg -c one"     "true true true none false none none none one"     3 \
+  -- opto_strict_equals    "-abs=never one"  "true true false none false none none never one"   2 \
+  -- opto_strict_next      "-abs two"        "true true false none false none none none two"    2 \
+  -- opto_strict_continue  "-absc one"       "true true true none false none none none one"     2 \
+  -- opto_strict_first     "-sab one"        "true true false none false none none none one"    2
 }
 
 test_shifu_run_bundle_help() {
