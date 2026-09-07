@@ -646,7 +646,7 @@ _shifu_cmd_opto() {
       ;;
     $shifu_mode_args_run)
       _shifu_case_arm_begin "$shifu_arg_scope" "$@"
-      _shifu_collect_short_val "$@"
+      _shifu_collect_opto_short "$@"
       shift $shifu_opt_count
       _shifu_guard_arg_order "$1"
       _shifu_var_default "$1" "$2"
@@ -660,7 +660,7 @@ _shifu_cmd_opto() {
       ;;
     $shifu_mode_args_comp)
       shifu_eq_saved_args="$*"
-      _shifu_collect_short_val "$@"
+      _shifu_collect_opto_short "$@"
       if [ "$shifu_arg_scope" = eager ]; then
         _shifu_opt_comp_eager_parse "$@"
         shift $shifu_opt_count
@@ -1059,6 +1059,22 @@ _shifu_collect_short_bin() {
 
 _shifu_collect_short_val() {
   _shifu_collect_short_flags shifu_short_val shifu_defer_short_val "$@"
+}
+
+_shifu_opto_form() {
+  while [ $# -gt 0 ] && [ "$1" != -- ]; do shift; done
+  shifu_opto_form=$4
+}
+
+# greedy takes a value after a space so it ends a bundle; literal/strict are =-only
+# so they chain like a binary flag
+_shifu_collect_opto_short() {
+  _shifu_opto_form "$@"
+  if [ "$shifu_opto_form" = :greedy: ]; then
+    _shifu_collect_short_val "$@"
+  else
+    _shifu_collect_short_bin "$@"
+  fi
 }
 
 # case statement codegen: the one set of accessors for shifu_case_stmt / shifu_defer_case
