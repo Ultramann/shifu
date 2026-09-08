@@ -108,14 +108,14 @@ The diagram below shows how shifu connects this CLI script to parse the command 
 
 Shifu parses command line arguments into shell variables for the target function. Six argument types are supported, letting CLI authors accept expressive, flexible input from their users.
 
-| Type                  | Description                                                     | Example              |
-| --------------------- | --------------------------------------------------------------- | -------------------- |
-| Binary flag           | Sets to one value when the flag is present, another when absent | `-v`                 |
-| Option with default   | Value set from the option using a default when omitted          | `-o file`            |
-| Optional-value option | Optional value: the flag may take a value or be bare            | `--color[(=| )auto]` |
-| Required option       | Value set from the option that must be provided                 | `-n name`            |
-| Positional argument   | Value set by position rather than an option                     | `file`               |
-| Remaining arguments   | Any extra arguments, collected for the function                 | `a b c`              |
+| Type                  | Description                                                     | Example               |
+| --------------------- | --------------------------------------------------------------- | --------------------- |
+| Binary flag           | Sets to one value when the flag is present, another when absent | `-v`                  |
+| Option with default   | Value set from the option using a default when omitted          | `-o file`             |
+| Optional-value option | Optional value: the flag may take a value or be bare            | `--color[(=\| )auto]` |
+| Required option       | Value set from the option that must be provided                 | `-n name`             |
+| Positional argument   | Value set by position rather than an option                     | `file`                |
+| Remaining arguments   | Any extra arguments, collected for the function                 | `a b c`               |
 
 Every example below uses this command.
 
