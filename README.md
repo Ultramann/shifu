@@ -21,7 +21,7 @@ Shell scripts are great for gluing terminal programs together. But adding subcom
 * [Installation](#installation)
 * [Quickstart](#quickstart)
 * [Argument parsing](#argument-parsing)
-* [Subcommands](#subcommands)
+* [Subcommand dispatching](#subcommand-dispatching)
 * [Tab completion](#tab-completion)
 * [FAQ](#faq)
 * [API](#api)
@@ -106,15 +106,16 @@ The diagram below shows how shifu connects this CLI script to parse the command 
 
 ## Argument parsing
 
-Shifu parses command line arguments into shell variables for the target function. Five argument types are supported, letting CLI authors accept expressive, flexible input from their users.
+Shifu parses command line arguments into shell variables for the target function. Six argument types are supported, letting CLI authors accept expressive, flexible input from their users.
 
-| Type                | Description                                                     | Example   |
-| ------------------- | --------------------------------------------------------------- | --------- |
-| Binary flag         | Sets to one value when the flag is present, another when absent | `-v`      |
-| Option with default | Value set from the option using a default when omitted          | `-o file` |
-| Required option     | Value set from the option that must be provided                 | `-n name` |
-| Positional argument | Value set by position rather than an option                     | `file`    |
-| Remaining arguments | Any extra arguments, collected for the function                 | `a b c`   |
+| Type                  | Description                                                     | Example               |
+| --------------------- | --------------------------------------------------------------- | --------------------- |
+| Binary flag           | Sets to one value when the flag is present, another when absent | `-v`                  |
+| Option with default   | Value set from the option using a default when omitted          | `-o file`             |
+| Optional-value option | Optional value: the flag may take a value or be bare            | `--color[(=\| )auto]` |
+| Required option       | Value set from the option that must be provided                 | `-n name`             |
+| Positional argument   | Value set by position rather than an option                     | `file`                |
+| Remaining arguments   | Any extra arguments, collected for the function                 | `a b c`               |
 
 Every example below uses this command.
 
@@ -133,17 +134,18 @@ parse_cmd() {
 option values, bundled short options, interspersed options and arguments, and the
 end-of-options delimiter"
 
-  shifu_cmd_optb -v --verbose -- VERBOSE false true "Verbose output"
-  shifu_cmd_optb -f --force   -- FORCE   false true "Force overwrite"
-  shifu_cmd_optd -o --output  -- OUTPUT  stdout     "Output destination"
-  shifu_cmd_optr -n --name    -- NAME               "Run name"
+  shifu_cmd_optb -v --verbose -- VERBOSE false true  "Verbose output"
+  shifu_cmd_optb -f --force   -- FORCE   false true  "Force overwrite"
+  shifu_cmd_optd -o --output  -- OUTPUT  stdout      "Output destination"
+  shifu_cmd_opto --color      -- COLOR   auto always "When to colorize output"
+  shifu_cmd_optr -n --name    -- NAME                "Run name"
   shifu_cmd_argr SOURCE "File to read"
   shifu_cmd_args "Extra files"
 }
 
 parse_function() {
-  printf 'VERBOSE=%s, FORCE=%s, OUTPUT=%s, NAME=%s, SOURCE=%s, $@=(%s)\n' \
-    "$VERBOSE" "$FORCE" "$OUTPUT" "$NAME" "$SOURCE" "$*"
+  printf 'VERBOSE=%s, FORCE=%s, OUTPUT=%s, COLOR=%s, NAME=%s, SOURCE=%s, $@=(%s)\n' \
+    "$VERBOSE" "$FORCE" "$OUTPUT" "$COLOR" "$NAME" "$SOURCE" "$*"
 }
 
 shifu_run parse_cmd "$@"
@@ -161,7 +163,7 @@ parse --name report in.txt  # NAME=report, long form
 parse --name=report in.txt  # NAME=report, long form with =
 ```
 
-These forms work for any such option, whether required, repeatable, or with a default.
+These forms work for options that are required, repeatable, or have a default. An optional-value option attaches its value with `=` (or a space in its `:greedy:` form); see [`shifu_cmd_opto`](#shifu_cmd_opto).
 
 ### Combining short options
 
@@ -184,13 +186,13 @@ Options may appear before or after positional arguments. Non-option arguments fi
 
 ```sh
 parse -n report in.txt -v
-  # VERBOSE=true, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=in.txt, $@=()
+  # VERBOSE=true, FORCE=false, OUTPUT=stdout, COLOR=auto, NAME=report, SOURCE=in.txt, $@=()
 parse in.txt -vf -n report
-  # VERBOSE=true, FORCE=true, OUTPUT=stdout, NAME=report, SOURCE=in.txt, $@=()
+  # VERBOSE=true, FORCE=true, OUTPUT=stdout, COLOR=auto, NAME=report, SOURCE=in.txt, $@=()
 parse -n report -v in.txt a.txt b.txt
-  # VERBOSE=true, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=in.txt, $@=(a.txt b.txt)
+  # VERBOSE=true, FORCE=false, OUTPUT=stdout, COLOR=auto, NAME=report, SOURCE=in.txt, $@=(a.txt b.txt)
 parse -n report in.txt a.txt -v
-  # VERBOSE=false, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=in.txt, $@=(a.txt -v)
+  # VERBOSE=false, FORCE=false, OUTPUT=stdout, COLOR=auto, NAME=report, SOURCE=in.txt, $@=(a.txt -v)
 ```
 
 ### End-of-options delimiter
@@ -199,16 +201,16 @@ A bare `--` stops option parsing; every argument after it is treated as a non-op
 
 ```sh
 parse -n report -- -v in.txt
-  # VERBOSE=false, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=-v, $@=(in.txt)
+  # VERBOSE=false, FORCE=false, OUTPUT=stdout, COLOR=auto, NAME=report, SOURCE=-v, $@=(in.txt)
 parse -n report -- -weird.txt
-  # VERBOSE=false, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=-weird.txt, $@=()
+  # VERBOSE=false, FORCE=false, OUTPUT=stdout, COLOR=auto, NAME=report, SOURCE=-weird.txt, $@=()
 parse -n report -- --output out.txt
-  # VERBOSE=false, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=--output, $@=(out.txt)
+  # VERBOSE=false, FORCE=false, OUTPUT=stdout, COLOR=auto, NAME=report, SOURCE=--output, $@=(out.txt)
 parse -n report in.txt -- --flag
-  # VERBOSE=false, FORCE=false, OUTPUT=stdout, NAME=report, SOURCE=in.txt, $@=(--flag)
+  # VERBOSE=false, FORCE=false, OUTPUT=stdout, COLOR=auto, NAME=report, SOURCE=in.txt, $@=(--flag)
 ```
 
-## Subcommands
+## Subcommand dispatching
 
 Shifu supports subcommands for grouping related functionality. Use `shifu_cmd_subs` instead of `shifu_cmd_func` to reference subcommand, `_cmd`, functions by name. When called, `shifu_run` recursively matches command line arguments against the names declared with `shifu_cmd_name` in each subcommand. Once a command is found using `shifu_cmd_func`, `shifu_run` calls the function by name as shown in the quickstart.
 
@@ -567,17 +569,18 @@ These instructions can also be found by running
 
 ### Option and argument functions
 
-There are five option and argument declaration functions:
+There are six option and argument declaration functions:
 
 | Type     | Function         | Parses                       |
 |----------|------------------|------------------------------|
 | Option   | `shifu_cmd_optb` | Binary option                |
 | Option   | `shifu_cmd_optd` | Option with default          |
+| Option   | `shifu_cmd_opto` | Optional-value option        |
 | Option   | `shifu_cmd_optr` | Required option              |
 | Argument | `shifu_cmd_argr` | Required positional argument |
 | Argument | `shifu_cmd_args` | Remaining arguments          |
 
-Option functions (`shifu_cmd_optb`, `shifu_cmd_optd`, `shifu_cmd_optr`) parse flagged arguments into variables. They take one or more flags (e.g. `-v`, `--verbose`) before a required `--` separator, followed by parsing configuration. Argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) parse positional arguments by order of declaration.
+Option functions (`shifu_cmd_optb`, `shifu_cmd_optd`, `shifu_cmd_opto`, `shifu_cmd_optr`) parse flagged arguments into variables. They take one or more flags (e.g. `-v`, `--verbose`) before a required `--` separator, followed by parsing configuration. Argument functions (`shifu_cmd_argr`, `shifu_cmd_args`) parse positional arguments by order of declaration.
 
 All option and argument functions accept a `variable` argument, the shell variable name that will be set when parsing, and a `help` string used in generated help output.
 
@@ -628,6 +631,55 @@ All option and argument functions accept a `variable` argument, the shell variab
     cli                          # ITEM has no values
     cli --item a --item b -i c   # ITEM has values: a, b, c
     ```
+
+#### `shifu_cmd_opto`
+* Optional-value option
+* The flag may be absent, take a value, or appear bare (provided, but with no value)
+* Signature
+  ```sh
+  shifu_cmd_opto <flags> -- <variable> <default> <bare_value> <help>
+  ```
+* The `<bare_value>` argument sets how the flag takes its value and what a bare flag does; it can be a literal, `:greedy:`, or `:strict:`
+  * a literal (e.g. `always`)
+    * a value attaches with `=` only
+    * a bare flag sets `<variable>` to the literal
+    ```sh
+    shifu_cmd_opto --color -- COLOR auto always "When to colorize output"
+    ```
+    ```txt
+    cli               # COLOR=auto
+    cli --color=none  # COLOR=none
+    cli --color none  # COLOR=always, "none" not consumed as the value
+    cli --color       # COLOR=always
+    ```
+  * `:greedy:`
+    * greedily consumes the next argument as the value
+    * a value can also attach with `=`
+      * a value beginning with `-` is never consumed as the next argument; use this form instead
+    * a bare flag sets no value, detect it with `shifu_bare_opt`
+    ```sh
+    shifu_cmd_opto --color -- COLOR auto :greedy: "When to colorize output"
+    ```
+    ```txt
+    cli               # COLOR=auto
+    cli --color=none  # COLOR=none
+    cli --color none  # COLOR=none
+    cli --color       # shifu_bare_opt COLOR is true
+    ```
+  * `:strict:`
+    * strictly never consumes the next argument
+    * a value attaches with `=` only
+    * a bare flag sets no value, detect it with `shifu_bare_opt`
+    ```sh
+    shifu_cmd_opto --color -- COLOR auto :strict: "When to colorize output"
+    ```
+    ```txt
+    cli               # COLOR=auto
+    cli --color=none  # COLOR=none
+    cli --color none  # shifu_bare_opt COLOR is true, "none" not consumed as the value
+    cli --color       # shifu_bare_opt COLOR is true
+    ```
+* Detect a bare flag in the leaf function with [`shifu_bare_opt`](#shifu_bare_opt)
 
 #### `shifu_cmd_optr`
 * Required option
@@ -783,6 +835,22 @@ Shifu has a few variables that can be set after sourcing to change default behav
     while shifu_itr_list ITEM; do
       echo "$ITEM"
     done
+  }
+  ```
+
+#### `shifu_bare_opt`
+* Returns 0 when the given variable's [`shifu_cmd_opto`](#shifu_cmd_opto) flag is bare (passed alone with no value), 1 otherwise
+    * Holds even for a literal `<bare_value>`, so a bare flag stays distinguishable from the same value passed explicitly
+* Call in the leaf function to detect a bare flag
+* Example
+  ```sh
+  shifu_cmd_opto --color -- COLOR auto :greedy: "When to colorize output"
+
+  run_func() {
+    if shifu_bare_opt COLOR; then
+      list_modes
+      exit 1
+    fi
   }
   ```
 

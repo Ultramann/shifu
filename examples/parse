@@ -10,17 +10,18 @@ parse_cmd() {
 option values, bundled short options, interspersed options and arguments, and the
 end-of-options delimiter"
 
-  shifu_cmd_optb -v --verbose -- VERBOSE false true "Verbose output"
-  shifu_cmd_optb -f --force   -- FORCE   false true "Force overwrite"
-  shifu_cmd_optd -o --output  -- OUTPUT  stdout     "Output destination"
-  shifu_cmd_optr -n --name    -- NAME               "Run name"
+  shifu_cmd_optb -v --verbose -- VERBOSE false true  "Verbose output"
+  shifu_cmd_optb -f --force   -- FORCE   false true  "Force overwrite"
+  shifu_cmd_optd -o --output  -- OUTPUT  stdout      "Output destination"
+  shifu_cmd_opto --color      -- COLOR   auto always "When to colorize output"
+  shifu_cmd_optr -n --name    -- NAME                "Run name"
   shifu_cmd_argr SOURCE "File to read"
   shifu_cmd_args "Extra files"
 }
 
 parse_function() {
-  printf 'VERBOSE=%s, FORCE=%s, OUTPUT=%s, NAME=%s, SOURCE=%s, $@=(%s)\n' \
-    "$VERBOSE" "$FORCE" "$OUTPUT" "$NAME" "$SOURCE" "$*"
+  printf 'VERBOSE=%s, FORCE=%s, OUTPUT=%s, COLOR=%s, NAME=%s, SOURCE=%s, $@=(%s)\n' \
+    "$VERBOSE" "$FORCE" "$OUTPUT" "$COLOR" "$NAME" "$SOURCE" "$*"
 }
 
 shifu_run parse_cmd "$@"

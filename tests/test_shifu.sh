@@ -94,9 +94,10 @@ shifu_test_all_options_cmd() {
   shifu_cmd_optb -f -- FLAG_BIN 0 1      "binary flag help"
   shifu_cmd_optr -a -- FLAG_REQ          "required flag help"
   shifu_cmd_optd -d -- FLAG_DEF def_flag "default argument flag help"
-  shifu_cmd_optb --option-bin -- OPTION_BIN 0 1     "binary option help"
-  shifu_cmd_optr --option-req -- OPTION_REQ         "required option help"
-  shifu_cmd_optd --option-def -- OPTION_DEF def_opt "default argument option help"
+  shifu_cmd_optb --option-bin  -- OPTION_BIN 0 1                 "binary option help"
+  shifu_cmd_optr --option-req  -- OPTION_REQ                     "required option help"
+  shifu_cmd_optd --option-def  -- OPTION_DEF def_opt             "default argument option help"
+  shifu_cmd_opto --option-opto -- OPTION_OPTO def_opto bare_opto "optional value option help"
   shifu_cmd_optb -F --flag-option-bin -- FLAG_OPTION_BIN 0 1 "binary flag/option help"
   shifu_cmd_optr -A --flag-option-req -- FLAG_OPTION_REQ     "required flag/option help"
   shifu_cmd_cpte flag option arg
@@ -439,6 +440,44 @@ test_shifu_run_optr_equals_value() {
   -- empty   "--option-req="              ""
 }
 
+shifu_test_opto_value_cmd() {
+  shifu_cmd_name colorize
+  shifu_cmd_func shifu_test_opto_value_func
+  shifu_cmd_opto --literal -- LITERAL none always   "literal opto"
+  shifu_cmd_opto --greedy  -- GREEDY  none :greedy: "greedy opto"
+  shifu_cmd_opto --strict  -- STRICT  none :strict: "strict opto"
+  shifu_cmd_args "remaining help"
+}
+
+shifu_test_opto_value_func() {
+  opto_remaining=$(shifu_test_format_args "$@")
+}
+
+test_shifu_run_opto_value() {
+  run_test() {
+    shifu_test_params @args var value bare remaining -- "$@"
+    shifu_run shifu_test_opto_value_cmd $args
+    shifu_assert_zero exit_code $?
+    eval "shifu_assert_equal $var \"\$$var\" \"$value\""
+    shifu_bare_opt "$var" && bare_result=yes || bare_result=no
+    shifu_assert_equal bare "$bare_result" "$bare"
+    shifu_assert_equal remaining "$opto_remaining" "$remaining"
+  }
+  shifu_parameterize_test run_test \
+  -- literal_absent  ""                 LITERAL  none    no   ""       \
+  -- literal_bare    "--literal"        LITERAL  always  yes  ""       \
+  -- literal_equals  "--literal=never"  LITERAL  never   no   ""       \
+  -- literal_space   "--literal one"    LITERAL  always  yes  "[one]"  \
+  -- greedy_absent   ""                 GREEDY   none    no   ""       \
+  -- greedy_bare     "--greedy"         GREEDY   none    yes  ""       \
+  -- greedy_equals   "--greedy=never"   GREEDY   never   no   ""       \
+  -- greedy_space    "--greedy one"     GREEDY   one     no   ""       \
+  -- strict_absent   ""                 STRICT   none    no   ""       \
+  -- strict_bare     "--strict"         STRICT   none    yes  ""       \
+  -- strict_equals   "--strict=never"   STRICT   never   no   ""       \
+  -- strict_space    "--strict one"     STRICT   none    yes  "[one]"
+}
+
 test_shifu_run_defer_and_eager_equals_value() {
   run_test() {
     shifu_test_params @cmd_args var expected -- "$@"
@@ -692,6 +731,9 @@ Options
   --option-def [OPTION_DEF]
     default argument option help
     Default: def_opt
+  --option-opto [OPTION_OPTO]
+    optional value option help
+    Default: def_opto
   -F, --flag-option-bin
     binary flag/option help
     Default: 0, set: 1
@@ -789,7 +831,7 @@ test_shifu_complete() {
      shifu_test_root_cmd "cur_word -e" "" \
   -- func_args_options \
      shifu_test_all_options_cmd "--op" \
-     "--option-bin --option-req --option-def" \
+     "--option-bin --option-req --option-def --option-opto" \
   -- func_args_flags \
      shifu_test_all_options_cmd "-f" "-f" \
   -- func_args_flag_options \
@@ -797,7 +839,7 @@ test_shifu_complete() {
      "--flag-option-bin --flag-option-req --flag-option-def" \
   -- single_dash_double_dash_only \
      shifu_test_all_options_cmd "-" \
-     "--option-bin --option-req --option-def --flag-option-bin --flag-option-req --flag-option-def --help" \
+     "--option-bin --option-req --option-def --option-opto --flag-option-bin --flag-option-req --flag-option-def --help" \
   -- options_only_when_dash \
      shifu_test_all_options_cmd "cur_word" "positional arg one" \
   -- defer_option_names \
@@ -947,7 +989,7 @@ test_shifu_zsh_comp_words() {
 
 test_shifu_complete_single_dash_with_config_shows_all_options() {
   shifu_complete_single_dash_options=true
-  expected="-f -a -d --option-bin --option-req --option-def -F --flag-option-bin -A --flag-option-req -D --flag-option-def -h --help"
+  expected="-f -a -d --option-bin --option-req --option-def --option-opto -F --flag-option-bin -A --flag-option-req -D --flag-option-def -h --help"
   actual=$(_shifu_complete shifu_test_all_options_cmd --shifu-complete -)
   shifu_assert_strings_equal completion "$expected" "$actual"
 }
@@ -1356,16 +1398,19 @@ shifu_test_bundle_cmd() {
   shifu_cmd_optb -a -- BIN_ONE false true "first binary"
   shifu_cmd_optb -b -- BIN_TWO false true "second binary"
   shifu_cmd_optb -c -- BIN_THREE false true "third binary"
+  shifu_cmd_optb -readonly -- READONLY false true "multi-char single dash"
   shifu_cmd_optd -o --output -- VALUE_OPT none "value option"
   shifu_cmd_optd -l --list -- LIST_OPT... "" "list option"
-  shifu_cmd_optb -readonly -- READONLY false true "multi-char single dash"
+  shifu_cmd_opto -p -- LIT_OPT    none always   "literal opto"
+  shifu_cmd_opto -g -- GREEDY_OPT none :greedy: "greedy opto"
+  shifu_cmd_opto -s -- STRICT_OPT none :strict: "strict opto"
   shifu_cmd_argr POS_ONE "positional"
   shifu_cmd_cpte one two three
   shifu_cmd_args "remaining"
 }
 
 shifu_test_bundle_func() {
-  bundle_result="$BIN_ONE $BIN_TWO $BIN_THREE $VALUE_OPT $READONLY $POS_ONE"
+  bundle_result="$BIN_ONE $BIN_TWO $BIN_THREE $VALUE_OPT $READONLY $LIT_OPT $GREEDY_OPT $STRICT_OPT $POS_ONE"
 }
 
 test_shifu_run_bundle() {
@@ -1377,17 +1422,30 @@ test_shifu_run_bundle() {
     shifu_assert_equal parsed "$_shifu_args_parsed" "$expected_parsed"
   }
   shifu_parameterize_test run_test \
-  -- bundle_two    "-ab one"       "true true false none false one"   2 \
-  -- bundle_three  "-abc one"      "true true true none false one"    2 \
-  -- value_ends    "-abo two one"  "true true false two false one"    3 \
-  -- exact_multi   "-readonly one" "false false false none true one"  2 \
-  -- delimiter     "-- -ab one"    "false false false none false -ab" 2 \
-  -- after_pos     "one -ab"       "true true false none false one"   2 \
-  -- attached      "-otwo one"     "false false false two false one"  2 \
-  -- attached_tail "-abotwo one"   "true true false two false one"    2 \
-  -- attached_mid  "-aob one"      "true false false b false one"     2 \
-  -- attached_eq   "-o=two one"    "false false false two false one"  2 \
-  -- value_ends_eq "-abo=two one"  "true true false two false one"    2
+  -- bundle_two            "-ab one"         "true true false none false none none none one"    2 \
+  -- bundle_three          "-abc one"        "true true true none false none none none one"     2 \
+  -- value_ends            "-abo auto one"   "true true false auto false none none none one"    3 \
+  -- exact_multi           "-readonly one"   "false false false none true none none none one"   2 \
+  -- delimiter             "-- -ab one"      "false false false none false none none none -ab"  2 \
+  -- after_pos             "one -ab"         "true true false none false none none none one"    2 \
+  -- attached              "-oauto one"      "false false false auto false none none none one"  2 \
+  -- attached_tail         "-aboauto one"    "true true false auto false none none none one"    2 \
+  -- attached_mid          "-aob one"        "true false false b false none none none one"      2 \
+  -- attached_eq           "-o=auto one"     "false false false auto false none none none one"  2 \
+  -- value_ends_eq         "-abo=auto one"   "true true false auto false none none none one"    2 \
+  -- opto_lit_bare         "-abp one"        "true true false none false always none none one"  2 \
+  -- opto_lit_equals       "-abp=never one"  "true true false none false never none none one"   2 \
+  -- opto_lit_continue     "-abpc one"       "true true true none false always none none one"   2 \
+  -- opto_lit_first        "-pab one"        "true true false none false always none none one"  2 \
+  -- opto_lit_reparse      "-abpoauto one"   "true true false auto false always none none one"  2 \
+  -- opto_greedy_next      "-abg auto one"   "true true false none false none auto none one"    3 \
+  -- opto_greedy_attached  "-abgauto one"    "true true false none false none auto none one"    2 \
+  -- opto_greedy_equals    "-abg=never one"  "true true false none false none never none one"   2 \
+  -- opto_greedy_bare      "-abg -c one"     "true true true none false none none none one"     3 \
+  -- opto_strict_equals    "-abs=never one"  "true true false none false none none never one"   2 \
+  -- opto_strict_next      "-abs two"        "true true false none false none none none two"    2 \
+  -- opto_strict_continue  "-absc one"       "true true true none false none none none one"     2 \
+  -- opto_strict_first     "-sab one"        "true true false none false none none none one"    2
 }
 
 test_shifu_run_bundle_help() {
