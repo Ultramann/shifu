@@ -680,12 +680,6 @@ All option and argument functions accept a `variable` argument, the shell variab
     cli --color       # shifu_bare_opt COLOR is true
     ```
 * Detect a bare flag in the leaf function with [`shifu_bare_opt`](#shifu_bare_opt)
-  ```sh
-  cli_func() {
-    shifu_bare_opt COLOR && { list_modes; exit; }
-    colorize "$COLOR"
-  }
-  ```
 
 #### `shifu_cmd_optr`
 * Required option
@@ -845,7 +839,7 @@ Shifu has a few variables that can be set after sourcing to change default behav
   ```
 
 #### `shifu_bare_opt`
-* True when the given variable's [`shifu_cmd_opto`](#shifu_cmd_opto) flag is bare, the flag alone with no value passed
+* True when the given variable's [`shifu_cmd_opto`](#shifu_cmd_opto) flag is bare, the flag is passed alone with no value
     * Holds even for a literal `<bare_value>`, so a bare flag stays distinguishable from the same value passed explicitly
 * Call in the leaf function to detect a bare flag
 * Example

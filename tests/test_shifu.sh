@@ -459,7 +459,8 @@ test_shifu_run_opto_value() {
     shifu_run shifu_test_opto_value_cmd $args
     shifu_assert_zero exit_code $?
     eval "shifu_assert_equal $var \"\$$var\" \"$value\""
-    shifu_assert_equal bare "$(shifu_bare_opt "$var" && echo yes || echo no)" "$bare"
+    shifu_bare_opt "$var" && bare_result=yes || bare_result=no
+    shifu_assert_equal bare "$bare_result" "$bare"
     shifu_assert_equal remaining "$opto_remaining" "$remaining"
   }
   shifu_parameterize_test run_test \
