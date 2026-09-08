@@ -6,6 +6,11 @@ The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+* `shifu_cmd_opto`: an optional-value option; the flag may be omitted, take a value, or appear bare. The `<bare_value>` argument sets the form: a literal (a bare flag sets the variable to the literal, a value attaches with `=`), `:greedy:` (a bare flag sets no value, `--flag value` and `--flag=value` both set one), or `:strict:` (a value attaches with `=` only, a bare flag sets no value) ([#61])
+* `shifu_bare_opt`: returns 0 when an optional-value flag is passed bare, 1 otherwise ([#61])
+
 ## [0.2.1] - 2026-08-16
 
 ### Added
@@ -53,6 +58,7 @@ The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/),
 [0.2.0]: https://github.com/Ultramann/shifu/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Ultramann/shifu/releases/tag/v0.1.0
 
+[#61]: https://github.com/Ultramann/shifu/pull/61
 [#59]: https://github.com/Ultramann/shifu/pull/59
 [#57]: https://github.com/Ultramann/shifu/pull/57
 [#56]: https://github.com/Ultramann/shifu/pull/56

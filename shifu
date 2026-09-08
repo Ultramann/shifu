@@ -58,7 +58,8 @@
 #     loop with <var> (without ...), each pass sets <var> to the next
 #     accrued value
 #   shifu_bare_opt <var>
-#     true when <var>'s opto flag was passed bare; call in the leaf function
+#     returns 0 when <var>'s opto flag was passed bare, 1 otherwise;
+#     call in the leaf function
 #   shifu_add_cpts <word>...
 #     append words to completions; used inside cptf functions
 #   shifu_less

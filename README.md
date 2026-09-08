@@ -639,7 +639,7 @@ All option and argument functions accept a `variable` argument, the shell variab
   ```sh
   shifu_cmd_opto <flags> -- <variable> <default> <bare_value> <help>
   ```
-* The `<bare_value>` slot sets how the flag takes its value and what a bare flag does; it can be a literal, `:greedy:`, or `:strict:`
+* The `<bare_value>` argument sets how the flag takes its value and what a bare flag does; it can be a literal, `:greedy:`, or `:strict:`
   * a literal (e.g. `always`)
     * a value attaches with `=` only
     * a bare flag sets `<variable>` to the literal
@@ -839,7 +839,7 @@ Shifu has a few variables that can be set after sourcing to change default behav
   ```
 
 #### `shifu_bare_opt`
-* True when the given variable's [`shifu_cmd_opto`](#shifu_cmd_opto) flag is bare, the flag is passed alone with no value
+* Returns 0 when the given variable's [`shifu_cmd_opto`](#shifu_cmd_opto) flag is bare (passed alone with no value), 1 otherwise
     * Holds even for a literal `<bare_value>`, so a bare flag stays distinguishable from the same value passed explicitly
 * Call in the leaf function to detect a bare flag
 * Example
