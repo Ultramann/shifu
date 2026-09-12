@@ -1,1 +1,2 @@
-*.tape -linguist-detectable
+Containerfile -linguist-detectable
+*.tape        -linguist-detectable
