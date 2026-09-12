@@ -68,7 +68,7 @@ issue_list_cmd() {
 
   cmd_optd -s --state -- STATE open "Filter by state: {open|closed|all}"
   cmd_optd -L --limit -- LIMIT 30 "Maximum number of issues to fetch"
-  cmd_optd    --json  -- JSON "" "Output JSON with the specified fields"
+  cmd_opto    --json  -- JSON "" :greedy: "Output JSON with specified fields; omit value to list fields"
 }
 
 issue_view_cmd() {
@@ -76,7 +76,7 @@ issue_view_cmd() {
   cmd_func issue_view
   cmd_help "View an issue"
 
-  cmd_optd --json -- JSON "" "Output JSON with the specified fields"
+  cmd_opto --json -- JSON "" :greedy: "Output JSON with specified fields; omit value to list fields"
   cmd_argr ISSUE_NUMBER "Issue number to view"
 }
 
@@ -95,8 +95,8 @@ pr_list_cmd() {
   cmd_help "List pull requests in a repository"
 
   cmd_optd -s --state -- STATE open "Filter by state: {open|closed|merged|all}"
-  cmd_optd -L --limit -- LIMIT 30  "Maximum number of items to fetch"
-  cmd_optd     --json -- JSON "" "Output JSON with the specified fields"
+  cmd_optd -L --limit -- LIMIT 30 "Maximum number of items to fetch"
+  cmd_opto    --json  -- JSON "" :greedy: "Output JSON with specified fields; omit value to list fields"
 }
 
 pr_view_cmd() {
@@ -104,7 +104,7 @@ pr_view_cmd() {
   cmd_func pr_view
   cmd_help "View a pull request"
 
-  cmd_optd --json -- JSON "" "Output JSON with the specified fields"
+  cmd_opto --json -- JSON "" :greedy: "Output JSON with specified fields; omit value to list fields"
   cmd_argr PR_NUMBER "Pull request number to view"
 }
 
@@ -171,6 +171,7 @@ auth_set() {
 
 ## issue
 issue_list() {
+  _check_json "$json_issue_fields"
   _resolve_repo
   if [ -n "$JSON" ]; then
     owner="${REPO%/*}"; name="${REPO#*/}"
@@ -204,6 +205,7 @@ issue_list() {
 }
 
 issue_view() {
+  _check_json "$json_issue_fields"
   _resolve_repo
   if [ -n "$JSON" ]; then
     owner="${REPO%/*}"; name="${REPO#*/}"
@@ -229,6 +231,7 @@ number:\t\(.number)
 
 ## pr
 pr_list() {
+  _check_json "$json_pr_fields"
   _resolve_repo
   if [ -n "$JSON" ]; then
     owner="${REPO%/*}"; name="${REPO#*/}"
@@ -267,6 +270,7 @@ pr_list() {
 }
 
 pr_view() {
+  _check_json "$json_pr_fields"
   _resolve_repo
   if [ -n "$JSON" ]; then
     owner="${REPO%/*}"; name="${REPO#*/}"
@@ -342,6 +346,32 @@ _gh_graphql() {
     exit 1
   fi
   printf "%s" "$result"
+}
+
+json_issue_fields="assignees author body comments createdAt labels milestone number state stateReason title updatedAt url"
+json_pr_fields="additions assignees author body comments createdAt deletions labels number state title updatedAt url"
+
+_check_json() {
+  local allowed="$1" requested f
+  if bare_opt JSON; then
+    printf 'Specify one or more comma-separated fields for `--json`:\n' >&2
+    printf '  %s\n' $allowed >&2
+    exit 1
+  fi
+  [ -z "$JSON" ] && return
+  IFS=', ' read -ra requested <<< "$JSON"
+  for f in "${requested[@]}"; do
+    [ -z "$f" ] && continue
+    case " $allowed " in
+      *" $f "*) ;;
+      *)
+        printf 'Unknown JSON field: "%s"\n' "$f" >&2
+        printf 'Available fields:\n' >&2
+        printf '  %s\n' $allowed >&2
+        exit 1
+        ;;
+    esac
+  done
 }
 
 # populate gql & proj variables with values from gql_<f> / proj_<f> variables
