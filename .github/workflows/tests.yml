@@ -17,7 +17,7 @@ jobs:
         id: cache-image
         with:
           path: /tmp/shifu-test-shells.tar
-          key: shifu-test-shells-${{ hashFiles('tests/Containerfile.test') }}
+          key: shifu-test-shells-${{ hashFiles('tests/Containerfile') }}
 
       - name: Load cached image
         if: steps.cache-image.outputs.cache-hit == 'true'
@@ -26,7 +26,7 @@ jobs:
       - name: Build test container
         if: steps.cache-image.outputs.cache-hit != 'true'
         run: |
-          podman build -t shifu-test-shells -f tests/Containerfile.test .
+          podman build -t shifu-test-shells -f tests/Containerfile .
           podman save -o /tmp/shifu-test-shells.tar shifu-test-shells
 
       - name: Run tests
