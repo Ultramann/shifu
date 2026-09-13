@@ -227,10 +227,10 @@ test_shifu_run_required_args_unset() {
     shifu_assert_string_contains error_message "$actual" "$expected_error"
   }
   shifu_parameterize_test run_test \
-  -- flag        ""  "Required variable, FLAG_REQ, is not set" \
-  -- option      "-a flag_value"  "Required variable, OPTION_REQ, is not set" \
+  -- flag        ""  "Required option, -a, is not set for the all command" \
+  -- option      "-a flag_value"  "Required option, --option-req, is not set for the all command" \
   -- flag_option "-a flag_value --option-req option_value" \
-                   "Required variable, FLAG_OPTION_REQ, is not set" \
+                   "Required option, -A|--flag-option-req, is not set for the all command" \
   -- positional  "-a flag_value --option-req option_value --flag-option-req flag_option_value" \
                    "Missing positional argument POSITIONAL_ARG_1"
 }
@@ -373,15 +373,16 @@ shifu_test_required_options_cmd() {
 
 test_shifu_run_required_eager_and_defer_options() {
   run_test() {
-    shifu_test_params @cmd_args expected_exit expected_error -- "$@"
+    shifu_test_params @cmd_args expected_exit expected_error expected_help -- "$@"
     actual=$(shifu_run shifu_test_required_options_cmd $cmd_args)
     shifu_assert_equal exit_code $expected_exit $?
     shifu_assert_string_contains error_message "$actual" "$expected_error"
+    shifu_assert_string_contains help "$actual" "$expected_help"
   }
   shifu_parameterize_test run_test \
-  -- both_set  "-e eager leaf-three -g defer"  0  "" \
-  -- eager_set "-e eager leaf-three"  1  "Required variable, DEFER_TEST, is not set" \
-  -- none_set  "leaf-three"  1  "Required variable, EAGER_TEST, is not set"
+  -- both_set  "-e eager leaf-three -g defer"  0  ""  "" \
+  -- eager_set "-e eager leaf-three"  1  "Required option, -g|--defer, is not set for the leaf-three command"  "" \
+  -- none_set  "leaf-three"  1  "Required option, -e|--eager, is not set for the required-options command"  "A test required eager arg"
 }
 
 shifu_test_option_missing_value_cmd() {

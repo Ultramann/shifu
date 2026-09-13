@@ -330,9 +330,11 @@ _shifu_parse_args() {
   else
     _shifu_set_for_looping shifu_req_variables shifu_required_variables
   fi
-  for shifu_req_variables in $shifu_req_variables; do
-    eval "if [ \"\${$shifu_req_variables+set}\" != set ]; then
-      echo \"Required variable, $shifu_req_variables, is not set for the $shifu_cmd_name command\"
+  for shifu_req_entry in $shifu_req_variables; do
+    shifu_req_var="${shifu_req_entry%%:*}"
+    shifu_req_flags="${shifu_req_entry#*:}"
+    eval "if [ \"\${$shifu_req_var+set}\" != set ]; then
+      echo \"Required option, $shifu_req_flags, is not set for the $shifu_cmd_name command\"
       _shifu_help \"$shifu_cmd\" 1
     fi"
   done
@@ -695,9 +697,11 @@ _shifu_cmd_optr() {
     $shifu_mode_args_run)
       _shifu_case_arm_begin "$shifu_arg_scope" "$@"
       _shifu_collect_short_val "$@"
+      shifu_req_flags=""
+      _shifu_opt_build shifu_req_flags '' '|' "$@"
       shift $shifu_opt_count
       _shifu_guard_arg_order "$1"
-      _shifu_var_require "$1"
+      _shifu_var_require "$1" "$shifu_req_flags"
       _shifu_case_arm_value "$1"
       [ "$shifu_arg_scope" = defer ] && \
         shifu_defer_help="${shifu_defer_help:-} $1\n    $2\n    Required"
@@ -1283,7 +1287,7 @@ _shifu_guard_arg_order() {
 
 # parsed variable registration: seed a declared option/arg's shell variable
 #   _shifu_var_default <name> <value>   set a var to its pre-parse default
-#   _shifu_var_require <name>           mark a var required
+#   _shifu_var_require <name> <flags>   mark a var required, naming its flags
 #   _shifu_var_require_pos <name>       mark a positional required
 #   _shifu_var_list <name> <first>      seed a repeatable (list) var
 
@@ -1293,9 +1297,9 @@ _shifu_var_default() {
 
 _shifu_var_require() {
   if [ "$shifu_parse_eager" = true ] && [ "$shifu_arg_scope" = eager ]; then
-    _shifu_list_append shifu_required_variables_eager "$1"
+    _shifu_list_append shifu_required_variables_eager "$1:$2"
   else
-    _shifu_list_append shifu_required_variables "$1"
+    _shifu_list_append shifu_required_variables "$1:$2"
   fi
 }
 
