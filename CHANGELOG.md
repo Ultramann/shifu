@@ -11,6 +11,10 @@ The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/),
 * `shifu_cmd_opto`: an optional-value option; the flag may be omitted, take a value, or appear bare. The `<bare_value>` argument sets the form: a literal (a bare flag sets the variable to the literal, a value attaches with `=`), `:greedy:` (a bare flag sets no value, `--flag value` and `--flag=value` both set one), or `:strict:` (a value attaches with `=` only, a bare flag sets no value) ([#61])
 * `shifu_bare_opt`: returns 0 when an optional-value flag is passed bare, 1 otherwise ([#61])
 
+### Fixed
+
+* Improved error shown when a required option declared on a non-leaf command with `:eager:` is missing. The error is now reported at that command, whose help lists the option, instead of at the leaf command whose help does not; and it lists the option's flags and the command ([#65])
+
 ## [0.2.1] - 2026-08-16
 
 ### Added
