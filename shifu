@@ -568,6 +568,7 @@ _shifu_comp_positional_close() {
 _shifu_cmd_optb() {
   case ${shifu_mode:-0} in
     $shifu_mode_help_run)
+      [ "$shifu_arg_scope" = defer ] && return 0
       _shifu_opt_help_parse "$@"
       shift $shifu_opt_count
       _shifu_error_if_invalid_arg_order "$1" $shifu_help_stage
@@ -603,6 +604,7 @@ _shifu_cmd_optb() {
 _shifu_cmd_optd() {
   case ${shifu_mode:-0} in
     $shifu_mode_help_run)
+      [ "$shifu_arg_scope" = defer ] && return 0
       _shifu_opt_help_parse "$@"
       shift $shifu_opt_count
       _shifu_error_if_invalid_arg_order "$1" $shifu_help_stage
@@ -646,6 +648,7 @@ _shifu_cmd_optd() {
 _shifu_cmd_opto() {
   case ${shifu_mode:-0} in
     $shifu_mode_help_run)
+      [ "$shifu_arg_scope" = defer ] && return 0
       _shifu_opt_help_parse "$@"
       shift $shifu_opt_count
       _shifu_error_if_invalid_arg_order "$1" $shifu_help_stage
@@ -693,6 +696,7 @@ _shifu_cmd_opto() {
 _shifu_cmd_optr() {
   case ${shifu_mode:-0} in
     $shifu_mode_help_run)
+      [ "$shifu_arg_scope" = defer ] && return 0
       _shifu_opt_help_parse "$@"
       shift $shifu_opt_count
       _shifu_error_if_invalid_arg_order "$1" $shifu_help_stage
