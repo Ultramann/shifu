@@ -371,7 +371,11 @@ _shifu_help() {
   [ -n "$shifu_cmd_func" ] && shifu_help_options="${shifu_help_options:-}${shifu_defer_help:-}"
   [ -n "${shifu_help_display:-}" ] && \
     shifu_help_options="${shifu_help_options:-}\n  $shifu_help_display\n    Show this help"
-  [ -n "${shifu_help_usage:-}" ] && shifu_help_usage="$shifu_cmd_name [OPTIONS]$shifu_help_usage"
+  if [ -n "${shifu_cmd_subs:-}" ]; then
+    shifu_help_usage="$shifu_cmd_name [OPTIONS] SUBCOMMAND"
+  elif [ -n "${shifu_help_usage:-}" ]; then
+    shifu_help_usage="$shifu_cmd_name [OPTIONS]$shifu_help_usage"
+  fi
   [ -n "$shifu_cmd_help" ] && _shifu_add_to_help_string "$shifu_cmd_help"
   [ -n "$shifu_cmd_long" ] && _shifu_add_to_help_string "$shifu_cmd_long"
   [ -n "${shifu_help_usage:-}" ] && _shifu_add_to_help_string "Usage\n  $shifu_help_usage"
