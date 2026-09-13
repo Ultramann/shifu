@@ -508,6 +508,9 @@ test_shifu_run_bad_first_cmd() {
     echo 'Unknown command: bad'
     printf 'Test root cmd help
 
+Usage
+  root [OPTIONS] SUBCOMMAND
+
 Subcommands
   sub-one
     Test sub one cmd help
@@ -515,16 +518,9 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -g, --defer-bin
-    A test deferred binary arg
-    Default: false, set: true
-  -G, --defer-def [DEFER_DEF]
-    A test deferred default arg
-    Default: defer_def
   -h, --help
     Show this help'
   )"
-  # TODO: I don't think the defer option should show up in this help string
   actual=$(shifu_run shifu_test_root_cmd bad sub-one leaf-two one two 2>&1)
   shifu_assert_non_zero exit_code $?
   shifu_assert_strings_equal error_message "$expected" "$actual"
@@ -535,6 +531,9 @@ test_shifu_run_bad_sub_cmd() {
     echo 'Unknown command: sub-bad'
     printf 'Test sub one cmd help
 
+Usage
+  sub-one [OPTIONS] SUBCOMMAND
+
 Subcommands
   leaf-one
     Test leaf one cmd help
@@ -542,9 +541,6 @@ Subcommands
     Test leaf two cmd help
 
 Options
-  -S, --sub-defer [SUB_DEFER]
-    A test sub-one deferred arg
-    Default: sub_defer
   -h, --help
     Show this help'
   )"
@@ -557,6 +553,9 @@ test_shifu_run_bad_leaf_cmd() {
   expected="$(
     echo 'Unknown command: leaf-bad'
     printf 'Test sub two cmd help
+
+Usage
+  sub-two [OPTIONS] SUBCOMMAND
 
 Subcommands
   leaf-three
@@ -580,6 +579,9 @@ test_shifu_run_bad_cmd_defer_and_eager_arg() {
   expected="$(
     echo 'Invalid option: -g'
     printf 'Test sub two cmd help
+
+Usage
+  sub-two [OPTIONS] SUBCOMMAND
 
 Subcommands
   leaf-three
@@ -620,6 +622,9 @@ test_shifu_run_args_invalid_option() {
     echo 'Invalid option: --invalid'
     printf 'Test root cmd help
 
+Usage
+  root [OPTIONS] SUBCOMMAND
+
 Subcommands
   sub-one
     Test sub one cmd help
@@ -627,12 +632,6 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -g, --defer-bin
-    A test deferred binary arg
-    Default: false, set: true
-  -G, --defer-def [DEFER_DEF]
-    A test deferred default arg
-    Default: defer_def
   -h, --help
     Show this help'
   )
@@ -754,6 +753,9 @@ Options
 test_shifu_help_subcommands() {
   expected='Test root cmd help
 
+Usage
+  root [OPTIONS] SUBCOMMAND
+
 Subcommands
   sub-one
     Test sub one cmd help
@@ -761,12 +763,6 @@ Subcommands
     Test sub two cmd help
 
 Options
-  -g, --defer-bin
-    A test deferred binary arg
-    Default: false, set: true
-  -G, --defer-def [DEFER_DEF]
-    A test deferred default arg
-    Default: defer_def
   -h, --help
     Show this help'
   actual=$(shifu_run shifu_test_root_cmd -h)
