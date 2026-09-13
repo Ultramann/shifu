@@ -230,7 +230,7 @@ test_shifu_run_required_args_unset() {
   -- flag        ""  "Required option, -a, is not set for the all command" \
   -- option      "-a flag_value"  "Required option, --option-req, is not set for the all command" \
   -- flag_option "-a flag_value --option-req option_value" \
-                   "Required option, -A|--flag-option-req, is not set for the all command" \
+                   "Required option, -A/--flag-option-req, is not set for the all command" \
   -- positional  "-a flag_value --option-req option_value --flag-option-req flag_option_value" \
                    "Missing positional argument POSITIONAL_ARG_1"
 }
@@ -381,8 +381,8 @@ test_shifu_run_required_eager_and_defer_options() {
   }
   shifu_parameterize_test run_test \
   -- both_set  "-e eager leaf-three -g defer"  0  ""  "" \
-  -- eager_set "-e eager leaf-three"  1  "Required option, -g|--defer, is not set for the leaf-three command"  "" \
-  -- none_set  "leaf-three"  1  "Required option, -e|--eager, is not set for the required-options command"  "A test required eager arg"
+  -- eager_set "-e eager leaf-three"  1  "Required option, -g/--defer, is not set for the leaf-three command"  "" \
+  -- none_set  "leaf-three"  1  "Required option, -e/--eager, is not set for the required-options command"  "A test required eager arg"
 }
 
 shifu_test_option_missing_value_cmd() {

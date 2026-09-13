@@ -698,7 +698,7 @@ _shifu_cmd_optr() {
       _shifu_case_arm_begin "$shifu_arg_scope" "$@"
       _shifu_collect_short_val "$@"
       shifu_req_flags=""
-      _shifu_opt_build shifu_req_flags '' '|' "$@"
+      _shifu_opt_build shifu_req_flags '' '/' "$@"
       shift $shifu_opt_count
       _shifu_guard_arg_order "$1"
       _shifu_var_require "$1" "$shifu_req_flags"
