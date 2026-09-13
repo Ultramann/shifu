@@ -1292,7 +1292,11 @@ _shifu_var_default() {
 }
 
 _shifu_var_require() {
-  _shifu_list_append shifu_required_variables "$1"
+  if [ "$shifu_parse_eager" = true ] && [ "$shifu_arg_scope" = eager ]; then
+    _shifu_list_append shifu_required_variables_eager "$1"
+  else
+    _shifu_list_append shifu_required_variables "$1"
+  fi
 }
 
 _shifu_var_require_pos() {
