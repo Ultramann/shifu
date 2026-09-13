@@ -332,7 +332,7 @@ _shifu_parse_args() {
   fi
   for shifu_req_variables in $shifu_req_variables; do
     eval "if [ \"\${$shifu_req_variables+set}\" != set ]; then
-      echo \"Required variable, $shifu_req_variables, is not set\"
+      echo \"Required variable, $shifu_req_variables, is not set for the $shifu_cmd_name command\"
       _shifu_help \"$shifu_cmd\" 1
     fi"
   done
