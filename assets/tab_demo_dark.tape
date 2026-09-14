@@ -7,7 +7,7 @@ Output assets/tab_demo_dark.gif
 Set Shell "bash"
 Set FontSize 22
 Set Width 1200
-Set Height 650
+Set Height 750
 Set Padding 50
 Set CursorBlink false
 Set Framerate 40
