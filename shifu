@@ -236,18 +236,23 @@ shifu_less() {
 }
 
 # helpers
+_shifu_invoke_cmd() {
+  [ -n "${ZSH_VERSION:-}" ] && setopt local_options no_equals
+  "$@"
+}
+
 _shifu_load_cur_cmd() {
   shifu_mode=$shifu_mode_cmds_run
   shifu_cur_cmd="$1"
   _shifu_clear_cmd_vars
-  "$shifu_cur_cmd"
+  _shifu_invoke_cmd "$shifu_cur_cmd"
   _shifu_set_for_looping shifu_cmds shifu_cmd_subs
 }
 
 _shifu_match_subcmd() {
   for shifu_cmd in $shifu_cmds; do
     _shifu_clear_cmd_vars
-    "$shifu_cmd"
+    _shifu_invoke_cmd "$shifu_cmd"
     [ "$1" = "$shifu_cmd_name" ] || continue
     [ -z "$shifu_cmd_func" ] && _shifu_load_cur_cmd "$shifu_cmd"
     return 0
@@ -311,7 +316,7 @@ _shifu_parse_args() {
     [ -n "${shifu_defer_short_val:-}" ] && shifu_short_val="${shifu_short_val:+$shifu_short_val|}$shifu_defer_short_val"
   fi
   _shifu_case_arm_help
-  "$shifu_cmd"
+  _shifu_invoke_cmd "$shifu_cmd"
   _shifu_case_close
   _shifu_args_parsed=0
   _shifu_n_args=$#
@@ -362,12 +367,12 @@ _shifu_clear_cmd_vars() {
 _shifu_help() {
   shifu_mode=$shifu_mode_cmds_run
   _shifu_clear_cmd_vars
-  "$1"
+  _shifu_invoke_cmd "$1"
   _shifu_make_subcmd_help
   shifu_mode=$shifu_mode_help_run
   _shifu_clear_cmd_vars
   shifu_help_stage=0
-  "$1"
+  _shifu_invoke_cmd "$1"
   [ -n "$shifu_cmd_func" ] && shifu_help_options="${shifu_help_options:-}${shifu_defer_help:-}"
   [ -n "${shifu_help_display:-}" ] && \
     shifu_help_options="${shifu_help_options:-}\n  $shifu_help_display\n    Show this help"
@@ -397,7 +402,7 @@ _shifu_make_subcmd_help() {
   _shifu_clear_cmd_vars
   for shifu_subcmd in $shifu_subcmds; do
     shifu_help_stage=0
-    "$shifu_subcmd"
+    _shifu_invoke_cmd "$shifu_subcmd"
     shifu_subcmd_help="${shifu_subcmd_help:-}\n  $shifu_cmd_name"
     [ -n "${shifu_cmd_help:-}" ] && shifu_subcmd_help="${shifu_subcmd_help:-}\n    $shifu_cmd_help"
   done
@@ -957,7 +962,7 @@ _shifu_set_completing_option() {
 
 _shifu_complete_option_names() {
   shifu_mode=$shifu_mode_opt_names_comp
-  "$shifu_cmd"
+  _shifu_invoke_cmd "$shifu_cmd"
   _shifu_set_for_looping shifu_complete_help_flags shifu_help_flags
   for shifu_help_flag in $shifu_complete_help_flags; do
     _shifu_list_append shifu_comp_option_names "$shifu_help_flag"
@@ -979,7 +984,7 @@ _shifu_collect_option_names() {
 _shifu_complete_subcmd_names() {
   _shifu_load_cur_cmd "$shifu_cur_cmd"
   for shifu_cmd in $shifu_cmds; do
-    "$shifu_cmd"
+    _shifu_invoke_cmd "$shifu_cmd"
     _shifu_list_append shifu_completions "$shifu_cmd_name"
   done
 }
@@ -1010,7 +1015,7 @@ ${shifu_defer_comp_case:-}"
     [ -n "${shifu_defer_short_bin:-}" ] && shifu_short_bin="${shifu_short_bin:+$shifu_short_bin|}$shifu_defer_short_bin"
     [ -n "${shifu_defer_short_val:-}" ] && shifu_short_val="${shifu_short_val:+$shifu_short_val|}$shifu_defer_short_val"
   fi
-  "$shifu_cmd"
+  _shifu_invoke_cmd "$shifu_cmd"
   shifu_comp_past_delimiter=false
   if [ "$shifu_parse_eager" = false ]; then
     for shifu_comp_delim_word in "$@"; do
