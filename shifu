@@ -408,16 +408,30 @@ _shifu_opt_build() {
   shifu_build_prefix="$2"
   shifu_build_sep="$3"
   shift 3
-  _shifu_validate_flag "$1"
-  eval "$shifu_build_var=\"\${$shifu_build_var:-}$shifu_build_prefix\$1\""
-  shifu_opt_count=2
-  shift
+  shifu_opt_env=""
+  shifu_opt_count=1
+  shifu_opt_has_flag=false
   while [ $# -gt 0 ] && [ "$1" != -- ]; do
-    _shifu_validate_flag "$1"
-    eval "$shifu_build_var=\"\$$shifu_build_var$shifu_build_sep\$1\""
+    case "$1" in
+      =*)
+        shifu_opt_env="${shifu_opt_env:+$shifu_opt_env }${1#=}"
+        ;;
+      *)
+        _shifu_validate_flag "$1"
+        if [ "$shifu_opt_has_flag" = false ]; then
+          eval "$shifu_build_var=\"\${$shifu_build_var:-}$shifu_build_prefix\$1\""
+          shifu_opt_has_flag=true
+        else
+          eval "$shifu_build_var=\"\$$shifu_build_var$shifu_build_sep\$1\""
+        fi
+        ;;
+    esac
     shifu_opt_count=$((shifu_opt_count + 1))
     shift
   done
+  if [ "$shifu_opt_has_flag" = false ]; then
+    _shifu_error "Option requires at least one flag: =$shifu_opt_env"
+  fi
 }
 
 _shifu_add_comp_eq_patterns() {
