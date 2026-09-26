@@ -418,7 +418,7 @@ _shifu_opt_build() {
   shifu_opt_has_flag=false
   while [ $# -gt 0 ] && [ "$1" != -- ]; do
     case "$1" in
-      =*)
+      "="*)
         shifu_opt_env="${shifu_opt_env:+$shifu_opt_env }${1#=}"
         ;;
       *)
@@ -435,7 +435,7 @@ _shifu_opt_build() {
     shift
   done
   if [ "$shifu_opt_has_flag" = false ]; then
-    _shifu_error "Option requires at least one flag: =$shifu_opt_env"
+    _shifu_error "Option requires at least one flag"
   fi
 }
 

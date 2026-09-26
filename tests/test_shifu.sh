@@ -1523,7 +1523,7 @@ shifu_test_env_no_flag_cmd() {
 test_shifu_env_no_flag_errors() {
   actual=$(shifu_run shifu_test_env_no_flag_cmd 2>&1)
   shifu_assert_non_zero exit_code $?
-  shifu_assert_string_contains error "$actual" "Option requires at least one flag"
+  shifu_assert_strings_equal error "Option requires at least one flag" "$actual"
 }
 
 # Testing utilities
