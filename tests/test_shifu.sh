@@ -1499,6 +1499,33 @@ test_shifu_run_defer_bundle() {
   shifu_assert_equal leaf_three_args "$leaf_three_args" "[one] [two]"
 }
 
+test_shifu_opt_build_env() {
+  run_test() {
+    shifu_test_params @decl exp_names exp_count -- "$@"
+    _shifu_opt_build shifu_out '' ' ' $decl
+    shifu_assert_strings_equal names "$exp_names" "$shifu_opt_env"
+    shifu_assert_equal count "$exp_count" "$shifu_opt_count"
+  }
+  shifu_parameterize_test run_test \
+  -- none   "-H --host -- VAR default help"       ""         3  \
+  -- one    "-H --host =FOO -- VAR default help"  "FOO"      4  \
+  -- first  "=FOO -H --host -- VAR default help"  "FOO"      4  \
+  -- chain  "-t =FOO =BAR -- VAR default help"    "FOO BAR"  4  \
+  -- mixed  "=FOO -t =BAR -- VAR default help"    "FOO BAR"  4
+}
+
+shifu_test_env_no_flag_cmd() {
+  shifu_cmd_name env-no-flag
+  shifu_cmd_func no_op
+  shifu_cmd_optd =ONLYENV -- X default_x "env only, no flag"
+}
+
+test_shifu_env_no_flag_errors() {
+  actual=$(shifu_run shifu_test_env_no_flag_cmd 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_strings_equal error "Option requires at least one flag" "$actual"
+}
+
 # Testing utilities
 shifu_skip_test() {
   # skip current test, or parameterized case
