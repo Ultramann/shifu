@@ -1526,6 +1526,64 @@ test_shifu_env_no_flag_errors() {
   shifu_assert_strings_equal error "Option requires at least one flag" "$actual"
 }
 
+shifu_test_env_optd_cmd() {
+  shifu_cmd_name env-optd
+  shifu_cmd_func no_op
+  shifu_cmd_optd -o --opt =TEST_OPT -- VAL default_val "opt"
+}
+
+shifu_test_env_opto_cmd() {
+  shifu_cmd_name env-opto
+  shifu_cmd_func no_op
+  shifu_cmd_opto -c --color =TEST_COLOR -- VAL auto always "color"
+}
+
+test_shifu_env_resolution_order() {
+  run_test() {
+    shifu_test_params cmd env_spec @args expected -- "$@"
+    [ -n "$env_spec" ] && eval "export $env_spec"
+    shifu_run "$cmd" $args
+    shifu_assert_zero exit_code $?
+    shifu_assert_equal value "$VAL" "$expected"
+  }
+  shifu_parameterize_test run_test \
+  -- optd_default  shifu_test_env_optd_cmd  ""                  ""             default_val  \
+  -- optd_env      shifu_test_env_optd_cmd  "TEST_OPT=env"      ""             env          \
+  -- optd_flag     shifu_test_env_optd_cmd  "TEST_OPT=env"      "--opt flag"   flag         \
+  -- optd_empty    shifu_test_env_optd_cmd  "TEST_OPT="         ""             ""           \
+  -- opto_default  shifu_test_env_opto_cmd  ""                  ""             auto         \
+  -- opto_env      shifu_test_env_opto_cmd  "TEST_COLOR=never"  ""             never        \
+  -- opto_bare     shifu_test_env_opto_cmd  "TEST_COLOR=never"  "--color"      always       \
+  -- opto_value    shifu_test_env_opto_cmd  "TEST_COLOR=never"  "--color=red"  red
+}
+
+shifu_test_env_optr_cmd() {
+  shifu_cmd_name env-optr
+  shifu_cmd_func no_op
+  shifu_cmd_optr -t --token =TEST_TOKEN -- TOKEN "token option"
+}
+
+test_shifu_env_optr_satisfied_by_env() {
+  export TEST_TOKEN=env_token
+  shifu_run shifu_test_env_optr_cmd
+  shifu_assert_zero exit_code $?
+  shifu_assert_equal token "$TOKEN" env_token
+}
+
+test_shifu_env_optr_flag_beats_env() {
+  export TEST_TOKEN=env_token
+  shifu_run shifu_test_env_optr_cmd --token flag_token
+  shifu_assert_zero exit_code $?
+  shifu_assert_equal token "$TOKEN" flag_token
+}
+
+test_shifu_env_optr_missing_errors() {
+  actual=$(shifu_run shifu_test_env_optr_cmd 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_string_contains error "$actual" \
+    "Required option, -t/--token, is not set for the env-optr command"
+}
+
 # Testing utilities
 shifu_skip_test() {
   # skip current test, or parameterized case

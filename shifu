@@ -636,10 +636,12 @@ _shifu_cmd_optd() {
       _shifu_guard_arg_order "$1"
       _shifu_strip_list_suffix "$1"
       if [ "$shifu_is_list" = true ]; then
+        [ -n "${shifu_opt_env:-}" ] && \
+          _shifu_error "Cannot combine repeatable (...) with env-var fallback: $shifu_list_var"
         _shifu_var_list "$shifu_list_var" "$2"
         _shifu_case_arm_append "$shifu_list_var"
       else
-        _shifu_var_default "$1" "$2"
+        _shifu_var_env_default "$1" "$2"
         _shifu_case_arm_value "$1"
       fi
       [ "$shifu_arg_scope" = defer ] && \
@@ -678,7 +680,7 @@ _shifu_cmd_opto() {
       _shifu_collect_opto_short "$@"
       shift $shifu_opt_count
       _shifu_guard_arg_order "$1"
-      _shifu_var_default "$1" "$2"
+      _shifu_var_env_default "$1" "$2"
       case "$3" in
         :greedy:) _shifu_case_arm_opto_greedy "$1" ;;
         :strict:) _shifu_case_arm_opto_strict "$1" ;;
@@ -730,6 +732,7 @@ _shifu_cmd_optr() {
       _shifu_guard_arg_order "$1"
       _shifu_var_require "$1" "$shifu_req_flags"
       _shifu_case_arm_value "$1"
+      _shifu_var_env_seed "$1"
       [ "$shifu_arg_scope" = defer ] && \
         shifu_defer_help="${shifu_defer_help:-} $1\n    $2\n    Required"
       ;;
@@ -1320,6 +1323,33 @@ _shifu_guard_arg_order() {
 
 _shifu_var_default() {
   _shifu_var_set "$1" "$2"
+}
+
+_shifu_resolve_env() {
+  shifu_env_found=false
+  if eval "[ \"\${$shifu_opt_env+set}\" = set ]"; then
+    eval "shifu_env_val=\"\$$shifu_opt_env\""
+    shifu_env_found=true
+  fi
+}
+
+_shifu_var_env_default() {
+  if [ -n "${shifu_opt_env:-}" ]; then
+    _shifu_resolve_env
+    if [ "$shifu_env_found" = true ]; then
+      _shifu_var_set "$1" "$shifu_env_val"
+      return
+    fi
+  fi
+  _shifu_var_set "$1" "$2"
+}
+
+_shifu_var_env_seed() {
+  [ -n "${shifu_opt_env:-}" ] || return 0
+  _shifu_resolve_env
+  if [ "$shifu_env_found" = true ]; then
+    _shifu_var_set "$1" "$shifu_env_val"
+  fi
 }
 
 _shifu_var_require() {
