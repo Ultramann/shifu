@@ -1499,6 +1499,140 @@ test_shifu_run_defer_bundle() {
   shifu_assert_equal leaf_three_args "$leaf_three_args" "[one] [two]"
 }
 
+test_shifu_opt_build_env() {
+  run_test() {
+    shifu_test_params @decl exp_names exp_count -- "$@"
+    _shifu_opt_build shifu_out '' ' ' $decl
+    shifu_assert_strings_equal names "$exp_names" "$shifu_opt_env"
+    shifu_assert_equal count "$exp_count" "$shifu_opt_count"
+  }
+  shifu_parameterize_test run_test \
+  -- none   "-H --host -- VAR default help"       ""         3  \
+  -- one    "-H --host =FOO -- VAR default help"  "FOO"      4  \
+  -- first  "=FOO -H --host -- VAR default help"  "FOO"      4  \
+  -- chain  "-t =FOO =BAR -- VAR default help"    "FOO BAR"  4  \
+  -- mixed  "=FOO -t =BAR -- VAR default help"    "FOO BAR"  4
+}
+
+shifu_test_env_no_flag_cmd() {
+  shifu_cmd_name env-no-flag
+  shifu_cmd_func no_op
+  shifu_cmd_optd =ONLYENV -- X default_x "env only, no flag"
+}
+
+test_shifu_env_no_flag_errors() {
+  actual=$(shifu_run shifu_test_env_no_flag_cmd 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_strings_equal error "Option requires at least one flag" "$actual"
+}
+
+shifu_test_env_optd_cmd() {
+  shifu_cmd_name env-optd
+  shifu_cmd_func no_op
+  shifu_cmd_optd --opt1 =TEST_OPT1 -- VAL1 default_val1 "opt1"
+  shifu_cmd_optd --opt2 =TEST_OPT2 -- VAL2 default_val2 "opt2"
+}
+
+shifu_test_env_opto_cmd() {
+  shifu_cmd_name env-opto
+  shifu_cmd_func no_op
+  shifu_cmd_opto -c --color =TEST_COLOR -- VAL1 auto always "color"
+}
+
+test_shifu_env_resolution_order() {
+  run_test() {
+    shifu_test_params cmd env_spec @args expected -- "$@"
+    [ -n "$env_spec" ] && eval "export $env_spec"
+    shifu_run "$cmd" $args
+    shifu_assert_zero exit_code $?
+    shifu_assert_equal value "$VAL1" "$expected"
+  }
+  shifu_parameterize_test run_test \
+  -- optd_default  shifu_test_env_optd_cmd  ""                  ""              default_val1  \
+  -- optd_env      shifu_test_env_optd_cmd  "TEST_OPT1=env"     ""              env           \
+  -- optd_flag     shifu_test_env_optd_cmd  "TEST_OPT1=env"     "--opt1 flag"   flag          \
+  -- optd_empty    shifu_test_env_optd_cmd  "TEST_OPT1="        ""              ""            \
+  -- opto_default  shifu_test_env_opto_cmd  ""                  ""              auto          \
+  -- opto_env      shifu_test_env_opto_cmd  "TEST_COLOR=never"  ""              never         \
+  -- opto_bare     shifu_test_env_opto_cmd  "TEST_COLOR=never"  "--color"       always        \
+  -- opto_value    shifu_test_env_opto_cmd  "TEST_COLOR=never"  "--color=red"   red
+}
+
+test_shifu_env_multi_option_independence() {
+  run_test() {
+    shifu_test_params env_spec exp1 exp2 -- "$@"
+    [ -n "$env_spec" ] && eval "export $env_spec"
+    shifu_run shifu_test_env_optd_cmd
+    shifu_assert_zero exit_code $?
+    shifu_assert_equal val1 "$VAL1" "$exp1"
+    shifu_assert_equal val2 "$VAL2" "$exp2"
+  }
+  shifu_parameterize_test run_test \
+  -- neither  ""                 default_val1  default_val2  \
+  -- opt1     "TEST_OPT1=from1"  from1         default_val2  \
+  -- opt2     "TEST_OPT2=from2"  default_val1  from2
+}
+
+shifu_test_env_optr_cmd() {
+  shifu_cmd_name env-optr
+  shifu_cmd_func no_op
+  shifu_cmd_optr -t --token =TEST_TOKEN -- TOKEN "token option"
+}
+
+test_shifu_env_optr_satisfied_by_env() {
+  export TEST_TOKEN=env_token
+  shifu_run shifu_test_env_optr_cmd
+  shifu_assert_zero exit_code $?
+  shifu_assert_equal token "$TOKEN" env_token
+}
+
+test_shifu_env_optr_flag_beats_env() {
+  export TEST_TOKEN=env_token
+  shifu_run shifu_test_env_optr_cmd --token flag_token
+  shifu_assert_zero exit_code $?
+  shifu_assert_equal token "$TOKEN" flag_token
+}
+
+test_shifu_env_optr_missing_errors() {
+  actual=$(shifu_run shifu_test_env_optr_cmd 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_string_contains error "$actual" \
+    "Required option, -t/--token, is not set for the env-optr command"
+}
+
+shifu_test_env_list_cmd() {
+  shifu_cmd_name env-list
+  shifu_cmd_func no_op
+  shifu_cmd_optd -l --list =TEST_LIST -- LIST... "" "list plus env"
+}
+
+test_shifu_env_list_combo_errors() {
+  actual=$(shifu_run shifu_test_env_list_cmd 2>&1)
+  shifu_assert_non_zero exit_code $?
+  shifu_assert_strings_equal error "Cannot combine repeatable (...) with env-var fallback: LIST" "$actual"
+}
+
+shifu_test_env_chain_cmd() {
+  shifu_cmd_name env-chain
+  shifu_cmd_func no_op
+  shifu_cmd_optd -t --token =TEST_A =TEST_B -- TOKEN default_token "token"
+}
+
+test_shifu_env_chain_first_set_wins() {
+  export TEST_B=from_b
+  shifu_run shifu_test_env_chain_cmd
+  shifu_assert_zero exit_code $?
+  shifu_assert_equal token "$TOKEN" from_b
+}
+
+test_shifu_env_chain_empty_first_beats_set_second() {
+  export TEST_A=""
+  export TEST_B=from_b
+  shifu_run shifu_test_env_chain_cmd
+  shifu_assert_zero exit_code $?
+  shifu_assert_equal token "$TOKEN" ""
+}
+
 # Testing utilities
 shifu_skip_test() {
   # skip current test, or parameterized case
